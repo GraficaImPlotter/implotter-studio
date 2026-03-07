@@ -24,6 +24,7 @@ export interface Product {
   longDescription: string;
   image: string;
   variations: ProductVariation[];
+  is_featured?: boolean;
 }
 
 export type OrderStatus = 'novo' | 'em_producao' | 'finalizado' | 'entregue';
