@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { products as initialProducts, categories, Product, getCategoryFullName, getMainCategories, getSubcategories, formatPrice } from '@/data/mockData';
+import { useState } from 'react';
+import { products as initialProducts, Product, getCategoryFullName, getMainCategories, getSubcategories, formatPrice } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,39 +8,81 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Star, Trash2 } from 'lucide-react';
 
 export default function AdminProdutos() {
   const [prods, setProds] = useState<Product[]>([...initialProducts]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ name: '', categoryId: '', price: '', description: '', image: '' });
+  const [form, setForm] = useState({ name: '', categoryId: '', price: '', description: '', image: '', is_featured: false });
   const { toast } = useToast();
 
   const mainCats = getMainCategories();
 
-  const openNew = () => { setEditing(null); setForm({ name: '', categoryId: '', price: '', description: '', image: '' }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ name: '', categoryId: '', price: '', description: '', image: '', is_featured: false }); setOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
-    setForm({ name: p.name, categoryId: p.categoryId, price: String(p.price), description: p.description, image: p.image });
+    setForm({ name: p.name, categoryId: p.categoryId, price: String(p.price), description: p.description, image: p.image, is_featured: Boolean(p.is_featured) });
     setOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.categoryId) return;
+
+    const payload = {
+      name: form.name,
+      slug: form.name.toLowerCase().replace(/\s+/g, '-'),
+      category_id: form.categoryId,
+      price: parseFloat(form.price) || 0,
+      description: form.description,
+      image: form.image || 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&h=400&fit=crop',
+      is_featured: form.is_featured,
+    };
+
     if (editing) {
-      setProds(prev => prev.map(p => p.id === editing.id ? { ...p, name: form.name, categoryId: form.categoryId, price: parseFloat(form.price) || 0, description: form.description, image: form.image, slug: form.name.toLowerCase().replace(/\s+/g, '-') } : p));
+      const { error } = await supabase.from('products').update(payload).eq('id', editing.id);
+      if (error) {
+        toast({ title: 'Erro ao atualizar produto', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      setProds(prev => prev.map(p => p.id === editing.id ? {
+        ...p,
+        name: form.name,
+        categoryId: form.categoryId,
+        price: parseFloat(form.price) || 0,
+        description: form.description,
+        image: payload.image,
+        slug: payload.slug,
+        is_featured: form.is_featured,
+      } : p));
       toast({ title: 'Produto atualizado!' });
     } else {
+      const { data, error } = await supabase.from('products').insert(payload);
+      if (error) {
+        toast({ title: 'Erro ao criar produto', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      const inserted = Array.isArray(data) ? data[0] : null;
       const newProd: Product = {
-        id: `prod-${Date.now()}`, name: form.name, slug: form.name.toLowerCase().replace(/\s+/g, '-'),
-        categoryId: form.categoryId, price: parseFloat(form.price) || 0, description: form.description,
-        longDescription: form.description, image: form.image || 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&h=400&fit=crop', variations: [],
+        id: inserted?.id ?? `prod-${Date.now()}`,
+        name: form.name,
+        slug: payload.slug,
+        categoryId: form.categoryId,
+        price: parseFloat(form.price) || 0,
+        description: form.description,
+        longDescription: form.description,
+        image: payload.image,
+        variations: [],
+        is_featured: form.is_featured,
       };
       setProds(prev => [...prev, newProd]);
       toast({ title: 'Produto criado!' });
     }
+
     setOpen(false);
   };
 
@@ -73,7 +115,14 @@ export default function AdminProdutos() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover" />
-                      <span className="font-medium">{p.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{p.name}</span>
+                        {p.is_featured === true && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-amber-600 border-amber-200">
+                            <Star className="h-3 w-3 fill-current" />
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{getCategoryFullName(p.categoryId)}</Badge></TableCell>
@@ -135,6 +184,10 @@ export default function AdminProdutos() {
             <div>
               <label className="text-sm font-medium mb-1 block">URL da Imagem</label>
               <Input value={form.image} onChange={e => setForm(p => ({ ...p, image: e.target.value }))} placeholder="https://..." />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <label htmlFor="is-featured" className="text-sm font-medium">Destacar na Página Inicial</label>
+              <Switch id="is-featured" checked={form.is_featured} onCheckedChange={checked => setForm(p => ({ ...p, is_featured: checked }))} />
             </div>
           </div>
           <DialogFooter>
