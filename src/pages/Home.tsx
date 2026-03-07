@@ -1,13 +1,44 @@
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { products, formatPrice, banners, getMainCategories } from '@/data/mockData';
+import { formatPrice, banners, getMainCategories } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, Printer, Zap, Shield } from 'lucide-react';
 import HeroCarousel from '@/components/HeroCarousel';
 
-const highlights = products.slice(0, 4);
+interface FeaturedProduct {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  price: number;
+}
+
+const fetchFeaturedProducts = async (): Promise<FeaturedProduct[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, name, description, image, price')
+    .eq('is_featured', true)
+    .limit(8);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
+};
 
 export default function Home() {
+  const {
+    data: highlights = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['featured-products'],
+    queryFn: fetchFeaturedProducts,
+  });
+
   return (
     <div className="flex flex-col">
       {/* Hero Carousel */}
@@ -61,22 +92,34 @@ export default function Home() {
       {/* Destaques */}
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center mb-8" style={{ fontFamily: 'Montserrat' }}>PRODUTOS EM DESTAQUE</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {highlights.map(prod => (
-            <Link key={prod.id} to={`/servicos/${prod.id}`}>
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow group h-full">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                </div>
-                <CardContent className="p-4">
-                  <h4 className="font-semibold mb-1 line-clamp-1">{prod.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{prod.description}</p>
-                  <p className="text-lg font-bold text-primary">A partir de {formatPrice(prod.price)}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+
+        {isLoading && <p className="text-center text-muted-foreground">Carregando destaques...</p>}
+
+        {isError && <p className="text-center text-destructive">Não foi possível carregar os produtos em destaque.</p>}
+
+        {!isLoading && !isError && highlights.length === 0 && (
+          <p className="text-center text-muted-foreground">Novidades chegando em breve!</p>
+        )}
+
+        {!isLoading && !isError && highlights.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {highlights.map((prod) => (
+              <Link key={prod.id} to={`/servicos/${prod.id}`}>
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow group h-full">
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold mb-1 line-clamp-1">{prod.name}</h4>
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{prod.description}</p>
+                    <p className="text-lg font-bold text-primary">A partir de {formatPrice(prod.price)}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+
         <div className="text-center mt-8">
           <Button size="lg" asChild>
             <Link to="/servicos">Ver Todos os Produtos <ArrowRight className="ml-2 h-4 w-4" /></Link>
