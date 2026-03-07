@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Star, Trash2 } from 'lucide-react';
 
 export default function AdminProdutos() {
   const [prods, setProds] = useState<Product[]>([...initialProducts]);
@@ -116,7 +115,14 @@ export default function AdminProdutos() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover" />
-                      <span className="font-medium">{p.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{p.name}</span>
+                        {p.is_featured === true && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-amber-600 border-amber-200">
+                            <Star className="h-3 w-3 fill-current" />
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell><Badge variant="secondary" className="text-xs">{getCategoryFullName(p.categoryId)}</Badge></TableCell>
