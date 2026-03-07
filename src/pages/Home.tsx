@@ -79,7 +79,7 @@ export default function Home() {
         </div>
         <div className="text-center mt-8">
           <Button size="lg" asChild>
-            <Link to="/servicos">Ver Todos os Serviços <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link to="/servicos">Ver Todos os Produtos <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>
       </section>
