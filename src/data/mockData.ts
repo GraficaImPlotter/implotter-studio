@@ -19,6 +19,7 @@ export interface Product {
   name: string;
   slug: string;
   categoryId: string; // aponta para subcategoria (ou categoria principal se não houver sub)
+  is_featured: boolean;
   price: number;
   description: string;
   longDescription: string;
@@ -91,6 +92,7 @@ export const products: Product[] = [
     description: 'Cartão de visita em papel couchê 300g com acabamento sofisticado.',
     longDescription: 'Cartão de visita impresso em papel couchê 300g com impressão frente e verso em alta definição. Ideal para causar uma primeira impressão profissional e marcante. Disponível em diversos acabamentos para se adequar à sua identidade visual.',
     image: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Acabamento', options: ['Fosco', 'Brilho', 'Laminação Soft Touch'] },
       { label: 'Quantidade', options: ['100 un', '250 un', '500 un', '1000 un'] },
@@ -103,6 +105,7 @@ export const products: Product[] = [
     description: 'Cartão com verniz UV localizado que destaca elementos do seu design.',
     longDescription: 'Cartão de visita sofisticado com aplicação de verniz UV localizado, criando um contraste tátil e visual único. Impresso em couchê 300g com fundo fosco e elementos em alto brilho.',
     image: 'https://images.unsplash.com/photo-1572502742720-3c68e05a0948?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Quantidade', options: ['100 un', '250 un', '500 un'] },
       { label: 'Cantos', options: ['Retos', 'Arredondados'] },
@@ -114,6 +117,7 @@ export const products: Product[] = [
     description: 'Cartão de visita em papel reciclado, ideal para marcas sustentáveis.',
     longDescription: 'Cartão de visita impresso em papel reciclato 300g com textura natural. Perfeito para empresas que valorizam sustentabilidade. Impressão em alta definição com acabamento rústico e elegante.',
     image: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Acabamento', options: ['Natural', 'Fosco'] },
       { label: 'Quantidade', options: ['100 un', '250 un', '500 un'] },
@@ -125,6 +129,7 @@ export const products: Product[] = [
     description: 'Banner em lona de alta resistência, perfeito para fachadas e eventos.',
     longDescription: 'Banner impresso em lona vinílica 440g com impressão digital em alta resolução. Resistente a sol e chuva, ideal para uso externo. Inclui acabamento com bastão e corda ou ilhós.',
     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Tamanho', options: ['1x0.5m', '2x1m', '3x1m', '4x1.5m'] },
       { label: 'Acabamento', options: ['Ilhós', 'Bastão e Corda', 'Sem acabamento'] },
@@ -136,6 +141,7 @@ export const products: Product[] = [
     description: 'Faixa personalizada para eventos, inaugurações e promoções.',
     longDescription: 'Faixa em lona 280g ou tecido, ideal para eventos corporativos, inaugurações e campanhas promocionais. Impressão em alta definição com cores vibrantes e duráveis.',
     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Material', options: ['Lona 280g', 'Tecido Sublimado'] },
       { label: 'Tamanho', options: ['3x0.7m', '5x1m', '8x1.2m'] },
@@ -147,6 +153,7 @@ export const products: Product[] = [
     description: 'Banner em tecido com sublimação, acabamento premium para stands e feiras.',
     longDescription: 'Banner em tecido de poliéster com impressão por sublimação. Cores vibrantes, lavável e reutilizável. Ideal para stands, feiras, congressos e eventos corporativos.',
     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Tamanho', options: ['1x2m', '2x2m', '3x2m'] },
       { label: 'Acabamento', options: ['Bastão', 'Ilhós', 'Bolso para estrutura'] },
@@ -158,6 +165,7 @@ export const products: Product[] = [
     description: 'Adesivo em vinil recortado a laser para aplicação em vidros e veículos.',
     longDescription: 'Adesivo em vinil de alta aderência com recorte eletrônico de precisão. Ideal para aplicação em vidros, veículos, paredes e superfícies lisas. Resistente a água e raios UV.',
     image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Tamanho', options: ['10x10cm', '20x20cm', '30x30cm', 'Personalizado'] },
       { label: 'Cor do Vinil', options: ['Branco', 'Preto', 'Dourado', 'Prata'] },
@@ -169,6 +177,7 @@ export const products: Product[] = [
     description: 'Adesivos em papel couchê ou kraft, ideais para embalagens e rótulos.',
     longDescription: 'Adesivos impressos em papel couchê brilho ou kraft, perfeitos para personalizar embalagens, garrafas e produtos artesanais. Impressão em alta qualidade com cores vibrantes.',
     image: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Papel', options: ['Couchê Brilho', 'Kraft'] },
       { label: 'Formato', options: ['Redondo', 'Quadrado', 'Retangular', 'Personalizado'] },
@@ -181,6 +190,7 @@ export const products: Product[] = [
     description: 'Adesivo em vinil transparente para vidros e superfícies claras.',
     longDescription: 'Adesivo em vinil transparente com impressão digital UV. Ideal para vitrines, vidros de lojas e aplicação em superfícies onde se deseja manter a visibilidade. Alta aderência e resistência.',
     image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Tamanho', options: ['20x20cm', '30x30cm', '50x50cm', 'Personalizado'] },
       { label: 'Quantidade', options: ['10 un', '25 un', '50 un'] },
@@ -192,6 +202,7 @@ export const products: Product[] = [
     description: 'Flyers em formato A5 para divulgação de promoções e eventos.',
     longDescription: 'Flyer em formato A5 (15x21cm) impresso em papel couchê 150g com impressão frente e verso. Cores vibrantes e acabamento profissional para divulgação de promoções, eventos e novidades.',
     image: 'https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Acabamento', options: ['Sem acabamento', 'Fosco', 'Brilho'] },
       { label: 'Quantidade', options: ['500 un', '1000 un', '2500 un', '5000 un'] },
@@ -203,6 +214,7 @@ export const products: Product[] = [
     description: 'Panfletos A4 com opção de dobra, perfeitos para cardápios e informativos.',
     longDescription: 'Panfleto em formato A4 impresso em couchê 170g, com opção de dobra (1, 2 ou 3 dobras). Ideal para cardápios, catálogos de produtos e material informativo corporativo.',
     image: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Dobra', options: ['Sem dobra', '1 dobra', '2 dobras', '3 dobras (sanfona)'] },
       { label: 'Quantidade', options: ['250 un', '500 un', '1000 un'] },
@@ -214,6 +226,7 @@ export const products: Product[] = [
     description: 'Crachá em PVC resistente com impressão digital direta.',
     longDescription: 'Crachá corporativo em PVC rígido com impressão digital UV direta. Resistente e durável, com opção de furo para cordão ou clip. Ideal para identificação de funcionários e eventos.',
     image: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Acabamento', options: ['Furo para cordão', 'Clip traseiro', 'Furo + Clip'] },
       { label: 'Quantidade', options: ['10 un', '25 un', '50 un', '100 un'] },
@@ -225,6 +238,7 @@ export const products: Product[] = [
     description: 'Convites elegantes para casamentos, aniversários e eventos corporativos.',
     longDescription: 'Convite impresso em papel especial (Markatto, Vergê ou Aspen) com acabamento refinado. Disponível com hot stamping dourado ou prata para um toque de luxo. Inclui envelope.',
     image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Papel', options: ['Markatto Stile', 'Vergê', 'Aspen'] },
       { label: 'Hot Stamping', options: ['Sem', 'Dourado', 'Prata', 'Rosê'] },
@@ -237,6 +251,7 @@ export const products: Product[] = [
     description: 'Papel timbrado profissional para correspondências e documentos oficiais.',
     longDescription: 'Papel timbrado em formato A4, impresso em papel offset 90g ou couchê 120g. Transmite profissionalismo e reforça a identidade visual da sua empresa em todas as comunicações.',
     image: 'https://images.unsplash.com/photo-1568702846914-96b305d2ead1?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Papel', options: ['Offset 90g', 'Couchê 120g'] },
       { label: 'Quantidade', options: ['250 un', '500 un', '1000 un'] },
@@ -248,6 +263,7 @@ export const products: Product[] = [
     description: 'Envelopes com impressão da marca para correspondências profissionais.',
     longDescription: 'Envelopes personalizados com a identidade visual da sua empresa. Disponíveis nos formatos ofício e carta, impressos em papel offset 90g. Perfeitos para envio de documentos, propostas e correspondências oficiais.',
     image: 'https://images.unsplash.com/photo-1579751626657-72bc17010498?w=600&h=400&fit=crop',
+    is_featured: false,
     variations: [
       { label: 'Formato', options: ['Carta (16x22cm)', 'Ofício (24x34cm)', 'Saco (26x36cm)'] },
       { label: 'Quantidade', options: ['250 un', '500 un', '1000 un'] },
