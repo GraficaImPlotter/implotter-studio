@@ -29,25 +29,33 @@ interface PublicLayoutProps {
 const PublicLayout = ({ children }: PublicLayoutProps) => {
   const { items, couponCode, setProgressiveDiscount } = useCart();
   const [rules, setRules] = useState<ProgressiveDiscountRule[]>([]);
+  const [activeTheme, setActiveTheme] = useState("default");
 
   useEffect(() => {
-    let active = true;
-    fetchActiveProgressiveDiscountRules()
-      .then((r) => {
-        if (active) setRules(r);
-      })
-      .catch(async () => {
-        const { data } = await supabase
-          .from("progressive_discounts")
-          .select("id, name, discount_type, discount_value, min_quantity, min_value, is_active")
-          .eq("is_active", true);
-        if (active) setRules((data ?? []) as any);
-      });
-
-    return () => {
-      active = false;
-    };
+     supabase.from("site_settings").select("value").eq("key", "active_theme").maybeSingle().then(({ data }) => {
+        if (data?.value) setActiveTheme(data.value);
+     });
   }, []);
+
+  const themeStyles = useMemo(() => {
+    if (activeTheme === "black_friday") {
+      return {
+        "--primary": "217 30% 10%",
+        "--primary-foreground": "45 100% 50%", // Yellow/Gold
+        "--highlight": "45 100% 50%",
+        "--highlight-glow": "45 100% 50% / 0.5",
+      } as React.CSSProperties;
+    }
+    if (activeTheme === "natal") {
+      return {
+        "--primary": "0 84% 40%", // Festive Red
+        "--primary-foreground": "45 100% 70%", // Soft Gold
+        "--highlight": "0 84% 60%",
+        "--highlight-glow": "0 84% 60% / 0.5",
+      } as React.CSSProperties;
+    }
+    return {} as React.CSSProperties; // Default
+  }, [activeTheme]);
 
   const bestProgressive = useMemo(() => {
     if (couponCode) return { discount: 0, ruleId: null, ruleName: null };
@@ -65,7 +73,7 @@ const PublicLayout = ({ children }: PublicLayoutProps) => {
   }, [bestProgressive.discount, bestProgressive.ruleName, couponCode, setProgressiveDiscount]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className={cn("min-h-screen flex flex-col bg-background", activeTheme !== "default" && "seasonal-theme")} style={themeStyles}>
       <Header />
       <main className="flex-1 pt-[72px]">{children}</main>
       <Footer />

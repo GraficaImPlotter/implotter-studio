@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import SmartRecommendations from "@/components/product/SmartRecommendations";
 import ArtEditor from "@/components/product/ArtEditor";
+import { DesignStudio } from "@/components/studio/DesignStudio";
 import { generateClientQuotePDF } from "@/lib/quote-client-pdf";
 import SEOHead from "@/components/SEOHead";
 
@@ -65,6 +66,8 @@ const Produto = () => {
   const [companySettings, setCompanySettings] = useState({ name: "", cnpj: "", address: "", phone: "", email: "", website: "" });
   const [showSticky, setShowSticky] = useState(false);
   const [activeTab, setActiveTab] = useState("preço");
+  const [showStudio, setShowStudio] = useState(false);
+  const [studioResult, setStudioResult] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setShowSticky(window.scrollY > 450);
@@ -190,7 +193,9 @@ const Produto = () => {
       shippingHeight: Number(product.shipping_height) || 2,
       shippingWidth: Number(product.shipping_width) || 11,
       shippingLength: Number(product.shipping_length) || 16,
+      customDesignUrl: studioResult || undefined,
     });
+    setStudioResult(null);
     toast({ title: `${product.name} adicionado ao carrinho!` });
   };
 
@@ -630,6 +635,24 @@ const Produto = () => {
                   </div>
                 )}
 
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 flex flex-col items-center text-center gap-4 group hover:border-highlight/30 transition-all">
+                   <div className="w-16 h-16 rounded-2xl bg-highlight/10 flex items-center justify-center text-highlight shadow-glow-sm group-hover:scale-110 transition-transform">
+                      <Palette className="w-8 h-8" />
+                   </div>
+                   <div>
+                      <h4 className="font-display font-black text-lg text-foreground uppercase tracking-tight">Crie sua própria arte</h4>
+                      <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1">Prefere criar do seu jeito? Use nosso editor gratuito e finalize seu projeto agora.</p>
+                   </div>
+                   <Button variant="outline" className="w-full rounded-2xl h-12 border-highlight/30 text-highlight hover:bg-highlight hover:text-white font-black uppercase text-[10px] tracking-widest" onClick={() => setShowStudio(true)}>
+                      <Plus className="w-4 h-4 mr-2" /> ABRIR DESIGN STUDIO
+                   </Button>
+                   {studioResult && (
+                     <div className="flex items-center gap-2 text-success text-[10px] font-bold uppercase">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Arte Personalizada Anexada
+                     </div>
+                   )}
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-4 mb-4">
                   <Button variant="highlight" size="lg" className="flex-1 h-14 text-base font-black shadow-glow-sm hover:shadow-glow-strong" onClick={handleAddToCart} disabled={!canAddToCart}>
                     <ShoppingCart className="w-5 h-5 mr-2" /> COLOCAR NO CARRINHO
@@ -784,6 +807,17 @@ const Produto = () => {
           </div>
         </section>
       </article>
+
+      {showStudio && (
+        <DesignStudio 
+          onClose={() => setShowStudio(false)} 
+          onSave={(dataUrl) => {
+             setStudioResult(dataUrl);
+             setShowStudio(false);
+             toast({ title: "Arte salva com sucesso!", description: "Sua criação foi anexada ao produto." });
+          }} 
+        />
+      )}
     </PublicLayout>
   );
 };

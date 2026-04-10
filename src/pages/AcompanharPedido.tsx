@@ -2,77 +2,45 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import PublicLayout from "@/components/layout/PublicLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, CheckCircle, Clock, Truck, Scissors, Palette, CreditCard, FileSearch, Eye, Printer, Box, XCircle, MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import { 
+  Check, Package, CreditCard, CheckCircle2, 
+  Search, Palette, Eye, Printer, Scissors, 
+  Box, Truck, XCircle, ArrowLeft, Clock, MapPin
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
-const ALL_STATUSES = [
-  { key: "pedido_recebido", label: "Pedido Recebido", icon: Package },
-  { key: "aguardando_pagamento", label: "Aguardando Pagamento", icon: CreditCard },
-  { key: "pagamento_confirmado", label: "Pagamento Confirmado", icon: CheckCircle },
-  { key: "em_analise", label: "Em Análise", icon: FileSearch },
-  { key: "aguardando_arte", label: "Aguardando Arte", icon: Palette },
-  { key: "arte_em_conferencia", label: "Arte em Conferência", icon: Eye },
-  { key: "aprovado_producao", label: "Aprovado p/ Produção", icon: Printer },
-  { key: "em_producao", label: "Em Produção", icon: Printer },
-  { key: "em_acabamento", label: "Em Acabamento", icon: Scissors },
-  { key: "pronto_envio", label: "Pronto para Envio", icon: Box },
-  { key: "finalizado", label: "Finalizado", icon: Truck },
+const STEPS = [
+  { key: "pedido_recebido", label: "Recebemos seu pedido", description: "Iniciando processamento administrativo", icon: Package },
+  { key: "aguardando_pagamento", label: "Aguardando pagamento", description: "Aguardando confirmação bancária", icon: CreditCard },
+  { key: "pagamento_confirmado", label: "Pagamento confirmado", description: "Seu pedido entrou na fila oficial", icon: CheckCircle2 },
+  { key: "em_analise", label: "Análise de arquivo", description: "Verificando qualidade da arte", icon: Search },
+  { key: "aguardando_arte", label: "Aguardando arte", description: "Aguardando envio do arquivo", icon: Palette },
+  { key: "arte_em_conferencia", label: "Arte em conferência", description: "Designers revisando detalhes", icon: Eye },
+  { key: "aprovado_producao", label: "Aguardando produção", description: "Aprovado para a oficina", icon: Printer },
+  { key: "em_producao", label: "Em produção", description: "Sua arte ganhando vida", icon: Printer },
+  { key: "em_acabamento", label: "Em acabamento", description: "Corte e refinamentos finais", icon: Scissors },
+  { key: "pronto_envio", label: "Pronto para envio", description: "Embalado e pronto para a transportadora", icon: Box },
+  { key: "finalizado", label: "Entrega a caminho", description: "Seu pacote foi enviado", icon: Truck },
 ];
-
-interface TrackingEvent {
-  status: string;
-  date: string;
-  locale: string;
-  message: string;
-}
 
 const AcompanharPedido = () => {
   const { orderId } = useParams();
   const [order, setOrder] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
-  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
-  const [trackingLoading, setTrackingLoading] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
     const load = async () => {
-      const [{ data: o }, { data: h }, { data: it }] = await Promise.all([
+      const [{ data: o }, { data: h }] = await Promise.all([
         supabase.from("orders").select("*").eq("id", orderId).maybeSingle(),
         supabase.from("order_status_history").select("*").eq("order_id", orderId).order("created_at", { ascending: true }),
-        supabase.from("order_items").select("*").eq("order_id", orderId),
       ]);
       setOrder(o);
       setHistory(h ?? []);
-      setItems(it ?? []);
       setLoading(false);
-
-      // If order has tracking_code, fetch tracking
-      if (o?.tracking_code) {
-        setTrackingLoading(true);
-        try {
-          const { data: trackData } = await supabase.functions.invoke("melhor-envio-tracking", {
-            body: { tracking_codes: [o.tracking_code] },
-          });
-          if (trackData?.tracking) {
-            const trackingObj = trackData.tracking;
-            // Melhor Envio returns an object keyed by tracking code
-            const events = trackingObj[o.tracking_code] || trackingObj[Object.keys(trackingObj)[0]];
-            if (Array.isArray(events)) {
-              setTrackingEvents(events.map((e: any) => ({
-                status: e.status || "",
-                date: e.date || e.datetime || "",
-                locale: e.locale || e.city || "",
-                message: e.message || e.description || e.status || "",
-              })));
-            }
-          }
-        } catch (err) {
-          console.error("Tracking fetch error:", err);
-        }
-        setTrackingLoading(false);
-      }
     };
     load();
   }, [orderId]);
@@ -80,8 +48,8 @@ const AcompanharPedido = () => {
   if (loading) {
     return (
       <PublicLayout>
-        <div className="py-20 text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       </PublicLayout>
     );
@@ -90,160 +58,167 @@ const AcompanharPedido = () => {
   if (!order) {
     return (
       <PublicLayout>
-        <div className="py-20 text-center">
-          <h1 className="font-display text-2xl font-bold text-foreground mb-4">Pedido não encontrado</h1>
-          <Link to="/" className="text-primary hover:underline">Voltar ao início</Link>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+           <XCircle className="w-16 h-16 text-muted-foreground/20 mb-4" />
+           <h1 className="font-display text-2xl font-bold mb-2">Pedido Não Encontrado</h1>
+           <p className="text-muted-foreground mb-8">Não conseguimos localizar as informações deste pedido.</p>
+           <Link to="/loja">
+              <Button variant="outline" className="rounded-2xl">Voltar para a Loja</Button>
+           </Link>
         </div>
       </PublicLayout>
     );
   }
 
-  const isCancelled = order.status === "cancelado";
-  const currentIdx = ALL_STATUSES.findIndex(s => s.key === order.status);
-  const completedStatuses = new Set(history.map((h: any) => h.status));
+  const currentStatusIdx = STEPS.findIndex(s => s.key === order.status);
+  const completedStatuses = new Set(history.map(h => h.status));
 
   return (
     <PublicLayout>
-      <section className="py-8 md:py-12">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="text-center mb-8">
-            <h1 className="font-display text-3xl font-bold text-foreground">
-              Pedido <span className="text-primary">#{order.order_number}</span>
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {order.customer_name} • {new Date(order.created_at).toLocaleDateString("pt-BR")}
-            </p>
-          </div>
-
-          {/* Production timeline */}
-          <div className="glass-card rounded-2xl p-6 md:p-8 mb-8">
-            <h2 className="font-display font-bold text-foreground mb-6">Acompanhamento</h2>
-
-            {isCancelled ? (
-              <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                <XCircle className="w-6 h-6 text-destructive" />
-                <div>
-                  <p className="font-semibold text-destructive">Pedido Cancelado</p>
-                  <p className="text-xs text-muted-foreground">Este pedido foi cancelado.</p>
-                </div>
+      <div className="bg-slate-50 min-h-screen py-12 md:py-20">
+        <div className="container mx-auto px-4 max-w-4xl">
+           {/* Header Minimalist */}
+           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+              <div className="space-y-1">
+                 <Link to="/minha-conta" className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors mb-4 uppercase tracking-widest">
+                    <ArrowLeft className="w-3 h-3" /> Voltar para Meus Pedidos
+                 </Link>
+                 <h1 className="font-display text-4xl font-black text-slate-900 tracking-tight">Status do Pedido</h1>
+                 <p className="text-slate-500 font-medium">Identificador: <span className="font-bold text-slate-900">#{order.order_number}</span> • {new Date(order.created_at).toLocaleDateString("pt-BR")}</p>
               </div>
-            ) : (
-              <div className="relative">
-                {ALL_STATUSES.map((step, i) => {
-                  const isCompleted = completedStatuses.has(step.key) || i < currentIdx;
-                  const isCurrent = i === currentIdx;
-                  const isFuture = i > currentIdx;
-                  const Icon = step.icon;
-                  const histEntry = history.find((h: any) => h.status === step.key);
-
-                  return (
-                    <motion.div
-                      key={step.key}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="flex gap-4 relative"
-                    >
-                      <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all
-                          ${isCurrent ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30" : ""}
-                          ${isCompleted && !isCurrent ? "bg-success border-success text-success-foreground" : ""}
-                          ${isFuture ? "bg-muted border-border text-muted-foreground" : ""}
-                        `}>
-                          {isCompleted && !isCurrent ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                        </div>
-                        {i < ALL_STATUSES.length - 1 && (
-                          <div className={`w-0.5 h-10 ${isCompleted ? "bg-success" : "bg-border"}`} />
-                        )}
-                      </div>
-                      <div className="pb-8">
-                        <p className={`font-semibold text-sm ${isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
-                          {step.label}
-                        </p>
-                        {histEntry && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(histEntry.created_at).toLocaleString("pt-BR")}
-                            {histEntry.notes && ` — ${histEntry.notes}`}
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+              <div className="bg-white px-6 py-4 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <Package className="w-5 h-5" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">Status Atual</p>
+                    <p className="font-bold text-slate-900 leading-none capitalize">{order.status.replace(/_/g, " ")}</p>
+                 </div>
               </div>
-            )}
-          </div>
+           </div>
 
-          {/* Shipping tracking from Melhor Envio */}
-          {order.tracking_code && (
-            <div className="glass-card rounded-2xl p-6 md:p-8 mb-8">
-              <h2 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
-                <Truck className="w-5 h-5 text-highlight" /> Rastreamento da Entrega
-              </h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Código: <span className="font-mono font-semibold text-foreground">{order.tracking_code}</span>
-                {order.shipping_service && <span> • {order.shipping_service}</span>}
-              </p>
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              {/* Vertical Stepper */}
+              <div className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 border border-slate-100">
+                 <h3 className="font-display font-black text-xl mb-10 text-slate-900 flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-primary" /> Jornada de Produção
+                 </h3>
+                 
+                 <div className="space-y-0">
+                    {STEPS.map((step, i) => {
+                      const isCompleted = completedStatuses.has(step.key) || i < currentStatusIdx;
+                      const isCurrent = step.key === order.status;
+                      const isFuture = i > currentStatusIdx && !isCompleted;
+                      const histEntry = history.find(h => h.status === step.key);
 
-              {trackingLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  Consultando rastreamento...
-                </div>
-              ) : trackingEvents.length > 0 ? (
-                <div className="space-y-3">
-                  {trackingEvents.map((evt, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="flex gap-3"
-                    >
-                      <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 ${i === 0 ? "bg-highlight border-highlight text-highlight-foreground" : "bg-muted border-border text-muted-foreground"}`}>
-                          <MapPin className="w-4 h-4" />
+                      return (
+                        <div key={step.key} className="flex gap-6 relative group">
+                           {/* Line */}
+                           {i < STEPS.length - 1 && (
+                             <div className={cn(
+                               "absolute left-[19px] top-10 w-[2px] h-[calc(100%-20px)] transition-all duration-500",
+                               isCompleted ? "bg-primary" : "bg-slate-100"
+                             )} />
+                           )}
+
+                           {/* Bullet */}
+                           <div className="flex flex-col items-center shrink-0">
+                              <motion.div 
+                                initial={false}
+                                animate={{ 
+                                  scale: isCurrent ? 1.2 : 1,
+                                  backgroundColor: isCurrent || isCompleted ? "var(--tw-primary)" : "transparent"
+                                }}
+                                className={cn(
+                                  "w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 transition-all duration-300",
+                                  isCurrent ? "border-primary text-white shadow-lg shadow-primary/20" : 
+                                  isCompleted ? "border-primary text-white" : 
+                                  "border-slate-200 text-slate-300"
+                                )}
+                              >
+                                {isCompleted && !isCurrent ? <Check className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
+                              </motion.div>
+                           </div>
+
+                           {/* Content */}
+                           <div className="pb-10 pt-1">
+                              <h4 className={cn(
+                                "text-sm font-bold tracking-tight transition-colors",
+                                isCurrent ? "text-primary text-base" : isCompleted ? "text-slate-900" : "text-slate-400"
+                              )}>
+                                 {step.label}
+                                 {isCurrent && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-primary/10 text-primary uppercase font-black tracking-normal">Em Andamento</span>}
+                              </h4>
+                              <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+                                 {step.description}
+                              </p>
+                              {histEntry && (
+                                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-tight">
+                                   {new Date(histEntry.created_at).toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              )}
+                           </div>
                         </div>
-                        {i < trackingEvents.length - 1 && <div className="w-0.5 h-6 bg-border" />}
-                      </div>
-                      <div className="pb-4">
-                        <p className={`text-sm font-semibold ${i === 0 ? "text-highlight" : "text-foreground"}`}>
-                          {evt.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {evt.locale && `${evt.locale} • `}
-                          {evt.date && new Date(evt.date).toLocaleString("pt-BR")}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Ainda não há informações de rastreamento disponíveis.
-                </p>
-              )}
-            </div>
-          )}
+                      );
+                    })}
+                 </div>
+              </div>
 
-          {/* Order items */}
-          <div className="glass-card rounded-2xl p-6 mb-8">
-            <h2 className="font-display font-bold text-foreground mb-4">Itens</h2>
-            <div className="space-y-2">
-              {items.map((it: any) => (
-                <div key={it.id} className="flex justify-between text-sm py-2 border-b border-border last:border-0">
-                  <span className="text-foreground">{it.product_name} <span className="text-muted-foreground">x{it.quantity}</span></span>
-                  <span className="font-semibold text-foreground">R$ {Number(it.subtotal).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-3 border-t border-border flex justify-between">
-              <span className="font-display font-bold text-foreground">Total</span>
-              <span className="font-display font-bold text-foreground text-lg">R$ {Number(order.total).toFixed(2)}</span>
-            </div>
-          </div>
+              {/* Sidebar Info */}
+              <div className="lg:col-span-4 space-y-6">
+                 {order.tracking_code && (
+                    <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl overflow-hidden relative">
+                       <div className="absolute top-0 right-0 p-8 opacity-10">
+                          <Truck className="w-32 h-32" />
+                       </div>
+                       <h4 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
+                          <Truck className="w-5 h-5 text-highlight" /> Entrega
+                       </h4>
+                       <div className="space-y-4 relative z-10">
+                          <div>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Código de Rastreio</p>
+                             <p className="font-mono font-bold text-highlight">{order.tracking_code}</p>
+                          </div>
+                          <Link to={`/rastrear`}>
+                             <Button className="w-full bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 mt-2 h-12 text-xs font-bold">
+                                Consultar Detalhes
+                             </Button>
+                          </Link>
+                       </div>
+                    </div>
+                 )}
+
+                 <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <h4 className="font-display font-bold text-slate-900 mb-6 flex items-center gap-2">
+                       <MapPin className="w-5 h-5 text-primary" /> Endereço
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                       {order.shipping_address}<br />
+                       {order.shipping_city} / {order.shipping_state}
+                    </p>
+                 </div>
+
+                 <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50">
+                    <h4 className="font-display font-bold text-slate-900 mb-6">Resumo Global</h4>
+                    <div className="space-y-3">
+                       <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Subtotal</span>
+                          <span className="font-bold text-slate-900">R$ {Number(order.total).toFixed(2)}</span>
+                       </div>
+                       <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Envio</span>
+                          <span className="font-bold text-success">Grátis</span>
+                       </div>
+                       <div className="pt-3 border-t border-slate-100 flex justify-between items-end">
+                          <span className="text-[10px] font-black uppercase text-slate-400">Total Pago</span>
+                          <span className="text-2xl font-black text-slate-900 tracking-tighter">R$ {Number(order.total).toFixed(2)}</span>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
-      </section>
+      </div>
     </PublicLayout>
   );
 };

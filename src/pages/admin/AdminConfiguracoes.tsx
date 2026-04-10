@@ -24,6 +24,7 @@ const settingsKeys = [
   { key: "pix_key", label: "Chave PIX" },
   { key: "pix_receiver_name", label: "Nome do Recebedor PIX" },
   { key: "pix_city", label: "Cidade PIX" },
+  { key: "active_theme", label: "Tema Ativo (Sazonal)" },
 ];
 
 const shippingKeys = [
@@ -111,6 +112,32 @@ const AdminConfiguracoes = () => {
           <p className="text-xs text-muted-foreground">
             Configure os valores padrão para cálculo de frete. O CEP de origem é obrigatório.
           </p>
+        </div>
+      </div>
+
+      {/* Seasonal Theme Setting */}
+      <div className="bg-card rounded-xl border border-border p-6 shadow-card max-w-2xl mb-6">
+        <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-4">
+          <Palette className="w-5 h-5 text-primary" /> Modo Sazonal Express
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+           {[
+              { id: "default", name: "Padrão", color: "bg-primary" },
+              { id: "black_friday", name: "Black Friday", color: "bg-slate-900" },
+              { id: "natal", name: "Natal & Festas", color: "bg-red-600" },
+           ].map(t => (
+             <button 
+                key={t.id}
+                onClick={() => setSettings(prev => ({ ...prev, active_theme: t.id }))}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                  settings.active_theme === t.id ? "border-primary bg-primary/5 shadow-glow-sm" : "border-border hover:border-primary/50"
+                )}
+             >
+                <div className={cn("w-10 h-10 rounded-full shadow-inner", t.color)} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{t.name}</span>
+             </button>
+           ))}
         </div>
       </div>
 

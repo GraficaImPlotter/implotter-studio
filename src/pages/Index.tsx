@@ -10,6 +10,7 @@ import DifferentialsSection from "@/components/home/DifferentialsSection";
 import ReviewsSection from "@/components/home/ReviewsSection";
 import CTASection from "@/components/home/CTASection";
 import FAQSection from "@/components/home/FAQSection";
+import { BeforeAfterSlider } from "@/components/home/BeforeAfterSlider";
 
 const Index = () => {
   return (
@@ -26,6 +27,12 @@ const Index = () => {
       <KitsSection />
       <HowItWorksSection />
       <DifferentialsSection />
+      <BeforeAfterSlider 
+        beforeImage="https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070" 
+        afterImage="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070" 
+        title="Transformação de Ambientes"
+        subtitle="De espaços vazios a marcas vibrantes."
+      />
       <ReviewsSection />
       <CTASection />
       <FAQSection />

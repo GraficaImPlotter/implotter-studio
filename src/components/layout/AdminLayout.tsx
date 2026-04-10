@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import {
   SidebarProvider,
@@ -17,9 +17,13 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, UserPlus,
   MessageSquare, Star, Tag, Link2, Settings, FileText, BarChart3, DollarSign, Search,
-  ArrowLeft, Image, ClipboardList, BoxIcon, FileEdit, MapPin, TrendingUp, Factory, Layers, MessageSquareMore,
+  ArrowLeft, Image, ClipboardList, BoxIcon, FileEdit, MapPin, TrendingUp, Factory, 
+  Layers, MessageSquareMore, Sparkles, Command
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { NotificationHub } from "@/components/admin/NotificationHub";
+import { CommandPalette } from "@/components/admin/CommandPalette";
+import { cn } from "@/lib/utils";
 
 const menuGroups = [
   {
@@ -48,7 +52,6 @@ const menuGroups = [
       { title: "CRM", url: "/admin/crm", icon: MessageSquare },
       { title: "Leads", url: "/admin/leads", icon: UserPlus },
       { title: "Mapa de Clientes", url: "/admin/mapa-clientes", icon: MapPin },
-      { title: "Clientes Importantes", url: "/admin/clientes-importantes", icon: Users },
     ]
   },
   {
@@ -58,14 +61,6 @@ const menuGroups = [
       { title: "Avaliações", url: "/admin/avaliacoes", icon: Star },
       { title: "Prova Social", url: "/admin/social-proof", icon: MessageSquareMore },
       { title: "Hero / Impressora", url: "/admin/hero-slides", icon: Image },
-    ]
-  },
-  {
-    label: "Conteúdo",
-    items: [
-      { title: "Blog", url: "/admin/blog", icon: FileText },
-      { title: "Páginas", url: "/admin/paginas", icon: FileEdit },
-      { title: "Afiliados", url: "/admin/afiliados", icon: Link2 },
     ]
   },
   {
@@ -82,6 +77,7 @@ const menuGroups = [
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -92,7 +88,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-2 border-highlight border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-highlight border-t-transparent rounded-full animate-spin shadow-glow" />
       </div>
     );
   }
@@ -101,78 +97,106 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <Sidebar collapsible="icon">
-          <SidebarContent className="bg-card border-r border-border">
-            <div className="p-5 border-b border-border">
+      <CommandPalette />
+      <div className="min-h-screen flex w-full bg-background overflow-hidden">
+        <Sidebar collapsible="icon" className="shadow-2xl z-50">
+          <SidebarContent className="bg-card border-r border-border/50">
+            <div className="p-6 border-b border-border/30">
               <div className="flex items-center gap-3">
-                <img src={logo} alt="ImPlotter" className="h-8" />
-                <div>
-                  <h2 className="font-display font-bold text-foreground text-sm">Admin Panel</h2>
-                  <p className="text-muted-foreground text-[10px]">Gráfica ImPlotter</p>
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-highlight to-highlight-glow p-0.5 shadow-glow">
+                   <div className="w-full h-full bg-card rounded-[14px] flex items-center justify-center">
+                     <img src={logo} alt="ImPlotter" className="h-5" />
+                   </div>
+                </div>
+                <div className="group-data-[collapsible=icon]:hidden animate-in fade-in duration-300">
+                  <h2 className="font-display font-black text-foreground text-sm uppercase tracking-tighter">Admin <span className="text-highlight">Suite</span></h2>
+                  <p className="text-muted-foreground text-[9px] font-bold uppercase tracking-widest opacity-60">Control Center</p>
                 </div>
               </div>
             </div>
-            {menuGroups.map((group) => (
-              <SidebarGroup key={group.label}>
-                <SidebarGroupLabel className="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold px-5 mt-4 mb-2">{group.label}</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {group.items.map((item) => (
-                      <SidebarMenuItem key={item.url}>
-                        <SidebarMenuButton asChild>
-                          <NavLink
-                            to={item.url}
-                            end={item.url === "/admin"}
-                            className="text-muted-foreground hover:text-foreground hover:bg-secondary mx-2 rounded-xl transition-all duration-200 py-2.5 h-auto group"
-                            activeClassName="bg-highlight/10 text-highlight font-semibold border-gradient-premium shadow-sm"
-                          >
-                            <item.icon className="mr-3 h-4 w-4 group-hover:scale-110 transition-transform" />
-                            <span className="text-sm">{item.title}</span>
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            ))}
+            
+            <div className="px-2 scrollbar-thin scrollbar-thumb-white/5 py-4">
+              {menuGroups.map((group) => (
+                <SidebarGroup key={group.label} className="mb-2">
+                  <SidebarGroupLabel className="text-muted-foreground text-[9px] uppercase font-black tracking-[0.2em] px-4 mt-2 mb-2 group-data-[collapsible=icon]:hidden opacity-40">
+                    {group.label}
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu className="gap-1">
+                      {group.items.map((item) => (
+                        <SidebarMenuItem key={item.url}>
+                          <SidebarMenuButton asChild>
+                            <NavLink
+                              to={item.url}
+                              end={item.url === "/admin"}
+                              className={cn(
+                                "text-muted-foreground hover:text-foreground hover:bg-white/[0.03] transition-all duration-300 py-3 h-auto group border border-transparent",
+                                location.pathname === item.url && "border-white/5 shadow-inner"
+                              )}
+                              activeClassName="bg-highlight/10 text-highlight font-bold border-highlight/20 shadow-glow-sm"
+                            >
+                              <item.icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ml-0.5" />
+                              <span className="text-xs group-data-[collapsible=icon]:hidden">{item.title}</span>
+                              {item.title === "Produção" && (
+                                <Sparkles className="w-3 h-3 text-highlight animate-pulse group-data-[collapsible=icon]:hidden" />
+                              )}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ))}
+            </div>
 
-            {/* Back to site */}
-            <div className="mt-auto p-4 border-t border-border">
-              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-highlight transition-colors px-3 py-2 rounded-xl hover:bg-secondary">
-                <ArrowLeft className="w-4 h-4" /> Voltar ao site
+            <div className="mt-auto p-4 border-t border-border/30 group-data-[collapsible=icon]:p-2">
+              <Link to="/" className="flex items-center gap-3 text-xs text-muted-foreground hover:text-highlight transition-all px-4 py-3 rounded-2xl hover:bg-white/[0.03] font-bold uppercase tracking-widest">
+                <ArrowLeft className="w-4 h-4" /> 
+                <span className="group-data-[collapsible=icon]:hidden">Sair do Painel</span>
               </Link>
             </div>
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 flex items-center justify-between border-b border-border px-6 bg-card/50 backdrop-blur-md sticky top-0 z-10 shadow-sm border-gradient-premium rounded-b-xl border-x-0 border-t-0">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
-              <div className="h-4 w-px bg-border mx-2 hidden md:block" />
-              <span className="text-sm text-muted-foreground font-medium hidden md:block">Painel Administrativo</span>
-            </div>
-            
-            <div className="flex items-center gap-4 flex-1 max-w-md mx-4">
-              <div className="relative w-full group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-highlight transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Pesquisar pedidos, produtos..." 
-                  className="w-full bg-secondary/50 border-border border rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-highlight/50 transition-all placeholder:text-muted-foreground/50"
-                />
+        <div className="flex-1 flex flex-col relative">
+          <header className="h-20 flex items-center justify-between border-b border-border/50 px-8 bg-card/[0.01] backdrop-blur-3xl sticky top-0 z-40 transition-all duration-300">
+            <div className="flex items-center gap-6">
+              <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-all p-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5" />
+              <div className="h-6 w-px bg-white/5 hidden lg:block" />
+              <div className="hidden lg:flex flex-col">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/60 leading-none mb-1">Status do Workspace</p>
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-success animate-pulse shadow-glow shadow-success/40" />
+                   <span className="text-xs font-bold text-foreground">Sistemas Operacionais Normais</span>
+                </div>
               </div>
             </div>
+            
+            <div className="flex items-center gap-4 flex-1 max-w-xl px-8 group">
+              <button 
+                onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+                className="w-full flex items-center gap-3 bg-white/[0.03] border-white/5 border rounded-2xl py-3 px-5 text-sm transition-all hover:bg-white/[0.06] hover:border-highlight/30 group/search"
+              >
+                <Search className="w-4 h-4 text-muted-foreground group-focus-within:text-highlight transition-colors" />
+                <span className="text-muted-foreground/50 text-[13px] font-medium mr-auto">Pesquisar tudo no sistema...</span>
+                <div className="flex items-center gap-1 opacity-40 group-hover/search:opacity-100 transition-opacity">
+                   <Command className="w-3 h-3" />
+                   <span className="text-[10px] font-bold">K</span>
+                </div>
+              </button>
+            </div>
 
-            <div className="flex items-center gap-2">
-              <Link to="/admin/configuracoes" className="p-2 text-muted-foreground hover:text-foreground hover:text-highlight transition-colors rounded-lg hover:bg-secondary" title="Configurações">
-                <Settings className="w-5 h-5" />
-              </Link>
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-px bg-white/5 mx-2" />
+              <NotificationHub />
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-highlight/20 to-transparent border border-highlight/30 flex items-center justify-center text-highlight font-black text-xs hover:scale-105 transition-transform cursor-pointer">
+                 {user?.email?.split('@')[0].slice(0, 2).toUpperCase()}
+              </div>
             </div>
           </header>
-          <main className="flex-1 p-6 overflow-auto">
+          
+          <main className="flex-1 p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
             {children}
           </main>
         </div>
