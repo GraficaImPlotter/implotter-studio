@@ -3,6 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import WhatsAppButton from "../WhatsAppButton";
 import { FloatingCart } from "../cart/FloatingCart";
+import { cn } from "@/lib/utils";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/use-cart";
