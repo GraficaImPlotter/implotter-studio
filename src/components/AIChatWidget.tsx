@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Send, User, MessageCircle, LogIn, ChevronDown, Sparkles } from "lucide-react";
+import { X, Send, User, MessageCircle, LogIn, ChevronDown, Sparkles, MoreVertical, Trash2, Paperclip, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,9 +21,12 @@ const AIChatWidget = () => {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Carregar histórico do banco de dados quando o chat abre e o usuário está logado
   // ... (keeping existing logic)
@@ -41,6 +44,8 @@ const AIChatWidget = () => {
             id: m.id,
             role: m.sender_type === 'client' ? 'user' : 'assistant',
             content: m.content,
+            file_url: m.file_url,
+            file_type: m.file_type,
             created_at: m.created_at
           }));
           setMessages(formattedMsgs);
@@ -69,6 +74,8 @@ const AIChatWidget = () => {
                   id: newMsg.id,
                   role: 'assistant',
                   content: newMsg.content,
+                  file_url: newMsg.file_url,
+                  file_type: newMsg.file_type,
                   created_at: newMsg.created_at
                 }];
               });
@@ -110,11 +117,17 @@ const AIChatWidget = () => {
     }
   };
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || !user || isSending) return;
+  const sendMessage = useCallback(async (text: string, fileInfo?: { url: string, type: string }) => {
+    if ((!text.trim() && !fileInfo) || !user || isSending) return;
 
     const tempId = crypto.randomUUID();
-    const userMsg: Msg = { role: "user", content: text.trim(), id: tempId };
+    const userMsg: Msg = { 
+      role: "user", 
+      content: text.trim(), 
+      id: tempId,
+      file_url: fileInfo?.url,
+      file_type: fileInfo?.type
+    };
     
     setMessages(prev => [...prev, userMsg]);
     setInput("");
@@ -126,7 +139,9 @@ const AIChatWidget = () => {
           message: text.trim(),
           userId: user.id,
           userName: user.user_metadata?.full_name || user.email,
-          userEmail: user.email
+          userEmail: user.email,
+          fileUrl: fileInfo?.url,
+          fileType: fileInfo?.type
         }
       });
       
@@ -141,6 +156,62 @@ const AIChatWidget = () => {
     }
 
   }, [user, isSending]);
+
+  const handleClearChat = async () => {
+    if (!user) return;
+    if (!confirm("Tem certeza que deseja limpar todo o histórico desta conversa?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setMessages([]);
+      setShowOptions(false);
+      toast.success("Histórico limpo!");
+    } catch (error) {
+      console.error("Erro ao limpar chat:", error);
+      toast.error("Erro ao limpar o histórico.");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("O arquivo é muito grande (máximo 5MB)");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('chat-attachments')
+        .upload(filePath, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(filePath);
+
+      await sendMessage("", { url: publicUrl, type: file.type });
+    } catch (error) {
+      console.error("Erro no upload:", error);
+      toast.error("Erro ao enviar arquivo.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleLoginRedirect = () => {
     window.location.href = "/login";
@@ -196,12 +267,44 @@ const AIChatWidget = () => {
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setOpen(false)} 
-                className="w-10 h-10 flex items-center justify-center rounded-2xl bg-black/10 text-white/70 hover:text-white hover:bg-black/20 hover:rotate-90 transition-all duration-300 relative z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2 relative z-10">
+                <button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  className={cn(
+                    "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300",
+                    showOptions ? "bg-white/20 text-white" : "bg-black/10 text-white/70 hover:text-white hover:bg-black/20"
+                  )}
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+
+                {/* Options Menu */}
+                <AnimatePresence>
+                  {showOptions && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      className="absolute top-12 left-0 w-48 bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-20"
+                    >
+                      <button
+                        onClick={handleClearChat}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Limpar Conversa
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button 
+                  onClick={() => setOpen(false)} 
+                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-black/10 text-white/70 hover:text-white hover:bg-black/20 hover:rotate-90 transition-all duration-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Chat Body */}
@@ -277,7 +380,7 @@ const AIChatWidget = () => {
                         
                         <div
                           className={cn(
-                            "rounded-[24px] px-5 py-3.5 text-[13px] leading-relaxed shadow-sm max-w-[85%] w-fit font-medium transition-all",
+                            "rounded-[24px] px-5 py-3.5 text-[13px] leading-relaxed shadow-sm max-w-[85%] w-fit font-medium transition-all flex flex-col gap-2",
                             m.role === "user"
                               ? "bg-primary text-white shadow-glow-sm"
                               : "glass-card-premium text-foreground/90 border-white/5",
@@ -289,7 +392,29 @@ const AIChatWidget = () => {
                             m.role === "assistant" && isLastFromSender && !isFirstFromSender && "rounded-bl-sm"
                           )}
                         >
-                          <span className="whitespace-pre-line">{m.content}</span>
+                          {m.file_url && (
+                            <div className="mb-1">
+                              {m.file_type?.includes("image") ? (
+                                <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-xl border border-white/10">
+                                  <img src={m.file_url} alt="Anexo" className="max-w-full h-auto max-h-48 object-cover group-hover:scale-105 transition-transform" />
+                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <ImageIcon className="w-6 h-6 text-white" />
+                                  </div>
+                                </a>
+                              ) : (
+                                <a 
+                                  href={m.file_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+                                >
+                                  <FileText className="w-5 h-5 text-highlight" />
+                                  <span className="text-xs truncate max-w-[150px]">Ver Arquivo</span>
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          {m.content && <span className="whitespace-pre-line">{m.content}</span>}
                         </div>
 
                         {m.role === "user" && isFirstFromSender ? (
@@ -333,11 +458,28 @@ const AIChatWidget = () => {
 
             {/* Input Footer */}
             {user && (
-              <div className="p-6 bg-black/10 backdrop-blur-md border-t border-white/5 shrink-0 relative">
+              <div className="p-6 bg-white/5 backdrop-blur-3xl border-t border-white/5 shrink-0 relative">
                 <form
                   onSubmit={e => { e.preventDefault(); sendMessage(input); }}
                   className="flex items-center gap-3"
                 >
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    onChange={handleFileUpload}
+                    accept="image/*,application/pdf"
+                  />
+                  
+                  <button
+                    type="button"
+                    disabled={isUploading || isSending}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all text-white/70 hover:text-white"
+                  >
+                    {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                  </button>
+
                   <div className="relative flex-1">
                     <input
                       ref={inputRef}
@@ -345,15 +487,15 @@ const AIChatWidget = () => {
                       onChange={e => setInput(e.target.value)}
                       placeholder="Sua mensagem aqui..."
                       autoComplete="off"
-                      className="w-full bg-black/20 border border-white/10 rounded-[28px] pl-6 pr-14 py-5 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-4 focus:ring-primary/20 focus:bg-black/40 focus:border-primary/40 transition-all font-semibold"
+                      className="w-full bg-white/5 border border-white/10 rounded-[24px] pl-6 pr-14 py-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:ring-4 focus:ring-primary/20 focus:bg-white/10 focus:border-primary/40 transition-all font-medium"
                     />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                       <button
                         type="submit"
-                        disabled={!input.trim() || isSending}
-                        className="w-12 h-12 rounded-[22px] bg-primary text-white flex items-center justify-center hover:scale-105 active:scale-90 disabled:opacity-20 disabled:hover:scale-100 transition-all shadow-glow"
+                        disabled={(!input.trim() && !isUploading) || isSending}
+                        className="w-10 h-10 rounded-[18px] bg-primary text-white flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-20 transition-all shadow-glow"
                       >
-                        <Send className="w-5 h-5 ml-0.5" />
+                        <Send className="w-4 h-4 ml-0.5" />
                       </button>
                     </div>
                   </div>

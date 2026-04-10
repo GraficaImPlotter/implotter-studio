@@ -16,10 +16,17 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { message, userId, userName, userEmail } = await req.json();
+    const { message, userId, userName, userEmail, fileUrl, fileType } = await req.json();
 
-    if (!message || !userId) {
-      return new Response(JSON.stringify({ error: "Mensagem e ID do usuário são obrigatórios." }), {
+    if (!message && !fileUrl) {
+      return new Response(JSON.stringify({ error: "Mensagem ou Arquivo são obrigatórios." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "ID do usuário é obrigatório." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -31,7 +38,9 @@ serve(async (req) => {
       .insert({
         user_id: userId,
         sender_type: "client",
-        content: message,
+        content: message || (fileType?.includes("image") ? "📷 Foto" : "📄 Arquivo"),
+        file_url: fileUrl,
+        file_type: fileType,
       })
       .select()
       .single();
@@ -43,42 +52,53 @@ serve(async (req) => {
     const ADMIN_CHAT_ID = Deno.env.get("TELEGRAM_ADMIN_CHAT_ID");
 
     console.log("Tentando enviar para Telegram...");
-    console.log("Token configurado:", TELEGRAM_TOKEN ? "SIM" : "NÃO");
-    console.log("Chat ID configurado:", ADMIN_CHAT_ID ? "SIM" : "NÃO");
-
+    
     if (TELEGRAM_TOKEN && ADMIN_CHAT_ID) {
       const caption = `<b>Novo Contato: ${userName || "Cliente"}</b>\n` +
                       `✉️ ${userEmail || "Sem e-mail"}\n\n` +
-                      `${message}\n\n` +
+                      `${message || ""}\n\n` +
                       `<code>ID: ${userId}</code>`;
 
-      const tgUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+      let tgMethod = "sendMessage";
+      let tgBody: any = {
+        chat_id: ADMIN_CHAT_ID,
+        parse_mode: "HTML",
+      };
+
+      if (fileUrl) {
+        if (fileType?.includes("image")) {
+          tgMethod = "sendPhoto";
+          tgBody.photo = fileUrl;
+          tgBody.caption = caption;
+        } else {
+          tgMethod = "sendDocument";
+          tgBody.document = fileUrl;
+          tgBody.caption = caption;
+        }
+      } else {
+        tgBody.text = caption;
+      }
+
+      const tgUrl = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/${tgMethod}`;
       const tgRes = await fetch(tgUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: ADMIN_CHAT_ID,
-          text: caption,
-          parse_mode: "HTML",
-        }),
+        body: JSON.stringify(tgBody),
       });
 
       const tgData = await tgRes.json();
       console.log("Resposta do Telegram:", JSON.stringify(tgData));
 
       if (tgData.ok) {
-        // Atualizar com o ID do Telegram para referência futura
-        const { error: updateError } = await supabaseClient
+        await supabaseClient
           .from("chat_messages")
           .update({ telegram_message_id: tgData.result.message_id.toString() })
           .eq("id", dbMsg.id);
-        
-        if (updateError) console.error("Erro ao atualizar telegram_message_id:", updateError);
       } else {
         console.error("Erro reportado pelo Telegram:", tgData.description);
       }
     } else {
-      console.warn("TELEGRAM_BOT_TOKEN ou TELEGRAM_ADMIN_CHAT_ID não estão configurados nos Secrets do Supabase.");
+      console.warn("TELEGRAM_BOT_TOKEN ou TELEGRAM_ADMIN_CHAT_ID não configurados.");
     }
 
     return new Response(JSON.stringify({ success: true, messageId: dbMsg.id }), {
