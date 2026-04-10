@@ -405,7 +405,7 @@ const AdminProdutos = () => {
   };
 
   const handleDuplicate = async (product: any) => {
-    const { id, created_at, updated_at, order_items, ...rest } = product;
+    const { id, created_at, updated_at, order_items, categories, subcategories, product_images, ...rest } = product;
     const payload = { 
       ...rest, 
       name: `${rest.name} (Cópia)`, 

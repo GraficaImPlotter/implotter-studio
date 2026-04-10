@@ -51,7 +51,7 @@ const OrderDetailDialog = ({
 
   return (
     <Dialog open={!!order} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 glass-card-premium border-gradient-premium border-white/10 shadow-2xl flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 bg-background border-border shadow-2xl flex flex-col">
         <DialogHeader className="p-6 pb-2 shrink-0 bg-gradient-to-r from-highlight/5 to-transparent">
           <div className="flex items-center gap-3">
              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
