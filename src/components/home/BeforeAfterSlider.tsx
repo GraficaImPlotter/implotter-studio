@@ -32,10 +32,10 @@ export const BeforeAfterSlider = ({ beforeImage, afterImage, title, subtitle }: 
                  <div className="w-8 h-px bg-primary" /> Resultados Reais
               </div>
               <h2 className="text-4xl md:text-5xl font-display font-black text-slate-900 tracking-tighter leading-none mb-6">
-                Veja o impacto da <br /><span className="text-primary">Transformação Digital</span>
+                {title}
               </h2>
               <p className="text-lg text-slate-500 font-medium leading-relaxed">
-                Nossos adesivos e banners premium mudam completamente a percepção do seu negócio. Arraste o slider para ver a diferença.
+                {subtitle} Arraste o slider para ver a diferença.
               </p>
            </div>
            

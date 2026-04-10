@@ -28,10 +28,10 @@ const Index = () => {
       <HowItWorksSection />
       <DifferentialsSection />
       <BeforeAfterSlider 
-        beforeImage="https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070" 
-        afterImage="https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070" 
-        title="Transformação de Ambientes"
-        subtitle="De espaços vazios a marcas vibrantes."
+        beforeImage="/images/antes.png" 
+        afterImage="/images/depois.png" 
+        title="Impacto que Gera Vendas"
+        subtitle="Uma fachada bem sinalizada não é apenas decoração, é um imã de clientes."
       />
       <ReviewsSection />
       <CTASection />
