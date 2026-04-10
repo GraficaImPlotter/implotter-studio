@@ -1,29 +1,24 @@
-/**
- * Optimizes image URLs for performance by adding format and size parameters.
- * Supports Unsplash and Supabase Storage URLs.
- */
 export const getOptimizedUrl = (url: string, { width, quality = 80, format = 'webp' }: { width?: number, quality?: number, format?: string } = {}) => {
   if (!url) return "/placeholder.svg";
+  
+  // Se não for uma URL completa (ex: path relativo do Supabase), retorna como está
+  if (!url.startsWith("http")) return url;
 
-  // Unsplash optimization
+  // Otimização Unsplash - Preserva parâmetros originais e adiciona os nossos
   if (url.includes("images.unsplash.com")) {
-    const baseUrl = url.split("?")[0];
-    const params = new URLSearchParams();
-    if (width) params.set("w", String(width));
-    params.set("q", String(quality));
-    params.set("fm", format);
-    params.set("auto", "format,compress");
-    return `${baseUrl}?${params.toString()}`;
+    try {
+      const urlObj = new URL(url);
+      if (width) urlObj.searchParams.set("w", String(width));
+      urlObj.searchParams.set("q", String(quality));
+      urlObj.searchParams.set("fm", format);
+      urlObj.searchParams.set("auto", "format,compress");
+      return urlObj.toString();
+    } catch (e) {
+      return url;
+    }
   }
 
-  // Supabase optimization (if using Supabase Image Transformation)
-  // Requires Pro/Pay-as-you-go plan, but we can structure the URL just in case
-  if (url.includes(".supabase.co/storage/v1/object/public/")) {
-    if (!width) return url;
-    // Format: .../object/public/bucket/file.jpg -> .../render/image/public/bucket/file.jpg?width=...
-    const [baseUrl, path] = url.split("/storage/v1/object/public/");
-    return `${baseUrl}/storage/v1/render/image/public/${path}?width=${width}&quality=${quality}&format=${format}`;
-  }
-
+  // Para Supabase ou outras fontes externas não mapeadas, retornamos a URL original
+  // para evitar quebras por parâmetros de segurança (tokens) ausentes.
   return url;
 };

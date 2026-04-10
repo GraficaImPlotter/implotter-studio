@@ -254,15 +254,16 @@ const HeroSection = () => {
                             {currentMedia.media_type === "video" ? (
                               <video src={currentMedia.media_url} className="w-full h-full object-cover rounded-xl" autoPlay loop muted playsInline />
                             ) : (
-                            <img 
-                              src={getOptimizedUrl(currentMedia.media_url, { width: 800 })} 
-                              alt={currentMedia.title || "Material impresso"} 
-                              className="w-full h-full object-cover rounded-xl" 
-                              loading="eager"
-                              fetchPriority={currentSlide === 0 ? "high" : "auto"}
-                              width={800}
-                              height={600}
-                            />
+                              <img 
+                                src={getOptimizedUrl(currentMedia.media_url, { width: 800 })} 
+                                alt={currentMedia.title || "Material impresso"} 
+                                className="w-full h-full object-cover rounded-xl" 
+                                loading="eager"
+                                fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                                width={800}
+                                height={600}
+                              />
+                            )}
                           </Link>
                         ) : currentMedia?.media_type === "video" ? (
                           <video src={currentMedia.media_url} className="w-full h-full object-cover rounded-xl" autoPlay loop muted playsInline />
