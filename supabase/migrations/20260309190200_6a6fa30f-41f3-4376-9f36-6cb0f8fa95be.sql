@@ -1,0 +1,1 @@
+ALTER TABLE public.finishings ADD COLUMN pricing_mode text NOT NULL DEFAULT 'fixed';

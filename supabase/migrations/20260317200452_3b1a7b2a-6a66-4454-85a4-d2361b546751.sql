@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN shipping_service_id integer;

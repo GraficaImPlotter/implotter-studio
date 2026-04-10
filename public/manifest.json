@@ -1,0 +1,36 @@
+{
+  "name": "Gráfica ImPlotter",
+  "short_name": "ImPlotter",
+  "description": "Impressão profissional de cartões, banners, adesivos e panfletos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1729",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "categories": ["business", "shopping"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Loja",
+      "url": "/loja",
+      "description": "Ver catálogo de produtos"
+    },
+    {
+      "name": "Rastrear Pedido",
+      "url": "/rastrear",
+      "description": "Rastrear pedido por número"
+    },
+    {
+      "name": "Contato",
+      "url": "/fale-conosco",
+      "description": "Fale conosco"
+    }
+  ]
+}
