@@ -277,7 +277,7 @@ const AIChatWidget = () => {
                       ref={inputRef}
                       value={input}
                       onChange={e => setInput(e.target.value)}
-                      placeholder="Sua mensagem para nós..."
+                      placeholder="No que podemos te ajudar agora? ✨"
                       autoComplete="off"
                       className="w-full bg-black/20 border border-white/10 rounded-2xl pl-5 pr-12 py-3.5 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:bg-black/30 transition-all font-medium"
                     />
