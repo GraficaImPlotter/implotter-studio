@@ -228,7 +228,7 @@ const AIChatWidget = () => {
             whileHover={{ scale: 1.1, y: -5 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setOpen(true)}
-            className="fixed bottom-[112px] right-6 z-50 w-16 h-16 rounded-3xl bg-gradient-to-br from-highlight/90 to-highlight-glow flex items-center justify-center shadow-glow-strong border border-white/20 transition-all duration-300 group"
+            className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-3xl bg-gradient-to-br from-highlight/90 to-highlight-glow flex items-center justify-center shadow-glow-strong border border-white/20 transition-all duration-300 group"
             aria-label="Chat Suporte"
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />

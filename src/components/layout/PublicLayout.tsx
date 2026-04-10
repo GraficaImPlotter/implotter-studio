@@ -78,7 +78,6 @@ const PublicLayout = ({ children }: PublicLayoutProps) => {
       <Header />
       <main className="flex-1 pt-[72px]">{children}</main>
       <Footer />
-      <WhatsAppButton />
       <Suspense fallback={null}>
         <AIChatWidget />
         <CookieBanner />
