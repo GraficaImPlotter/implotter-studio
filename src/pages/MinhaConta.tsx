@@ -45,6 +45,9 @@ const MinhaConta = () => {
   const [address, setAddress] = useState({
     zip: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: ""
   });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login", { replace: true });
@@ -95,6 +98,26 @@ const MinhaConta = () => {
     });
     toast({ title: "Itens adicionados ao carrinho!" });
     navigate("/carrinho");
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "Senha muito curta", description: "A senha deve ter pelo menos 6 caracteres.", variant: "destructive" });
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: "Senha atualizada!", description: "Sua senha foi alterada com sucesso." });
+      setShowPasswordDialog(false);
+      setNewPassword("");
+    } catch (error: any) {
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+    } finally {
+      setUpdatingPassword(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -229,27 +252,50 @@ const MinhaConta = () => {
                          </Button>
                       </div>
 
-                      <div className="space-y-8">
-                         <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl space-y-6">
-                            <h3 className="text-xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                               <KeyRound className="w-5 h-5 text-primary" /> Segurança
-                            </h3>
-                            <p className="text-xs text-slate-500 font-medium">Sua senha é protegida por criptografia de ponta para sua segurança.</p>
-                            <Button className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest" onClick={() => navigate("/login?reset=true")}>Trocar Senha Agora</Button>
-                         </div>
+                       <div className="space-y-8">
+                          <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl space-y-6">
+                             <h3 className="text-xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                                <KeyRound className="w-5 h-5 text-primary" /> Segurança
+                             </h3>
+                             <p className="text-xs text-slate-500 font-medium">Sua senha é protegida por criptografia de ponta para sua segurança.</p>
+                             <Button className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest" onClick={() => setShowPasswordDialog(true)}>Trocar Senha Agora</Button>
+                          </div>
+                       </div>
+                    </div>
+                 )}
+              </motion.div>
+            </AnimatePresence>
+         </div>
 
-                         <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-10"><CreditCard className="w-32 h-32" /></div>
-                            <h3 className="text-xl font-display font-black uppercase tracking-tight mb-4">Cartão de Crédito</h3>
-                            <p className="text-xs text-slate-400 mb-8 max-w-xs">Não armazenamos seus dados de pagamento no nosso banco de dados central.</p>
-                            <Button variant="outline" className="w-full h-12 rounded-xl border-white/20 text-white hover:bg-white/10 font-bold">Gerenciar Pagamentos</Button>
-                         </div>
-                      </div>
-                   </div>
-                )}
-             </motion.div>
-           </AnimatePresence>
-        </div>
+         {/* Password Change Dialog */}
+         <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+            <DialogContent className="max-w-md bg-white rounded-[2.5rem] p-10 border-0 shadow-2xl">
+               <DialogHeader className="mb-6">
+                  <DialogTitle className="font-display font-black text-2xl tracking-tight text-slate-900 uppercase">
+                     Definir Nova Senha
+                  </DialogTitle>
+               </DialogHeader>
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nova Senha</label>
+                     <Input 
+                        type="password" 
+                        placeholder="Mínimo 6 caracteres" 
+                        className="h-12 rounded-xl bg-slate-50 border-0 font-bold"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                     />
+                  </div>
+                  <Button 
+                     className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest"
+                     onClick={handleUpdatePassword}
+                     disabled={updatingPassword}
+                  >
+                     {updatingPassword ? "Salvando..." : "Confirmar Mudança"}
+                  </Button>
+               </div>
+            </DialogContent>
+         </Dialog>
 
         {/* Order Detail Modal */}
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
