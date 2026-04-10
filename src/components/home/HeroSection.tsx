@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Star, Users, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { getOptimizedUrl } from "@/lib/image-utils";
 import heroBanner from "@/assets/hero-banner.jpg";
-// Added motion refinements to imports
 
 interface HeroSlide {
   id: string;
@@ -254,13 +254,28 @@ const HeroSection = () => {
                             {currentMedia.media_type === "video" ? (
                               <video src={currentMedia.media_url} className="w-full h-full object-cover rounded-xl" autoPlay loop muted playsInline />
                             ) : (
-                              <img src={currentMedia.media_url} alt={currentMedia.title || "Material impresso"} className="w-full h-full object-cover rounded-xl" loading="eager" />
-                            )}
+                            <img 
+                              src={getOptimizedUrl(currentMedia.media_url, { width: 800 })} 
+                              alt={currentMedia.title || "Material impresso"} 
+                              className="w-full h-full object-cover rounded-xl" 
+                              loading="eager"
+                              fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                              width={800}
+                              height={600}
+                            />
                           </Link>
                         ) : currentMedia?.media_type === "video" ? (
                           <video src={currentMedia.media_url} className="w-full h-full object-cover rounded-xl" autoPlay loop muted playsInline />
                         ) : (
-                          <img src={currentMedia?.media_url || fallbackImage} alt={currentMedia?.title || "Material impresso"} className="w-full h-full object-cover rounded-xl" loading="eager" />
+                          <img 
+                            src={getOptimizedUrl(currentMedia?.media_url || fallbackImage, { width: 800 })} 
+                            alt={currentMedia?.title || "Material impresso"} 
+                            className="w-full h-full object-cover rounded-xl" 
+                            loading="eager"
+                            fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                            width={800}
+                            height={600}
+                          />
                         )}
                         <div className="absolute inset-0 pointer-events-none">
                           <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background/60 to-transparent" />

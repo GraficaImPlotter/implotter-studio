@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Ruler, Clock, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import DynamicBadges from "./DynamicBadges";
+import { getOptimizedUrl } from "@/lib/image-utils";
 
 interface ProductCardProps {
   p: any;
@@ -15,7 +16,6 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
   const hasPromo = p.sale_price && Number(p.sale_price) < Number(p.price) && p.pricing_type !== "per_sqm";
   const displayPrice = hasPromo ? Number(p.sale_price) : Number(p.price);
   const isSqm = p.pricing_type === "per_sqm";
-
   const colorMode = p.color_mode || "";
   const quantity = p.default_quantity || "";
   const productCode = p.product_code || "";
@@ -43,10 +43,12 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
       {/* Image Container */}
       <Link to={`/loja/${p.slug}`} className="block relative aspect-[4/3] overflow-hidden bg-muted">
         <img 
-          src={getImage(p)} 
+          src={getOptimizedUrl(getImage(p), { width: 400 })} 
           alt={p.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
           loading="lazy" 
+          width={400}
+          height={300}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         

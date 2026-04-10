@@ -184,10 +184,20 @@ const Loja = () => {
     else if (sort === "recentes") q = q.order("created_at", { ascending: false });
     else q = q.order("name");
 
-    const { data } = await q;
-    // Sort by color_mode priority
-    setProducts(sortByColorMode(data ?? []));
-    setLoading(false);
+    try {
+      const { data, error } = await q;
+      if (error) {
+        console.error("Erro ao buscar produtos:", error);
+        setProducts([]);
+      } else {
+        setProducts(sortByColorMode(data ?? []));
+      }
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   }, [search]);
 
   useEffect(() => {
@@ -593,11 +603,30 @@ const Loja = () => {
 
               {/* Empty */}
               {!loading && (selectedNodeId || search.trim()) && filteredProducts.length === 0 && (
-                <div className="text-center py-16">
-                  <Package className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                  <p className="text-foreground text-lg font-semibold mb-1">Nenhum produto encontrado</p>
-                  <p className="text-muted-foreground text-sm mb-4">Tente outra categoria, filtro ou termo de busca.</p>
-                  <Button variant="outline" onClick={() => { setSearch(""); navigateToBreadcrumb(null); }}>Ver todos os produtos</Button>
+                <div className="text-center py-20 px-6 glass-card-premium rounded-[3rem] border-dashed border-2 border-border/50 max-w-2xl mx-auto shadow-2xl">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-10 h-10 text-primary animate-pulse" />
+                  </div>
+                  <h3 className="font-display text-2xl font-black text-foreground mb-3">Nenhum produto encontrado</h3>
+                  <p className="text-muted-foreground text-sm mb-10 max-w-md mx-auto leading-relaxed">
+                    Não encontramos exatamente o que você buscou ("{search}"), mas nossa equipe pode desenvolver um projeto personalizado para você agora mesmo.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button 
+                      variant="highlight" 
+                      className="rounded-2xl h-14 px-8 font-black uppercase text-xs tracking-widest shadow-glow hover:shadow-glow-strong transition-all"
+                      onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" /> Falar com Especialista
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="rounded-2xl h-14 px-8 font-bold text-xs uppercase tracking-widest border-border hover:bg-muted transition-all"
+                      onClick={() => { setSearch(""); navigateToBreadcrumb(null); }}
+                    >
+                      Ver Tudo
+                    </Button>
+                  </div>
                 </div>
               )}
 

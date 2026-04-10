@@ -28,6 +28,12 @@ const AIChatWidget = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const handleOpenChat = () => setOpen(true);
+    window.addEventListener("open-chat", handleOpenChat);
+    return () => window.removeEventListener("open-chat", handleOpenChat);
+  }, []);
+
   // 1. Carregar histórico do banco de dados quando o chat abre e o usuário está logado
   // ... (keeping existing logic)
   useEffect(() => {
@@ -314,27 +320,39 @@ const AIChatWidget = () => {
               className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-transparent to-black/5 scrollbar-thin scrollbar-thumb-white/10"
             >
               {!user ? (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-8 px-6">
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-8 px-6 py-10">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center border border-primary/20 animate-float-gentle p-4">
-                       <img src={logo} alt="ImPlotter" className="w-full h-full object-contain opacity-50 transition-transform" />
+                    <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center border border-primary/20 animate-float-gentle p-4 relative z-10 carbon-fiber-bg shadow-2xl">
+                       <img src={logo} alt="ImPlotter" className="w-full h-full object-contain brightness-110" />
                     </div>
-                    <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-background border border-border flex items-center justify-center">
-                       <LogIn className="w-5 h-5 text-primary" />
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-highlight border border-white/20 flex items-center justify-center shadow-glow-sm z-20">
+                       <LogIn className="w-5 h-5 text-white" />
                     </div>
+                    {/* Animated rings */}
+                    <div className="absolute inset-0 bg-primary/5 rounded-full blur-2xl animate-pulse -z-10" />
                   </div>
                   <div className="space-y-3">
-                    <h4 className="font-display font-black text-2xl tracking-tight uppercase">Atendimento</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Para iniciar o atendimento personalizado, por favor, conecte-se à sua conta ImPlotter.
+                    <h4 className="font-display font-black text-2xl tracking-tight uppercase text-foreground">Acesso Exclusivo</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed max-w-[260px] mx-auto">
+                      Para iniciarmos seu atendimento personalizado com um consultor, por favor, entre na sua conta.
                     </p>
                   </div>
-                  <button
-                    onClick={handleLoginRedirect}
-                    className="flex items-center gap-3 px-10 py-4 bg-primary text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-glow hover:scale-105 active:scale-95 transition-all"
-                  >
-                    Entrar ou Cadastrar
-                  </button>
+                  <div className="flex flex-col w-full gap-3 max-w-[240px]">
+                    <Button
+                      onClick={handleLoginRedirect}
+                      variant="hero"
+                      className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-glow hover:scale-105 active:scale-95 transition-all"
+                    >
+                      Entrar na Minha Conta
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                      asChild
+                    >
+                      <Link to="/cadastro">Não tenho conta, quero criar</Link>
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
