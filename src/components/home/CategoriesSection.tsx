@@ -67,7 +67,7 @@ const CategoriesSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="flex flex-wrap justify-center gap-5">
           {categories.map((cat, i) => (
             <motion.div
               key={cat.id}
@@ -75,6 +75,7 @@ const CategoriesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
               viewport={{ once: true }}
+              className="w-full sm:w-[calc(50%-1.25rem)] lg:w-[calc(25%-1.25rem)]"
             >
               <Link
                 to={`/loja?path=${cat.id}`}
