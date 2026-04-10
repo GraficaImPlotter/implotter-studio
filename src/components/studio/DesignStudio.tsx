@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.png";
 
 type Element = {
   id: string;
@@ -30,11 +31,13 @@ const FONTS = ["Inter", "Impact", "Arial", "Georgia", "Monospace", "Outfit"];
 export const DesignStudio = ({ 
   onSave, 
   onClose,
+  productImage,
   targetWidth = 1.0, // in meters
   targetHeight = 1.0 // in meters
 }: { 
   onSave: (dataUrl: string) => void, 
   onClose: () => void,
+  productImage?: string,
   targetWidth?: number,
   targetHeight?: number
 }) => {
@@ -155,7 +158,10 @@ export const DesignStudio = ({
       {/* Settings Panel (Left) */}
       <div className="w-full md:w-80 border-r border-border bg-card p-6 flex flex-col gap-8 order-2 md:order-1">
         <div className="flex items-center justify-between">
-           <h2 className="font-display font-black text-xl tracking-tighter uppercase">ImPlotter <span className="text-highlight">Studio</span></h2>
+           <div className="flex flex-col items-start gap-0.5 mt-2 mb-2">
+             <img src={logo} alt="Gráfica ImPlotter" className="h-7 cursor-pointer brightness-110 drop-shadow-[0_0_12px_hsl(217_85%_55%/0.4)]" />
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-highlight ml-1 -mt-1 opacity-90">Studio</span>
+           </div>
            <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
         </div>
 
@@ -289,7 +295,16 @@ export const DesignStudio = ({
       </div>
 
       {/* Main Canvas Area (Center) */}
-      <div className="flex-1 bg-[#1a1a1a] p-4 md:p-12 flex items-center justify-center relative order-1 md:order-2">
+      <div 
+        className="flex-1 p-4 md:p-12 flex items-center justify-center relative order-1 md:order-2"
+        style={{
+          backgroundColor: "#111111",
+          backgroundImage: productImage ? `radial-gradient(circle at center, rgba(17,17,17,0.4) 0%, rgba(17,17,17,0.95) 100%), url(${productImage})` : "none",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat"
+        }}
+      >
         <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/5 px-4 py-2 rounded-full border border-white/10 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] pointer-events-none">
            Preview em Tempo Real
         </div>

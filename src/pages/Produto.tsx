@@ -810,6 +810,7 @@ const Produto = () => {
 
       {showStudio && (
         <DesignStudio 
+          productImage={images[0]?.image_url}
           onClose={() => setShowStudio(false)} 
           onSave={(dataUrl) => {
              setStudioResult(dataUrl);
