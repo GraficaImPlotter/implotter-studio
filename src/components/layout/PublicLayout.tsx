@@ -80,7 +80,7 @@ const PublicLayout = ({ children }: PublicLayoutProps) => {
       <Footer />
       <WhatsAppButton />
       <Suspense fallback={null}>
-        {/* <AIChatWidget /> Desativado temporariamente pela dupla arquitetura */}
+        <AIChatWidget />
         <CookieBanner />
         <OfferPopup />
         <ExitIntentPopup />

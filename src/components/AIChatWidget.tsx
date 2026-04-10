@@ -118,18 +118,16 @@ const AIChatWidget = () => {
     setIsSending(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_CHAT_API_URL || 'http://localhost:3001'}/api/chat/human`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('chat-human', {
+        body: {
           message: text.trim(),
           userId: user.id,
           userName: user.user_metadata?.full_name || user.email,
           userEmail: user.email
-        }),
+        }
       });
-
-      if (!response.ok) throw new Error("Falha ao enviar mensagem");
+      
+      if (error) throw error;
 
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
