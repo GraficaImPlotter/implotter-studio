@@ -23,6 +23,10 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
   const infoParts = [colorMode, quantity ? `${quantity} un` : "", productCode].filter(Boolean);
   const infoLine = infoParts.join(" • ");
 
+  const formatName = (name: string) => {
+    return name.toLowerCase().replace(/(?:^|\s|["'([{])+\S/g, l => l.toUpperCase());
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -74,7 +78,7 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
         {/* Product Name */}
         <Link to={`/loja/${p.slug}`} className="mb-4">
           <h3 className="text-sm font-bold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
-            {p.name}
+            {formatName(p.name)}
           </h3>
         </Link>
 
@@ -109,7 +113,7 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
           <div className="flex gap-1.5 sm:gap-2">
             <Link to={`/loja/${p.slug}`} className="flex-1 min-w-0">
               <Button variant="outline" size="sm" className="w-full rounded-xl text-[10px] xl:text-[11px] px-1 font-bold h-9 md:h-10 border-white/10 hover:bg-white/5 transition-all line-clamp-1">
-                DETALHES
+                Detalhes
               </Button>
             </Link>
             <Button
@@ -117,12 +121,13 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
               className="flex-1 min-w-0 rounded-xl text-[10px] xl:text-[11px] px-1 font-black h-9 md:h-10 bg-success text-success-foreground hover:bg-success/90 shadow-lg active:scale-95 transition-all line-clamp-1"
               onClick={(e) => { e.preventDefault(); onAdd(p); }}
             >
-              COMPRAR
+              Comprar
             </Button>
           </div>
         </div>
       </div>
     </motion.div>
+
   );
 };
 

@@ -117,7 +117,7 @@ const Header = () => {
       <div className={`hidden md:block transition-all duration-300 ${scrolled ? "h-0 overflow-hidden opacity-0" : "h-auto opacity-100"}`}>
         <div className="container mx-auto px-4 py-2 flex justify-between items-center text-xs text-[hsl(215_15%_70%)]">
           <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-highlight" /> {settings.phone || "(00) 0000-0000"}</span>
+            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-highlight" /> {settings.phone || "(11) 99999-8888"}</span>
             <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-highlight" /> {settings.email || "contato@graficaimplotter.com.br"}</span>
           </div>
           <div className="flex items-center gap-5">

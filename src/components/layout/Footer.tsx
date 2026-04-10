@@ -102,7 +102,7 @@ const Footer = () => {
                 <div className="w-8 h-8 rounded-lg bg-highlight/10 flex items-center justify-center flex-shrink-0">
                   <Phone className="w-4 h-4 text-highlight" />
                 </div>
-                <span className="text-[hsl(215_15%_70%)]">{settings.phone || "(00) 0000-0000"}</span>
+                <span className="text-[hsl(215_15%_70%)]">{settings.phone || "(11) 99999-8888"}</span>
               </li>
               <li className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-highlight/10 flex items-center justify-center flex-shrink-0">
