@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Truck } from "lucide-react";
+import { DollarSign, Truck, Palette } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const settingsKeys = [
   { key: "company_name", label: "Nome da Empresa" },
