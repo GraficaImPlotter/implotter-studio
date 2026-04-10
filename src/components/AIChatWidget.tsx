@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+import logo from "@/assets/logo.png";
+
 type Msg = { 
   role: "user" | "assistant"; 
   content: string; 
@@ -24,6 +26,7 @@ const AIChatWidget = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 1. Carregar histórico do banco de dados quando o chat abre e o usuário está logado
+  // ... (keeping existing logic)
   useEffect(() => {
     if (open && user) {
       const fetchHistory = async () => {
@@ -180,8 +183,8 @@ const AIChatWidget = () => {
               
               <div className="flex items-center gap-4 relative z-10">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30 shadow-inner group overflow-hidden">
-                    <User className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30 shadow-inner group overflow-hidden p-2">
+                    <img src={logo} alt="ImPlotter" className="w-full h-full object-contain group-hover:scale-110 transition-transform brightness-110" />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400 border-2 border-highlight animate-pulse shadow-glow" />
                 </div>
@@ -210,8 +213,8 @@ const AIChatWidget = () => {
               {!user ? (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-8 px-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center border border-primary/20 animate-float-gentle">
-                       <User className="w-12 h-12 text-primary opacity-50" />
+                    <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center border border-primary/20 animate-float-gentle p-4">
+                       <img src={logo} alt="ImPlotter" className="w-full h-full object-contain opacity-50 transition-transform" />
                     </div>
                     <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-background border border-border flex items-center justify-center">
                        <LogIn className="w-5 h-5 text-primary" />
@@ -238,8 +241,8 @@ const AIChatWidget = () => {
                       animate={{ opacity: 1, x: 0 }}
                       className="flex gap-3"
                     >
-                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm animate-float-gentle">
-                        <User className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm animate-float-gentle p-1.5">
+                        <img src={logo} alt="ImPlotter" className="w-full h-full object-contain" />
                       </div>
                       <div className="glass-card-premium p-5 rounded-[24px] rounded-tl-sm max-w-[85%] shadow-xl border-white/5">
                         <p className="text-[13px] text-foreground/90 leading-relaxed font-medium">
@@ -265,8 +268,8 @@ const AIChatWidget = () => {
                         )}
                       >
                         {m.role === "assistant" && isFirstFromSender ? (
-                          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm self-end">
-                            <User className="w-5 h-5 text-primary" />
+                          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 shadow-sm self-end p-1.5">
+                            <img src={logo} alt="ImPlotter" className="w-full h-full object-contain" />
                           </div>
                         ) : m.role === "assistant" ? (
                           <div className="w-10 h-10 shrink-0" /> // Spacer for grouped messages
