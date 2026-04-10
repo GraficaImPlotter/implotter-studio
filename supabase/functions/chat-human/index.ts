@@ -42,6 +42,10 @@ serve(async (req) => {
     const TELEGRAM_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
     const ADMIN_CHAT_ID = Deno.env.get("TELEGRAM_ADMIN_CHAT_ID");
 
+    console.log("Tentando enviar para Telegram...");
+    console.log("Token configurado:", TELEGRAM_TOKEN ? "SIM" : "NÃO");
+    console.log("Chat ID configurado:", ADMIN_CHAT_ID ? "SIM" : "NÃO");
+
     if (TELEGRAM_TOKEN && ADMIN_CHAT_ID) {
       const caption = `<b>Novo Contato: ${userName || "Cliente"}</b>\n` +
                       `✉️ ${userEmail || "Sem e-mail"}\n\n` +
@@ -60,13 +64,21 @@ serve(async (req) => {
       });
 
       const tgData = await tgRes.json();
+      console.log("Resposta do Telegram:", JSON.stringify(tgData));
+
       if (tgData.ok) {
         // Atualizar com o ID do Telegram para referência futura
-        await supabaseClient
+        const { error: updateError } = await supabaseClient
           .from("chat_messages")
           .update({ telegram_message_id: tgData.result.message_id.toString() })
           .eq("id", dbMsg.id);
+        
+        if (updateError) console.error("Erro ao atualizar telegram_message_id:", updateError);
+      } else {
+        console.error("Erro reportado pelo Telegram:", tgData.description);
       }
+    } else {
+      console.warn("TELEGRAM_BOT_TOKEN ou TELEGRAM_ADMIN_CHAT_ID não estão configurados nos Secrets do Supabase.");
     }
 
     return new Response(JSON.stringify({ success: true, messageId: dbMsg.id }), {
