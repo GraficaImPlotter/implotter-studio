@@ -104,7 +104,7 @@ const HeroSection = () => {
   // Determine what media to show in the printer
   const hasSlides = slides.length > 0;
   const currentMedia = hasSlides ? slides[currentSlide] : null;
-  const fallbackImage = banner?.image_url || heroBanner;
+  const fallbackImage = banner?.image_url || "/images/hero-lcp.jpg";
 
   const stats = [
     { icon: Users, value: settings.hero_stat_1_value || "1.250+", label: settings.hero_stat_1_label || "Clientes atendidos" },

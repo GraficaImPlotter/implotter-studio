@@ -18,7 +18,22 @@ export const getOptimizedUrl = (url: string, { width, quality = 80, format = 'we
     }
   }
 
-  // Para Supabase ou outras fontes externas não mapeadas, retornamos a URL original
-  // para evitar quebras por parâmetros de segurança (tokens) ausentes.
-  return url;
+  // Otimização Supabase Storage (se habilitado no bucket)
+  if (url.includes(".supabase.co/storage/v1/object/public/")) {
+    try {
+      const urlObj = new URL(url);
+      // Supabase transformation path is /storage/v1/render/image/public/
+      const newPath = urlObj.pathname.replace("/object/public/", "/render/image/public/");
+      urlObj.pathname = newPath;
+      if (width) urlObj.searchParams.set("width", String(width));
+      urlObj.searchParams.set("quality", String(quality));
+      urlObj.searchParams.set("format", format || "webp");
+      urlObj.searchParams.set("resize", "contain"); // 'contain' mantém proporção
+      return urlObj.toString();
+    } catch (e) {
+      return url;
+    }
+  }
+
+  // Para outras fontes externas não mapeadas, retornamos a URL original
 };
