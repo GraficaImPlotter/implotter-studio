@@ -272,13 +272,48 @@
     animation: float-gentle 4s ease-in-out infinite;
   }
 
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 10px rgba(0, 230, 255, 0.2); }
-    50% { box-shadow: 0 0 25px rgba(0, 230, 255, 0.5); }
-  }
-
   .animate-glow-pulse {
     animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  /* Cinematic Mesh Gradient */
+  .bg-mesh-gradient {
+    background-color: hsla(222, 40%, 10%, 1);
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(217, 85%, 48%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(255, 65%, 55%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(217, 85%, 48%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(255, 65%, 55%, 0.1) 0px, transparent 50%);
+  }
+
+  /* 3D Floating Showcase Utilities */
+  .perspective-2000 {
+    perspective: 2000px;
+  }
+  
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .glass-card-3d {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    transform: translateZ(20px);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .glass-card-3d:hover {
+    transform: translateZ(50px) rotateX(4deg) rotateY(4deg);
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  @keyframes orbit {
+    0% { transform: rotate(0deg) translateX(10px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(10px) rotate(-360deg); }
+  }
+
+  .animate-orbit {
+    animation: orbit 20s linear infinite;
   }
 }
 
