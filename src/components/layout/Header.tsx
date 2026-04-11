@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PreloadLink from "@/components/PreloadLink";
-import { Phone, Mail, Clock, ShoppingCart, Menu, X, Shield, MapPin, CloudSun, Search, Sun, Moon } from "lucide-react";
+import { Phone, Mail, Clock, ShoppingCart, Menu, X, Shield, MapPin, CloudSun, Search, Sun, Moon, MessageCircle, ChevronDown, LayoutGrid } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/use-cart";
@@ -112,12 +112,22 @@ const Header = () => {
   };
 
   const categoriesNav = [
-    { name: "Cartão de Visita", link: "/loja?search=cartao" },
+    { name: "Cartões", link: "/loja?search=cartao" },
     { name: "Banners", link: "/loja?search=banner" },
-    { name: "Windbanner", link: "/loja?search=windbanner" },
-    { name: "Blocos e Talões", link: "/loja?search=bloco" },
-    { name: "Pastas", link: "/loja?search=pasta" },
-    { name: "Brindes", link: "/loja?search=brinde" },
+    { name: "Adesivos", link: "/loja?search=adesivo" },
+    { name: "WindBanner", link: "/loja?search=wind" },
+    { name: "Brinde", link: "/loja?search=brinde" },
+  ];
+
+  /* ─── Mock categories for the All Products dropdown ─── */
+  const allCategoriesDropdown = [
+    { name: "Cartão de Visita", slug: "cartao-de-visita" },
+    { name: "Adesivos & Etiquetas", slug: "adesivos" },
+    { name: "Banners & Lonas", slug: "banners" },
+    { name: "Folhetos & Panfletos", slug: "folhetos" },
+    { name: "Pastas & Papelaria", slug: "pastas" },
+    { name: "Brindes Personalizados", slug: "brindes" },
+    { name: "Wind Banner", slug: "wind-banner" },
   ];
 
   return (
@@ -150,8 +160,8 @@ const Header = () => {
       {/* Main Header (Logo, Search, Cart) */}
       <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4 md:gap-8">
         {/* Logo */}
-        <Link to="/" className="flex-shrink-0">
-          <img src={logo} alt="Gráfica ImPlotter" className="h-10 md:h-12 object-contain" />
+        <Link to="/" className="flex-shrink-0 animate-in fade-in slide-in-from-left duration-700">
+          <img src={logo} alt="Gráfica ImPlotter" className="h-10 md:h-12 object-contain hover:scale-105 transition-transform duration-300" />
         </Link>
         
         {/* Search Bar - Center */}
@@ -210,18 +220,37 @@ const Header = () => {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
-          <Link to={user ? "/minha-conta" : "/login"} className="hidden lg:flex flex-col items-start justify-center group">
-            <span className="text-[11px] text-gray-500 font-medium">Olá, bem-vindo(a)!</span>
-            <span className="text-sm text-gray-800 font-bold group-hover:text-primary transition-colors">
-              {user ? "Minha Conta" : "Entre ou cadastre-se"}
+        <div className="flex items-center gap-3 md:gap-5 flex-shrink-0">
+          {/* WhatsApp & Budget CTAs (Desktop) */}
+          <div className="hidden lg:flex items-center gap-3 mr-2">
+            <a 
+              href={`https://wa.me/${settings.whatsapp?.replace(/\D/g, "")}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 active:scale-95 transition-all duration-300"
+            >
+              <MessageCircle className="w-4 h-4 fill-current group-hover:rotate-12 transition-transform" />
+              WhatsApp
+            </a>
+            <Link 
+              to="/fale-conosco" 
+              className="bg-accent hover:bg-accent/90 text-white px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 active:scale-95 transition-all duration-300"
+            >
+              Orçamento
+            </Link>
+          </div>
+
+          <Link to={user ? "/minha-conta" : "/login"} className="hidden lg:flex flex-col items-start justify-center group border-l border-gray-100 pl-5">
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Minha Conta</span>
+            <span className="text-[13px] text-gray-800 font-black group-hover:text-primary transition-colors leading-none mt-0.5">
+              {user ? "Acessar Painel" : "Entrar / Cadastro"}
             </span>
           </Link>
           
-          <Link to="/carrinho" className="relative p-2 text-gray-700 hover:text-primary transition-colors">
+          <Link to="/carrinho" className="relative p-2 text-gray-700 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-90">
             <ShoppingCart className="w-7 h-7" />
             {items.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF6B00] text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm border-2 border-white">
+              <span className="absolute top-0 right-0 w-5 h-5 bg-accent text-white text-[10px] rounded-full flex items-center justify-center font-black shadow-lg animate-in zoom-in duration-300">
                 {items.length}
               </span>
             )}
@@ -234,21 +263,42 @@ const Header = () => {
       </div>
 
       {/* Bottom Nav (Categories) */}
-      <div className="hidden md:block bg-white border-t border-gray-100">
+      <div className="hidden md:block bg-white border-t border-gray-100 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-6">
-            <Link to="/loja" className="flex items-center gap-2 py-3.5 pr-6 font-bold text-gray-800 hover:text-primary transition-colors border-r border-gray-100">
-              <Menu className="w-5 h-5" />
-              Todos os Produtos
-            </Link>
-            <nav className="flex items-center gap-6 overflow-x-auto">
+            {/* Todos os Produtos with Dropdown */}
+            <div className="relative group">
+              <Link to="/loja" className="flex items-center gap-2 py-4 pr-6 font-black text-[12px] uppercase tracking-widest text-[#111827] hover:text-primary transition-colors border-r border-gray-100 group">
+                <LayoutGrid className="w-4 h-4 text-primary" />
+                Todos os Produtos
+                <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-40 group-hover:rotate-180 transition-transform duration-300" />
+              </Link>
+              
+              {/* Dropdown Menu */}
+              <div className="absolute top-full left-0 w-64 bg-white border border-gray-100 shadow-2xl rounded-b-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
+                <div className="p-2">
+                  {allCategoriesDropdown.map(cat => (
+                    <Link 
+                      key={cat.slug} 
+                      to={`/loja?search=${cat.slug}`} 
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold text-gray-600 hover:bg-gray-50 hover:text-primary transition-all duration-200"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <nav className="flex items-center gap-1">
               {categoriesNav.map(cat => (
                 <Link
                   key={cat.name}
                   to={cat.link}
-                  className="py-3.5 text-sm font-semibold text-gray-600 hover:text-primary whitespace-nowrap transition-colors"
+                  className="px-5 py-4 text-[12px] font-bold uppercase tracking-widest text-[#4B5563] hover:text-primary whitespace-nowrap transition-colors relative group"
                 >
                   {cat.name}
+                  <span className="absolute bottom-4 left-5 right-5 h-0.5 bg-primary rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                 </Link>
               ))}
             </nav>

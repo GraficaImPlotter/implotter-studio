@@ -129,7 +129,7 @@ const sortByColorMode = (products: any[]) => {
 };
 
 /* ─── Main page ─── */
-const Loja = () => {
+const Loja = ({ hideHero = false, forceSearch = "", segmentTitle = "" }: { hideHero?: boolean, forceSearch?: string, segmentTitle?: string }) => {
   const { toast } = useToast();
   const { addItem } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,7 +137,7 @@ const Loja = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [search, setSearch] = useState(forceSearch || searchParams.get("search") || "");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [kits, setKits] = useState<any[]>([]);
@@ -302,134 +302,139 @@ const Loja = () => {
   const showHome = !selectedNodeId && !search.trim();
 
   return (
-    <PublicLayout>
-      <SEOHead 
-        title={selectedNodeName ? `${selectedNodeName} | Catálogo` : "Loja de Impressos | Banners, Adesivos e Cartões"} 
-        description={selectedNodeName ? `Confira nossa linha de ${selectedNodeName}. Qualidade profissional e entrega rápida.` : "Explore nosso catálogo completo de materiais gráficos: banners em lona, adesivos vinil, cartões de visita premium e panfletos promocionais."} 
-        canonical="/loja" 
-      />
-      <PageHero title={selectedNodeName || "Nossa Loja"} badge="Catálogo de Produtos">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-white/70 text-sm md:text-base mb-8">
-            Explore nossa seleção premium de materiais gráficos com a melhor qualidade do Brasil.
-          </p>
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-xl mx-auto">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-              <Input
-                placeholder="O que você deseja imprimir hoje?"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-12 h-12 md:h-14 text-base bg-white/10 border-white/20 text-white rounded-xl shadow-sm focus:shadow-md transition-shadow backdrop-blur-md placeholder:text-white/30"
-              />
-            </div>
-            <Button type="submit" variant="highlight" className="h-12 md:h-14 px-8 rounded-xl text-sm font-bold shadow-glow hover:shadow-glow-strong active:scale-95 transition-all">
-              <Search className="w-5 h-5 md:mr-2" />
-              <span className="hidden md:inline text-base">Buscar</span>
-            </Button>
-          </form>
-
-          {/* Filters Bar Premium */}
-            <div className="flex flex-wrap gap-4 justify-center mt-8 p-4 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl">
-              {/* Color Filter Segmented */}
-              <div className="flex flex-wrap gap-1 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
-                <button 
-                  onClick={() => setFilterColor("")}
-                  className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${!filterColor ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
-                >
-                  Todas Cores
-                </button>
-                {["1x0", "1x1", "4x0", "4x1", "4x4"].map(c => (
-                  <button 
-                    key={c}
-                    onClick={() => setFilterColor(c)}
-                    className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${filterColor === c ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
-                  >
-                    {c}
-                  </button>
-                ))}
+    <div className={hideHero ? "pt-12" : ""}>
+      {!hideHero && (
+        <SEOHead 
+          title={selectedNodeName ? `${selectedNodeName} | Catálogo` : "Loja de Impressos | Banners, Adesivos e Cartões"} 
+          description={selectedNodeName ? `Confira nossa linha de ${selectedNodeName}. Qualidade profissional e entrega rápida.` : "Explore nosso catálogo completo de materiais gráficos: banners em lona, adesivos vinil, cartões de visita premium e panfletos promocionais."} 
+          canonical="/loja" 
+        />
+      )}
+      
+      {!hideHero && (
+        <PageHero title={selectedNodeName || "Nossa Loja"} badge="Catálogo de Produtos">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-white/70 text-sm md:text-base mb-8">
+              Explore nossa seleção premium de materiais gráficos com a melhor qualidade do Brasil.
+            </p>
+            <form onSubmit={handleSearch} className="flex gap-2 max-w-xl mx-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                <Input
+                  placeholder="O que você deseja imprimir hoje?"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-12 h-12 md:h-14 text-base bg-white/10 border-white/20 text-white rounded-xl shadow-sm focus:shadow-md transition-shadow backdrop-blur-md placeholder:text-white/30"
+                />
               </div>
+              <Button type="submit" variant="highlight" className="h-12 md:h-14 px-8 rounded-xl text-sm font-bold shadow-glow hover:shadow-glow-strong active:scale-95 transition-all">
+                <Search className="w-5 h-5 md:mr-2" />
+                <span className="hidden md:inline text-base">Buscar</span>
+              </Button>
+            </form>
 
-              {/* Qty Filter Segmented (if small number of options) */}
-              {availableQtys.length > 1 && availableQtys.length <= 6 && (
+            {/* Filters Bar Premium */}
+              <div className="flex flex-wrap gap-4 justify-center mt-8 p-4 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl">
+                {/* Color Filter Segmented */}
                 <div className="flex flex-wrap gap-1 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
                   <button 
-                    onClick={() => setFilterQty("")}
-                    className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${!filterQty ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
+                    onClick={() => setFilterColor("")}
+                    className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${!filterColor ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
                   >
-                    Todas Qtds
+                    Todas Cores
                   </button>
-                  {availableQtys.map(q => (
+                  {["1x0", "1x1", "4x0", "4x1", "4x4"].map(c => (
                     <button 
-                      key={q}
-                      onClick={() => setFilterQty(q)}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${filterQty === q ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
+                      key={c}
+                      onClick={() => setFilterColor(c)}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${filterColor === c ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
                     >
-                      {q}
+                      {c}
                     </button>
                   ))}
                 </div>
+
+                {/* Qty Filter Segmented (if small number of options) */}
+                {availableQtys.length > 1 && availableQtys.length <= 6 && (
+                  <div className="flex flex-wrap gap-1 bg-black/40 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+                    <button 
+                      onClick={() => setFilterQty("")}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${!filterQty ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
+                    >
+                      Todas Qtds
+                    </button>
+                    {availableQtys.map(q => (
+                      <button 
+                        key={q}
+                        onClick={() => setFilterQty(q)}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-bold tracking-tight transition-all uppercase ${filterQty === q ? "bg-primary text-primary-foreground shadow-glow-sm" : "text-white/40 hover:text-white/70"}`}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+              {/* Fallback for large number of qtys */}
+              {availableQtys.length > 6 && (
+                <select
+                  value={filterQty}
+                  onChange={e => setFilterQty(e.target.value)}
+                  className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none"
+                >
+                  <option value="" className="bg-neutral-900">📦 Todas Qtds</option>
+                  {availableQtys.map(q => (
+                    <option key={q} value={q} className="bg-neutral-900">{q} unidades</option>
+                  ))}
+                </select>
               )}
 
-            {/* Fallback for large number of qtys */}
-            {availableQtys.length > 6 && (
+              <select value={filterPrice} onChange={e => setFilterPrice(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
+                <option value="" className="bg-neutral-900">💵 Preço: Todos</option>
+                <option value="<50" className="bg-neutral-900">Faixa: Até R$ 50</option>
+                <option value="50-100" className="bg-neutral-900">Faixa: R$ 50 a R$ 100</option>
+                <option value=">100" className="bg-neutral-900">Faixa: Acima de R$ 100</option>
+              </select>
+
+              <select value={filterUnit} onChange={e => setFilterUnit(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
+                <option value="" className="bg-neutral-900">📏 Formato: Todos</option>
+                <option value="per_unit" className="bg-neutral-900">Por Unidade/Pacote</option>
+                <option value="per_sqm" className="bg-neutral-900">Por Metro Quadrado</option>
+              </select>
+
+              <select value={filterPromo} onChange={e => setFilterPromo(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
+                <option value="" className="bg-neutral-900">🌟 Ofertas: Todas</option>
+                <option value="promo" className="bg-neutral-900">🔥 Apenas Promoções</option>
+                <option value="featured" className="bg-neutral-900">⭐ Destaques</option>
+              </select>
+
               <select
-                value={filterQty}
-                onChange={e => setFilterQty(e.target.value)}
+                value={sortBy}
+                onChange={e => { const p = new URLSearchParams(searchParams); p.set("sort", e.target.value); setSearchParams(p); }}
                 className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none"
               >
-                <option value="" className="bg-neutral-900">📦 Todas Qtds</option>
-                {availableQtys.map(q => (
-                  <option key={q} value={q} className="bg-neutral-900">{q} unidades</option>
-                ))}
+                <option value="relevancia" className="bg-neutral-900">🔀 Ordenar: A-Z</option>
+                <option value="menor-preco" className="bg-neutral-900">⬇️ Menor preço</option>
+                <option value="maior-preco" className="bg-neutral-900">⬆️ Maior preço</option>
+                <option value="recentes" className="bg-neutral-900">⭐ Mais recentes</option>
               </select>
-            )}
-
-            <select value={filterPrice} onChange={e => setFilterPrice(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
-              <option value="" className="bg-neutral-900">💵 Preço: Todos</option>
-              <option value="<50" className="bg-neutral-900">Faixa: Até R$ 50</option>
-              <option value="50-100" className="bg-neutral-900">Faixa: R$ 50 a R$ 100</option>
-              <option value=">100" className="bg-neutral-900">Faixa: Acima de R$ 100</option>
-            </select>
-
-            <select value={filterUnit} onChange={e => setFilterUnit(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
-              <option value="" className="bg-neutral-900">📏 Formato: Todos</option>
-              <option value="per_unit" className="bg-neutral-900">Por Unidade/Pacote</option>
-              <option value="per_sqm" className="bg-neutral-900">Por Metro Quadrado</option>
-            </select>
-
-            <select value={filterPromo} onChange={e => setFilterPromo(e.target.value)} className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none">
-              <option value="" className="bg-neutral-900">🌟 Ofertas: Todas</option>
-              <option value="promo" className="bg-neutral-900">🔥 Apenas Promoções</option>
-              <option value="featured" className="bg-neutral-900">⭐ Destaques</option>
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={e => { const p = new URLSearchParams(searchParams); p.set("sort", e.target.value); setSearchParams(p); }}
-              className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs text-white shadow-inner appearance-none cursor-pointer hover:bg-black/60 transition-all outline-none"
-            >
-              <option value="relevancia" className="bg-neutral-900">🔀 Ordenar: A-Z</option>
-              <option value="menor-preco" className="bg-neutral-900">⬇️ Menor preço</option>
-              <option value="maior-preco" className="bg-neutral-900">⬆️ Maior preço</option>
-              <option value="recentes" className="bg-neutral-900">⭐ Mais recentes</option>
-            </select>
-            
-            <div className="md:hidden">
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-xl gap-2 bg-white/10 border-white/20 text-white h-[44px] px-6">
-                    <Menu className="w-4 h-4" /> Categorias
-                  </Button>
-                </SheetTrigger>
-                  </Sheet>
+              
+              <div className="md:hidden">
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="rounded-xl gap-2 bg-white/10 border-white/20 text-white h-[44px] px-6">
+                      <Menu className="w-4 h-4" /> Categorias
+                    </Button>
+                  </SheetTrigger>
+                    </Sheet>
+                  </div>
                 </div>
               </div>
-            </div>
-          </PageHero>
+            </PageHero>
+      )}
 
       {/* Breadcrumb */}
-      {(selectedNodeId || search.trim()) && (
+      {(selectedNodeId || search.trim()) && !hideHero && (
         <section className="border-b border-border bg-muted/30">
           <div className="container mx-auto px-4 py-2.5">
             <nav className="flex items-center gap-1.5 text-sm flex-wrap">
@@ -646,7 +651,7 @@ const Loja = () => {
           </div>
         </div>
       </section>
-    </PublicLayout>
+    </div>
   );
 };
 

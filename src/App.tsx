@@ -42,6 +42,7 @@ const AcompanharPedido = lazy(() => import("./pages/AcompanharPedido"));
 const OrcamentoPublico = lazy(() => import("./pages/OrcamentoPublico"));
 const MelhorEnvioCallback = lazy(() => import("./pages/MelhorEnvioCallback"));
 const RastrearPedido = lazy(() => import("./pages/RastrearPedido"));
+const SegmentoLoja = lazy(() => import("./pages/SegmentoLoja"));
 
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -146,6 +147,7 @@ const AppContent = () => {
             <Route path="/rastrear" element={<RastrearPedido />} />
             <Route path="/orcamento/:quoteId" element={<OrcamentoPublico />} />
             <Route path="/melhor-envio/callback" element={<MelhorEnvioCallback />} />
+            <Route path="/segmento/:slug" element={<SegmentoLoja />} />
 
             {/* Admin — protected by AdminRoute guard */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

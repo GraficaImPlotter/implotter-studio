@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { Award, Heart, Zap, Layers, Headphones, BarChart3 } from "lucide-react";
+import { Award, Zap, MessageCircle, Image, MapPin, Headphones } from "lucide-react";
 
 const items = [
-  { icon: Award, title: "Qualidade Profissional", desc: "Materiais e equipamentos de ponta para resultados impecáveis em cada projeto." },
-  { icon: Heart, title: "Atendimento Humanizado", desc: "Suporte próximo e dedicado do início ao fim, pensando no melhor para sua marca." },
-  { icon: Zap, title: "Agilidade na Entrega", desc: "Processos otimizados para entregas rápidas sem comprometer a qualidade." },
-  { icon: Layers, title: "Variedade de Produtos", desc: "Amplo catálogo de materiais gráficos para todas as necessidades do seu negócio." },
-  { icon: Headphones, title: "Suporte Especializado", desc: "Equipe técnica pronta para tirar dúvidas e orientar na melhor escolha." },
-  { icon: BarChart3, title: "Acompanhamento Real-time", desc: "Acompanhe cada etapa da produção do seu pedido com status em tempo real." },
+  { icon: Award, title: "Alta Qualidade", desc: "Impressão de alta definição com cores vibrantes e acabamento profissional em todos os materiais." },
+  { icon: Zap, title: "Entrega Rápida", desc: "Produção otimizada para que seu material chegue no menor tempo possível, sem atrasos." },
+  { icon: MessageCircle, title: "Atendimento WhatsApp", desc: "Suporte direto via WhatsApp para tirar dúvidas e acompanhar seu pedido em tempo real." },
+  { icon: Image, title: "Arte Facilitada", desc: "Auxiliamos na verificação e fechamento correto dos seus arquivos para uma impressão perfeita." },
+  { icon: MapPin, title: "Produção Local", desc: "Tecnologia de ponta em nossa unidade própria, garantindo controle total sobre cada etapa." },
+  { icon: Headphones, title: "Suporte Personalizado", desc: "Uma equipe de especialistas pronta para sugerir as melhores soluções para o seu negócio." },
 ];
 
 const DifferentialsSection = () => {
@@ -24,11 +24,11 @@ const DifferentialsSection = () => {
           className="text-center mb-16"
         >
           <span className="text-highlight text-sm font-semibold tracking-wider uppercase mb-3 block">Por que nos escolher</span>
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground mb-4">
-            Nossos Diferenciais
+          <h2 className="font-display text-3xl md:text-5xl font-black text-[#111827] mb-6 tracking-tighter leading-tight">
+            Por que escolher a <span className="text-secondary text-gradient-primary">ImPlotter</span>?
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto text-lg">
-            Motivos para confiar na Gráfica ImPlotter para destacar sua marca
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg font-medium">
+            Combinamos tecnologia de última geração com atendimento humanizado para entregar o melhor resultado para sua marca.
           </p>
         </motion.div>
 
@@ -42,11 +42,11 @@ const DifferentialsSection = () => {
               viewport={{ once: true }}
               className="group p-7 rounded-2xl glass-card glass-card-hover transition-all duration-500"
             >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-5 shadow-lg shadow-highlight/20 group-hover:shadow-highlight/40 transition-shadow">
-                <item.icon className="w-7 h-7 text-accent-foreground" />
+              <div className="w-16 h-16 rounded-[1.25rem] bg-secondary flex items-center justify-center mb-6 shadow-xl shadow-secondary/20 group-hover:rotate-6 transition-transform duration-500">
+                <item.icon className="w-8 h-8 text-white" />
               </div>
-              <h3 className="font-display font-bold text-foreground text-lg mb-2">{item.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+              <h3 className="font-display font-black text-[#111827] text-xl mb-3 tracking-tight group-hover:text-secondary transition-colors">{item.title}</h3>
+              <p className="text-gray-500 font-medium leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>
