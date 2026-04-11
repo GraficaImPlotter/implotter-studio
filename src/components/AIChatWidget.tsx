@@ -255,9 +255,12 @@ const AIChatWidget = () => {
             className="fixed inset-0 z-[100] sm:inset-auto sm:bottom-24 sm:right-6 w-full sm:w-[420px] h-[100dvh] sm:h-[650px] bg-card/95 backdrop-blur-3xl sm:rounded-[40px] border border-white/5 shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-gradient-to-br from-highlight to-highlight-glow p-6 flex items-center justify-between shrink-0 shadow-lg relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-3xl rounded-full translate-x-10 translate-y-[-50%]" />
-               <div className="absolute bottom-0 left-0 w-32 h-32 bg-highlight-glow/20 blur-2xl rounded-full translate-x-[-50%] translate-y-[50%]" />
+            <div className="bg-gradient-to-br from-highlight to-highlight-glow p-6 flex items-center justify-between shrink-0 shadow-lg relative">
+               {/* Decorative background effects clipped to header bounds */}
+               <div className="absolute inset-0 overflow-hidden pointer-events-none sm:rounded-t-[40px]">
+                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-3xl rounded-full translate-x-10 translate-y-[-50%]" />
+                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-highlight-glow/20 blur-2xl rounded-full translate-x-[-50%] translate-y-[50%]" />
+               </div>
               
               <div className="flex items-center gap-4 relative z-10">
                 <div className="relative">
