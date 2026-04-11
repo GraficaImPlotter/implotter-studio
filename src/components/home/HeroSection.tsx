@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Star, Users, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, Users, Package } from "lucide-react";
 import { getOptimizedUrl } from "@/lib/image-utils";
-import heroBanner from "@/assets/hero-banner.jpg";
+import logo from "@/assets/logo.png";
 
 interface HeroSlide {
   id: string;
