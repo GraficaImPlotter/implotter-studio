@@ -40,3 +40,4 @@ export const getOptimizedUrl = (url: string, { width, quality = 80, format = 'we
   }
 
   return url;
+};
