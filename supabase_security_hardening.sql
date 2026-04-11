@@ -63,7 +63,8 @@ FOR SELECT USING (
 );
 
 DROP POLICY IF EXISTS "Anyone can insert leads" ON public.leads;
-CREATE POLICY "Anyone can insert leads" ON public.leads FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can insert leads" ON public.leads 
+FOR INSERT WITH CHECK (name IS NOT NULL AND email IS NOT NULL);
 
 -- 5. POLÍTICA: USER_ROLES (PROTEÇÃO CONTRA ESCALAÇÃO)
 -- Usuários comuns não podem visualizar quem são os outros administradores.
@@ -109,3 +110,19 @@ FOR ALL USING (
 -- (Pode ser refinado se necessário)
 DROP POLICY IF EXISTS "Anyone can validate coupon" ON public.coupons;
 CREATE POLICY "Anyone can validate coupon" ON public.coupons FOR SELECT USING (is_active = true);
+
+-- ==========================================
+-- 8. CORREÇÕES DO SECURITY ADVISOR (SUPABASE)
+-- ==========================================
+
+-- A. Fix: Security Definer Views (Produtos e Reviews)
+-- Alterando para SECURITY INVOKER para que respeitem o RLS de quem consulta.
+ALTER VIEW IF EXISTS public.products_public SET (security_invoker = on);
+ALTER VIEW IF EXISTS public.reviews_public SET (security_invoker = on);
+
+-- B. Fix: Function Search Path (Proteção contra Hijacking)
+-- Define um caminho de busca fixo para funções de trigger.
+ALTER FUNCTION public.handle_updated_at() SET search_path = public;
+
+-- C. Verificação de RLS em tabelas de sistema (opcional mas recomendado)
+ALTER TABLE IF EXISTS public.user_roles FORCE ROW LEVEL SECURITY;
