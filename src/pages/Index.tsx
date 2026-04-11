@@ -21,13 +21,53 @@ const SectionLoader = ({ height = "400px" }) => (
   </div>
 );
 
+import { useSettings } from "@/hooks/use-settings";
+
 const Index = () => {
+  const { data: settings } = useSettings();
+
+  const businessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": settings?.company_name || "Gráfica ImPlotter",
+    "image": "https://graficaimplotter.shop/pwa-icon-512.png",
+    "@id": "https://graficaimplotter.shop",
+    "url": "https://graficaimplotter.shop",
+    "telephone": settings?.phone || settings?.whatsapp || "",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": settings?.address || "",
+      "addressLocality": settings?.city || "",
+      "addressRegion": settings?.state || "",
+      "addressCountry": "BR"
+    },
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "08:00",
+      "closes": "18:00"
+    }
+  };
+
+  const orgSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Gráfica ImPlotter",
+    "url": "https://graficaimplotter.shop",
+    "logo": "https://graficaimplotter.shop/pwa-icon-512.png",
+    "sameAs": [
+      settings?.instagram_url,
+      settings?.facebook_url
+    ].filter(Boolean)
+  };
+
   return (
     <PublicLayout>
       <SEOHead
-        title="Impressão Profissional"
-        description="Gráfica ImPlotter: banners, adesivos, cartões, panfletos e muito mais com qualidade profissional, entrega rápida e preço justo."
+        title="Gráfica Online | Banners, Adesivos e Cartões com Entrega Rápida"
+        description="A Gráfica ImPlotter é especialista em impressos de alta qualidade. Banners, adesivos personalizados, cartões de visita e panfletos com o melhor preço e entrega ágil."
         canonical="/"
+        jsonLd={[businessSchema, orgSchema]}
       />
       
       {/* Above the fold - Eager */}

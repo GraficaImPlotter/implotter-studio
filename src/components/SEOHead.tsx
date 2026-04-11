@@ -37,6 +37,13 @@ const SEOHead = ({
       {canonical && <meta property="og:url" content={`${SITE_URL}${canonical}`} />}
       {ogImage && <meta property="og:image" content={ogImage} />}
       <meta property="og:site_name" content={SITE_NAME} />
+      
+      {/* Twitter Cards */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      {ogImage && <meta name="twitter:image" content={ogImage} />}
+
       {jsonLd && (
         <script type="application/ld+json">
           {JSON.stringify(jsonLd)}

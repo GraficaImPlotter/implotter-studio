@@ -303,7 +303,11 @@ const Loja = () => {
 
   return (
     <PublicLayout>
-      <SEOHead title="Loja" description="Explore nosso catálogo de materiais gráficos: banners, adesivos, cartões, panfletos e mais." canonical="/loja" />
+      <SEOHead 
+        title={selectedNodeName ? `${selectedNodeName} | Catálogo` : "Loja de Impressos | Banners, Adesivos e Cartões"} 
+        description={selectedNodeName ? `Confira nossa linha de ${selectedNodeName}. Qualidade profissional e entrega rápida.` : "Explore nosso catálogo completo de materiais gráficos: banners em lona, adesivos vinil, cartões de visita premium e panfletos promocionais."} 
+        canonical="/loja" 
+      />
       <PageHero title={selectedNodeName || "Nossa Loja"} badge="Catálogo de Produtos">
         <div className="max-w-2xl mx-auto">
           <p className="text-white/70 text-sm md:text-base mb-8">
