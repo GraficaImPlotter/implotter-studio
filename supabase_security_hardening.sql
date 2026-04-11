@@ -15,6 +15,19 @@ ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
+-- 1.5. FUNÇÃO AUXILIAR: IS_ADMIN
+-- Resolve o erro de recursão infinita (Algo deu errado) nas verificações de cargo
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
+  );
+$$;
+
 -- 2. POLÍTICA: SITE_SETTINGS (Proteção de Dados Sensíveis da Empresa)
 -- Permite que qualquer pessoa leia configurações públicas.
 -- Bloqueia dados sensíveis (CPF, CNPJ, Margem) para não-admins.
@@ -22,17 +35,13 @@ DROP POLICY IF EXISTS "Public can read site settings" ON public.site_settings;
 CREATE POLICY "Public can read site settings" ON public.site_settings
 FOR SELECT USING (
   key NOT IN ('cpf_responsavel', 'cnpj', 'profit_margin_default') 
-  OR (
-    auth.uid() IN (
-      SELECT user_id FROM public.user_roles WHERE role = 'admin'
-    )
-  )
+  OR public.is_admin()
 );
 
 DROP POLICY IF EXISTS "Admins can manage site settings" ON public.site_settings;
 CREATE POLICY "Admins can manage site settings" ON public.site_settings
 FOR ALL USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 -- 3. POLÍTICA: PEDIDOS (ORDERS)
@@ -41,7 +50,7 @@ FOR ALL USING (
 DROP POLICY IF EXISTS "Admins see all orders" ON public.orders;
 CREATE POLICY "Admins see all orders" ON public.orders
 FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 DROP POLICY IF EXISTS "Users see own orders" ON public.orders;
@@ -59,7 +68,7 @@ FOR INSERT WITH CHECK (
 DROP POLICY IF EXISTS "Admins can view leads" ON public.leads;
 CREATE POLICY "Admins can view leads" ON public.leads
 FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 DROP POLICY IF EXISTS "Anyone can insert leads" ON public.leads;
@@ -75,7 +84,7 @@ FOR SELECT USING (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Only admins can manage roles" ON public.user_roles;
 CREATE POLICY "Only admins can manage roles" ON public.user_roles
 FOR ALL USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 -- 6. POLÍTICA: PRODUTOS E CATEGORIAS
@@ -86,7 +95,7 @@ CREATE POLICY "Public can view products" ON public.products FOR SELECT USING (tr
 DROP POLICY IF EXISTS "Admins can manage products" ON public.products;
 CREATE POLICY "Admins can manage products" ON public.products
 FOR ALL USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 DROP POLICY IF EXISTS "Public can view categories" ON public.categories;
@@ -95,7 +104,7 @@ CREATE POLICY "Public can view categories" ON public.categories FOR SELECT USING
 DROP POLICY IF EXISTS "Admins can manage categories" ON public.categories;
 CREATE POLICY "Admins can manage categories" ON public.categories
 FOR ALL USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 -- 7. POLÍTICA: CUPONS E MARKETING
@@ -103,7 +112,7 @@ FOR ALL USING (
 DROP POLICY IF EXISTS "Admins can manage marketing" ON public.coupons;
 CREATE POLICY "Admins can manage marketing" ON public.coupons
 FOR ALL USING (
-  auth.uid() IN (SELECT user_id FROM public.user_roles WHERE role = 'admin')
+  public.is_admin()
 );
 
 -- Permite que usuários validem cupons durante o checkout 

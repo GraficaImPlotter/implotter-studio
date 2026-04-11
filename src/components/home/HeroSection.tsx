@@ -112,166 +112,112 @@ const HeroSection = () => {
     { icon: Star, value: settings.hero_stat_3_value || "4.9", label: settings.hero_stat_3_label || "Avaliação média" },
   ];
 
+  const categoriesList = [
+    { name: "Cartão de Visita", icon: "/images/cat-cartoes.jpg", slug: "cartao-de-visita" },
+    { name: "Banners", icon: "/images/cat-banners.jpg", slug: "banners" },
+    { name: "Wind Banner", icon: "/images/hero-lcp.jpg", slug: "wind-banner" },
+    { name: "Blocos e Talões", icon: "/images/hero-cards.jpg", slug: "blocos-e-taloes" },
+    { name: "Pastas", icon: "/images/hero-stickers.jpg", slug: "pastas" },
+    { name: "Brindes", icon: "/images/hero-banner.jpg", slug: "brindes" },
+  ];
+
   return (
-    <section className="relative min-h-[85vh] lg:min-h-[100vh] flex items-center bg-blueprint-grid overflow-hidden">
-      {/* Background Overlays */}
-      <div className="absolute inset-0 bg-blueprint-dot opacity-30" />
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222_40%_10%)] via-transparent to-[hsl(222_40%_10%)] opacity-80" />
-      
-      {/* Dynamic Guidelines */}
-      <div className="absolute top-1/4 left-0 right-0 h-px bg-highlight/10" />
-      <div className="absolute top-2/3 left-0 right-0 h-px bg-highlight/10" />
-      <div className="absolute left-1/4 top-0 bottom-0 w-px bg-highlight/10" />
-      <div className="absolute left-3/4 top-0 bottom-0 w-px bg-highlight/10" />
-
-      <div className="container mx-auto px-4 relative z-10 pt-24 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Left Side: Content with Plate for Readability */}
-          <div className="lg:col-span-6">
+    <div className="bg-white">
+      {/* Full Width Banner Carousel */}
+      <section className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] bg-blue-600 overflow-hidden mt-[110px] md:mt-[165px]">
+        {hasSlides ? (
+          <AnimatePresence mode="wait">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="glass-content-plate relative overflow-hidden"
+              key={currentSlide}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
             >
-              {/* Corner accent */}
-              <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-primary/30 rounded-tr-[2.5rem]" />
-              
-              <div className="flex items-center gap-3 mb-8">
-                <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border border-primary/20">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-primary animate-pulse" />
-                  {badgeText}
-                </span>
-              </div>
-
-              <h1 className={`${settings.hero_title_font || "font-display"} ${settings.hero_title_size || "text-5xl md:text-6xl lg:text-7xl"} font-black text-white leading-[1.1] mb-8 tracking-tight text-glow-dramatic`}>
-                {title.includes("destacar") ? (
-                  <>
-                    {title.split("destacar")[0]}
-                    <span className="text-highlight">destacar</span>
-                    {title.split("destacar")[1]}
-                  </>
-                ) : (
-                  title
-                )}
-              </h1>
-
-              <p className="text-lg md:text-xl text-[hsl(215_15%_80%)] leading-relaxed mb-10 max-w-lg font-medium">
-                {subtitle}
-              </p>
-
-              <div className="flex flex-wrap gap-4 mb-12">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="hero" size="xl" asChild className="px-10 h-14 text-base font-bold shadow-glow-sm">
-                    <Link to={btnLink}>
-                      {btnText} <ArrowRight className="w-5 h-5 ml-2" />
-                    </Link>
-                  </Button>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="hero-outline" size="xl" asChild className="px-10 h-14 text-base font-bold border-white/10 hover:bg-white/5">
-                    <Link to={btn2Link}>{btn2Text}</Link>
-                  </Button>
-                </motion.div>
-              </div>
-
-              {/* Stats Footer on Plate */}
-              <div className="flex flex-wrap gap-10 pt-10 border-t border-white/5">
-                {stats.map((stat, i) => (
-                  <div key={i} className="flex flex-col">
-                    <span className="text-2xl font-black text-white font-display mb-1">{stat.value}</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[hsl(215_15%_60%)]">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right Side: Logo Drafting / Construction UI */}
-          <div className="lg:col-span-6 relative flex justify-center items-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.4 }}
-              className="relative w-full max-w-[500px] aspect-square flex items-center justify-center"
-            >
-              {/* Drafting Circle 1 */}
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 border border-highlight/10 rounded-full"
+              <img 
+                src={getOptimizedUrl(slides[currentSlide].media_url, 1920)} 
+                alt={slides[currentSlide].title || "Banner"} 
+                className="w-full h-full object-cover object-center"
               />
-              {/* Construction Lines Overlay */}
-              <div className="absolute inset-0 preserve-3d">
-                {/* Simulated SVG Path Drawing Component */}
-                <svg viewBox="0 0 400 400" className="w-full h-full stroke-highlight/30 fill-none">
-                  {/* Drawing Path Outline */}
-                  <motion.path
-                    d="M 100,200 L 300,200 M 200,100 L 200,300"
-                    strokeWidth="1"
-                    strokeDasharray="400"
-                    initial={{ strokeDashoffset: 400 }}
-                    animate={{ strokeDashoffset: [400, 0, 0, 400] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  {/* Outer circle drafting */}
-                  <motion.circle
-                    cx="200" cy="200" r="160"
-                    strokeWidth="0.5"
-                    strokeDasharray="1000"
-                    initial={{ strokeDashoffset: 1000 }}
-                    animate={{ strokeDashoffset: 0 }}
-                    transition={{ duration: 2, delay: 1 }}
-                  />
-                </svg>
-              </div>
-
-              {/* Central Logo Container */}
-              <div className="relative z-20 p-12 lg:p-16">
-                <motion.div
-                  animate={{ 
-                    y: [0, -10, 0],
-                  }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative"
-                >
-                  <img src={logo} alt="Logo ImPlotter" className="w-full max-w-[280px] drop-shadow-[0_0_30px_hsl(217_85%_55%/0.4)] brightness-110" />
-                  
-                  {/* Construction Nodes around Logo */}
-                  <div className="absolute top-0 left-0 node-point -translate-x-1/2 -translate-y-1/2" />
-                  <div className="absolute top-0 right-0 node-point translate-x-1/2 -translate-y-1/2" />
-                  <div className="absolute bottom-0 left-0 node-point -translate-x-1/2 translate-y-1/2" />
-                  <div className="absolute bottom-0 right-0 node-point translate-x-1/2 translate-y-1/2" />
-                  
-                  {/* Moving Connector Lines */}
-                  <motion.div 
-                    animate={{ x: ["0%", "100%", "0%"] }}
-                    transition={{ duration: 6, repeat: Infinity }}
-                    className="absolute top-0 left-0 w-1/2 h-px bg-highlight/40" 
-                  />
-                </motion.div>
-              </div>
-
-              {/* HUD / CAD Style elements */}
-              <div className="absolute top-5 left-5 flex gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <div className="w-2 h-2 rounded-full bg-highlight" />
-                <div className="w-2 h-2 rounded-full bg-white/20" />
-              </div>
-              <div className="absolute bottom-5 right-5 text-[9px] font-mono text-highlight/40 tracking-widest uppercase">
-                X: 42.069 Y: 13.37
-              </div>
             </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="absolute inset-0 bg-blue-600 flex items-center justify-center">
+             {/* Fallback Static Banner Content (FuturaIM style) */}
+             <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
+                <div className="text-white text-left z-10 max-w-lg">
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded mb-4 inline-block">LANÇAMENTO</span>
+                  <h1 className="text-4xl md:text-5xl font-black mb-2 leading-tight">Painéis<br/>e Fachadas</h1>
+                  <p className="text-xl md:text-2xl mb-4 font-medium">A partir de<br/><span className="text-3xl md:text-4xl font-black">R$29,99</span> un.</p>
+                  <Button className="bg-[#FF6B00] hover:bg-[#e65c00] text-white rounded-full px-8 text-base font-bold shadow-lg h-12">
+                     PERSONALIZAR +
+                  </Button>
+                </div>
+                <div className="hidden md:block w-1/2 h-full absolute right-0 top-0 pointer-events-none">
+                  {banner?.image_url && <img src={banner.image_url} alt="" className="w-full h-full object-cover object-left" />}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* Carousel Controls */}
+        {slides.length > 1 && (
+          <>
+            <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white backdrop-blur-sm transition-all z-20">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white backdrop-blur-sm transition-all z-20">
+              <ChevronRight className="w-6 h-6" />
+            </button>
+            
+            {/* Dots */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goToSlide(i)}
+                  className={`w-10 h-1 rounded-full transition-all ${
+                    currentSlide === i ? "bg-white" : "bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* Circular Categories Row */}
+      <section className="bg-gray-50 py-8 border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="flex overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory gap-6 md:gap-8 justify-start xl:justify-center items-center">
+            {categoriesList.map((cat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="flex flex-col flex-shrink-0 items-center gap-3 w-28 md:w-36 snap-center group cursor-pointer"
+              >
+                <Link to={`/loja?search=${cat.slug}`} className="flex flex-col items-center">
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden flex items-center justify-center p-2 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] group-hover:-translate-y-2 transition-all duration-300">
+                    <img 
+                      src={cat.icon} 
+                      alt={cat.name} 
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <span className="text-gray-800 font-semibold text-xs md:text-sm text-center mt-4 group-hover:text-primary transition-colors line-clamp-2">
+                    {cat.name}
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Elegant Bottom Transition */}
-      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[hsl(222_40%_8%)] to-transparent" />
-    </section>
+      </section>
+    </div>
   );
 };
 
 export default HeroSection;
-
