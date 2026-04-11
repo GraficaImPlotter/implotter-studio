@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Star, Users, Package } from "lucide-react";
+import { ArrowRight, Star, Users, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import { getOptimizedUrl } from "@/lib/image-utils";
 import logo from "@/assets/logo.png";
 
@@ -113,12 +113,13 @@ const HeroSection = () => {
   ];
 
   const categoriesList = [
-    { name: "Cartão de Visita", icon: "/images/cat-cartoes.jpg", slug: "cartao-de-visita" },
-    { name: "Banners", icon: "/images/cat-banners.jpg", slug: "banners" },
-    { name: "Wind Banner", icon: "/images/hero-lcp.jpg", slug: "wind-banner" },
-    { name: "Blocos e Talões", icon: "/images/hero-cards.jpg", slug: "blocos-e-taloes" },
-    { name: "Pastas", icon: "/images/hero-stickers.jpg", slug: "pastas" },
-    { name: "Brindes", icon: "/images/hero-banner.jpg", slug: "brindes" },
+    { name: "Adesivos e Etiquetas", icon: "/images/cat-adesivos.jpg", slug: "adesivos" },
+    { name: "Blocos e Talões", icon: "/images/cat-blocos.jpg", slug: "blocos" },
+    { name: "Brindes", icon: "/images/cat-brindes.jpg", slug: "brindes" },
+    { name: "Cartão de Visita", icon: "/images/cat-cartoes.jpg", slug: "cartao" },
+    { name: "Folhetos e Panfletos", icon: "/images/cat-panfletos.jpg", slug: "folhetos" },
+    { name: "Pastas", icon: "/images/cat-pastas.jpg", slug: "pastas" },
+    { name: "Wind Banner", icon: "/images/cat-wind.jpg", slug: "wind" },
   ];
 
   return (
