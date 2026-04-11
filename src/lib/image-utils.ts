@@ -21,6 +21,9 @@ export const getOptimizedUrl = (url: string, { width, quality = 80, format = 'we
   // Otimização Supabase Storage (se habilitado no bucket)
   if (url.includes(".supabase.co/storage/v1/object/public/")) {
     try {
+      // Retorna a URL original se for um SVG (não precisa de transformação)
+      if (url.toLowerCase().endsWith('.svg')) return url;
+
       const urlObj = new URL(url);
       // Supabase transformation path is /storage/v1/render/image/public/
       const newPath = urlObj.pathname.replace("/object/public/", "/render/image/public/");
@@ -28,12 +31,12 @@ export const getOptimizedUrl = (url: string, { width, quality = 80, format = 'we
       if (width) urlObj.searchParams.set("width", String(width));
       urlObj.searchParams.set("quality", String(quality));
       urlObj.searchParams.set("format", format || "webp");
-      urlObj.searchParams.set("resize", "contain"); // 'contain' mantém proporção
+      urlObj.searchParams.set("resize", "contain"); 
       return urlObj.toString();
     } catch (e) {
+      console.warn("Erro ao otimizar imagem Supabase, usando original:", e);
       return url;
     }
   }
 
-  // Para outras fontes externas não mapeadas, retornamos a URL original
-};
+  return url;

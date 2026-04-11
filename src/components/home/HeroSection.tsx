@@ -149,7 +149,7 @@ const HeroSection = () => {
              <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
                 <div className="text-white text-left z-10 max-w-lg">
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded mb-4 inline-block">LANÇAMENTO</span>
-                  <h1 className="text-4xl md:text-5xl font-black mb-2 leading-tight">Painéis<br/>e Fachadas</h1>
+                  <h1 className="text-4xl md:text-5xl font-black mb-2 leading-tight">Sua Marca em<br/>Alta Definição</h1>
                   <p className="text-xl md:text-2xl mb-4 font-medium">A partir de<br/><span className="text-3xl md:text-4xl font-black">R$29,99</span> un.</p>
                   <Button className="bg-[#FF6B00] hover:bg-[#e65c00] text-white rounded-full px-8 text-base font-bold shadow-lg h-12">
                      PERSONALIZAR +

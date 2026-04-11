@@ -35,10 +35,10 @@ const menuGroups = [
   {
     label: "Loja & Produtos",
     items: [
-      { title: "Produtos", url: "/admin/produtos", icon: Package },
+      { title: "Gestão de Produtos e Fotos", url: "/admin/produtos", icon: Package },
       { title: "Acabamentos", url: "/admin/acabamentos", icon: Layers },
       { title: "Kits", url: "/admin/kits", icon: BoxIcon },
-      { title: "Catálogo", url: "/admin/categorias", icon: FolderOpen },
+      { title: "Categorias (Círculos Home)", url: "/admin/categorias", icon: FolderOpen },
       { title: "Cupons", url: "/admin/cupons", icon: Tag },
     ]
   },
@@ -60,7 +60,7 @@ const menuGroups = [
       { title: "Produção", url: "/admin/producao", icon: Factory },
       { title: "Avaliações", url: "/admin/avaliacoes", icon: Star },
       { title: "Prova Social", url: "/admin/social-proof", icon: MessageSquareMore },
-      { title: "Hero / Impressora", url: "/admin/hero-slides", icon: Image },
+      { title: "Banners (Carousel Home)", url: "/admin/hero-slides", icon: Image },
     ]
   },
   {

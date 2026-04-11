@@ -126,11 +126,16 @@ const Header = () => {
       <div className={`hidden md:block border-b border-gray-100 bg-white transition-all duration-300 ${scrolled ? "h-0 overflow-hidden opacity-0" : "h-9 opacity-100"}`}>
         <div className="container mx-auto px-4 h-full flex justify-between items-center text-[11px] text-gray-500 font-medium tracking-wide">
           <div className="flex items-center gap-4">
-            <span>Você pensa, a gente imprime!</span>
+            <span>Sua Marca em Alta Definição</span>
             <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-primary" /> {settings.phone || "(11) 99999-8888"}</span>
           </div>
           <div className="flex items-center gap-5">
             <Link to="/rastrear" className="hover:text-primary transition-colors">Meus Pedidos</Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-primary font-bold hover:underline flex items-center gap-1">
+                <Shield className="w-3 h-3" /> Painel Administrativo
+              </Link>
+            )}
             <Link to="/fale-conosco" className="hover:text-primary transition-colors">Central de Ajuda</Link>
             {weather && (
               <span className="flex items-center gap-1 text-gray-600 border-l border-gray-200 pl-4 ml-2">
@@ -138,12 +143,6 @@ const Header = () => {
                 {weather.city} • {weather.temp_c}°C
               </span>
             )}
-            <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-1">
-               {/* Social Icons Placeholder */}
-               <span className="font-bold text-gray-400 hover:text-primary cursor-pointer">In</span>
-               <span className="font-bold text-gray-400 hover:text-primary cursor-pointer">Fb</span>
-               <span className="font-bold text-gray-400 hover:text-primary cursor-pointer">Ig</span>
-            </div>
           </div>
         </div>
       </div>
@@ -152,7 +151,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4 md:gap-8">
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
-          <img src={logo} alt="Gráfica ImPlotter" className="h-10 md:h-12 object-contain" style={{ filter: "brightness(0.2)" }} />
+          <img src={logo} alt="Gráfica ImPlotter" className="h-10 md:h-12 object-contain" />
         </Link>
         
         {/* Search Bar - Center */}
@@ -238,10 +237,10 @@ const Header = () => {
       <div className="hidden md:block bg-white border-t border-gray-100">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-6">
-            <button className="flex items-center gap-2 py-3.5 pr-6 font-bold text-gray-800 hover:text-primary transition-colors border-r border-gray-100">
+            <Link to="/loja" className="flex items-center gap-2 py-3.5 pr-6 font-bold text-gray-800 hover:text-primary transition-colors border-r border-gray-100">
               <Menu className="w-5 h-5" />
               Todos os Produtos
-            </button>
+            </Link>
             <nav className="flex items-center gap-6 overflow-x-auto">
               {categoriesNav.map(cat => (
                 <Link
