@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PreloadLink from "@/components/PreloadLink";
-import { Phone, Mail, Clock, ShoppingCart, Menu, X, Shield, MapPin, CloudSun, Search, Sun, Moon, MessageCircle, ChevronDown, LayoutGrid } from "lucide-react";
+import { Phone, Mail, Clock, ShoppingCart, Menu, X, Shield, MapPin, CloudSun, Search, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/use-cart";
@@ -111,225 +111,212 @@ const Header = () => {
     return location.pathname === pathname && !path.includes("#");
   };
 
-  const categoriesNav = [
-    { name: "Cartões", link: "/loja?search=cartao" },
-    { name: "Banners", link: "/loja?search=banner" },
-    { name: "Adesivos", link: "/loja?search=adesivo" },
-    { name: "WindBanner", link: "/loja?search=wind" },
-    { name: "Brinde", link: "/loja?search=brinde" },
-  ];
-
-  /* ─── Mock categories for the All Products dropdown ─── */
-  const allCategoriesDropdown = [
-    { name: "Cartão de Visita", slug: "cartao-de-visita" },
-    { name: "Adesivos & Etiquetas", slug: "adesivos" },
-    { name: "Banners & Lonas", slug: "banners" },
-    { name: "Folhetos & Panfletos", slug: "folhetos" },
-    { name: "Pastas & Papelaria", slug: "pastas" },
-    { name: "Brindes Personalizados", slug: "brindes" },
-    { name: "Wind Banner", slug: "wind-banner" },
-  ];
-
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 bg-white shadow-sm transition-all duration-300 font-sans`}>
-      {/* Top bar (Very thin) */}
-      <div className={`hidden md:block border-b border-gray-100 bg-white transition-all duration-300 ${scrolled ? "h-0 overflow-hidden opacity-0" : "h-9 opacity-100"}`}>
-        <div className="container mx-auto px-4 h-full flex justify-between items-center text-[11px] text-gray-500 font-medium tracking-wide">
-          <div className="flex items-center gap-4">
-            <span>Sua Marca em Alta Definição</span>
-            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-primary" /> {settings.phone || "(11) 99999-8888"}</span>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-[hsl(222_40%_12%/0.97)] backdrop-blur-xl border-b border-[hsl(217_30%_20%)] shadow-lg" : "bg-[hsl(222_40%_12%)]"}`}>
+      {/* Top bar */}
+      <div className={`hidden md:block transition-all duration-300 ${scrolled ? "h-0 overflow-hidden opacity-0" : "h-auto opacity-100"}`}>
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center text-xs text-[hsl(215_15%_70%)]">
+          <div className="flex items-center gap-5">
+            <span className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-highlight" /> {settings.phone || "(11) 99999-8888"}</span>
+            <span className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-highlight" /> {settings.email || "contato@graficaimplotter.com.br"}</span>
           </div>
           <div className="flex items-center gap-5">
-            <Link to="/rastrear" className="hover:text-primary transition-colors">Meus Pedidos</Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-primary font-bold hover:underline flex items-center gap-1">
-                <Shield className="w-3 h-3" /> Painel Administrativo
-              </Link>
-            )}
-            <Link to="/fale-conosco" className="hover:text-primary transition-colors">Central de Ajuda</Link>
-            {weather && (
-              <span className="flex items-center gap-1 text-gray-600 border-l border-gray-200 pl-4 ml-2">
-                <MapPin className="w-3 h-3 text-primary" />
-                {weather.city} • {weather.temp_c}°C
+            <span className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-highlight" /> {settings.business_hours || "Seg-Sex: 8h às 18h"}</span>
+            {weather ? (
+              <span className="flex items-center gap-2 text-highlight font-semibold">
+                {weather.icon && <img src={`https:${weather.icon}`} alt={weather.condition} className="w-5 h-5" />}
+                <span>{weather.temp_c !== null ? `${weather.temp_c}°C` : ""}</span>
+                <span className="text-[hsl(215_15%_70%)] font-normal flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-highlight" />
+                  {weather.city}{weather.region ? `, ${weather.region}` : ""}
+                </span>
+              </span>
+            ) : weatherLoading ? (
+              <span className="flex items-center gap-1.5 text-[hsl(215_15%_70%)] animate-pulse">
+                <CloudSun className="w-3 h-3 text-highlight" /> Carregando clima...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-highlight" /> Ative a localização
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Main Header (Logo, Search, Cart) */}
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4 md:gap-8">
-        {/* Logo */}
-        <Link to="/" className="flex-shrink-0 animate-in fade-in slide-in-from-left duration-700">
-          <img src={logo} alt="Gráfica ImPlotter" className="h-10 md:h-12 object-contain hover:scale-105 transition-transform duration-300" />
+      {/* Main nav */}
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <img src={logo} alt="Gráfica ImPlotter" className="h-12 transition-transform group-hover:scale-105 drop-shadow-[0_0_12px_hsl(217_85%_55%/0.4)] brightness-110" />
         </Link>
-        
-        {/* Search Bar - Center */}
-        <div className="hidden md:flex flex-1 max-w-3xl relative">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (searchQuery.trim()) {
-                navigate(`/loja?search=${encodeURIComponent(searchQuery.trim())}`);
-                setSearchQuery("");
-                setSuggestions([]);
-                setShowSuggestions(false);
-              }
-            }}
-            className="w-full relative"
+
+        <nav className="hidden lg:flex items-center gap-1">
+          {navLinks.map(l => (
+            <PreloadLink
+              key={l.to}
+              to={l.to}
+              onClick={(e: React.MouseEvent) => {
+                if (l.to.includes("#") && location.pathname === l.to.split("#")[0]) {
+                  e.preventDefault();
+                  const hash = l.to.split("#")[1];
+                  const el = document.getElementById(hash);
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActive(l.to)
+                  ? "text-white bg-white/10"
+                  : "text-[hsl(215_15%_75%)] hover:text-white hover:bg-white/8"
+              }`}
+            >
+              {l.label}
+            </PreloadLink>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Theme toggle */}
+          <button
+            className="p-2.5 rounded-lg text-[hsl(215_15%_75%)] hover:text-white hover:bg-white/10 transition-all"
+            onClick={toggleTheme}
+            title={theme === "light" ? "Modo escuro" : "Modo claro"}
           >
-            <input
-              ref={searchInputRef}
-              value={searchQuery}
-              onChange={e => handleSearchChange(e.target.value)}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              placeholder="O que você está procurando?"
-              className="w-full pl-5 pr-12 py-3 rounded-full bg-white border-2 border-gray-100 text-gray-800 placeholder:text-gray-400 text-sm focus:outline-none focus:border-primary transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
-              autoComplete="off"
-            />
-            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-primary transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
-            
-            {/* Autocomplete */}
-            {showSuggestions && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
-                {suggestions.map(s => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      navigate(`/loja/${s.slug}`);
-                      setSearchQuery("");
-                      setSuggestions([]);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
-                  >
-                    {s.image_url && (
-                      <img src={s.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                    )}
-                    <span className="text-sm text-gray-700 font-medium truncate">{s.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </form>
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-3 md:gap-5 flex-shrink-0">
-          {/* WhatsApp & Budget CTAs (Desktop) */}
-          <div className="hidden lg:flex items-center gap-3 mr-2">
-            <a 
-              href={`https://wa.me/${settings.whatsapp?.replace(/\D/g, "")}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="group flex items-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20 active:scale-95 transition-all duration-300"
-            >
-              <MessageCircle className="w-4 h-4 fill-current group-hover:rotate-12 transition-transform" />
-              WhatsApp
-            </a>
-            <Link 
-              to="/fale-conosco" 
-              className="bg-accent hover:bg-accent/90 text-white px-4 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 active:scale-95 transition-all duration-300"
-            >
-              Orçamento
+            {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
+          {/* Search toggle */}
+          <button
+            className="p-2.5 rounded-lg text-[hsl(215_15%_75%)] hover:text-white hover:bg-white/10 transition-all"
+            onClick={() => { setSearchOpen(v => !v); setTimeout(() => searchInputRef.current?.focus(), 100); }}
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          {isAdmin && (
+            <Link to="/admin" className="hidden md:flex items-center gap-1.5 text-highlight hover:text-highlight/80 transition-colors text-sm font-semibold bg-white/10 px-3 py-2 rounded-lg">
+              <Shield className="w-4 h-4" /> Admin
             </Link>
-          </div>
-
-          <Link to={user ? "/minha-conta" : "/login"} className="hidden lg:flex flex-col items-start justify-center group border-l border-gray-100 pl-5">
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Minha Conta</span>
-            <span className="text-[13px] text-gray-800 font-black group-hover:text-primary transition-colors leading-none mt-0.5">
-              {user ? "Acessar Painel" : "Entrar / Cadastro"}
-            </span>
-          </Link>
-          
-          <Link to="/carrinho" className="relative p-2 text-gray-700 hover:text-primary transition-all duration-300 hover:scale-110 active:scale-90">
-            <ShoppingCart className="w-7 h-7" />
+          )}
+          <Link to="/carrinho" className="relative p-2.5 rounded-lg text-[hsl(215_15%_75%)] hover:text-white hover:bg-white/10 transition-all">
+            <ShoppingCart className="w-5 h-5" />
             {items.length > 0 && (
-              <span className="absolute top-0 right-0 w-5 h-5 bg-accent text-white text-[10px] rounded-full flex items-center justify-center font-black shadow-lg animate-in zoom-in duration-300">
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-gradient-accent text-accent-foreground text-[10px] rounded-full flex items-center justify-center font-bold shadow-lg">
                 {items.length}
               </span>
             )}
           </Link>
-
-          <button className="md:hidden p-2 text-gray-700" onClick={() => setMobileOpen(!mobileOpen)}>
+          <Link
+            to={user ? "/minha-conta" : "/login"}
+            className="hidden sm:flex text-[hsl(215_15%_75%)] hover:text-white px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/10 items-center gap-1.5"
+          >
+            {user ? "Minha Conta" : "Entrar"}
+          </Link>
+          <button className="lg:hidden p-2 text-white" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Bottom Nav (Categories) */}
-      <div className="hidden md:block bg-white border-t border-gray-100 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-6">
-            {/* Todos os Produtos with Dropdown */}
-            <div className="relative group">
-              <Link to="/loja" className="flex items-center gap-2 py-4 pr-6 font-black text-[12px] uppercase tracking-widest text-[#111827] hover:text-primary transition-colors border-r border-gray-100 group">
-                <LayoutGrid className="w-4 h-4 text-primary" />
-                Todos os Produtos
-                <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-40 group-hover:rotate-180 transition-transform duration-300" />
-              </Link>
-              
-              {/* Dropdown Menu */}
-              <div className="absolute top-full left-0 w-64 bg-white border border-gray-100 shadow-2xl rounded-b-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-50 overflow-hidden">
-                <div className="p-2">
-                  {allCategoriesDropdown.map(cat => (
-                    <Link 
-                      key={cat.slug} 
-                      to={`/loja?search=${cat.slug}`} 
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold text-gray-600 hover:bg-gray-50 hover:text-primary transition-all duration-200"
-                    >
-                      {cat.name}
-                    </Link>
-                  ))}
-                </div>
+      {/* Search bar */}
+      {searchOpen && (
+        <div className="bg-[hsl(222_40%_10%)] border-t border-[hsl(217_30%_20%)]">
+          <div className="container mx-auto px-4 py-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  navigate(`/loja?search=${encodeURIComponent(searchQuery.trim())}`);
+                  setSearchOpen(false);
+                  setSearchQuery("");
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                }
+              }}
+              className="flex gap-2 max-w-xl mx-auto relative"
+            >
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215_15%_50%)]" />
+                <input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="Buscar produtos..."
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-[hsl(222_40%_15%)] border border-[hsl(217_30%_25%)] text-white placeholder:text-[hsl(215_15%_50%)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoComplete="off"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(""); setSuggestions([]); setShowSuggestions(false); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                {/* Autocomplete dropdown */}
+                {showSuggestions && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                    {suggestions.map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          navigate(`/loja/${s.slug}`);
+                          setSearchOpen(false);
+                          setSearchQuery("");
+                          setSuggestions([]);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors"
+                      >
+                        {s.image_url && (
+                          <img src={s.image_url} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                        )}
+                        <span className="text-sm text-foreground truncate">{s.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-
-            <nav className="flex items-center gap-1">
-              {categoriesNav.map(cat => (
-                <Link
-                  key={cat.name}
-                  to={cat.link}
-                  className="px-5 py-4 text-[12px] font-bold uppercase tracking-widest text-[#4B5563] hover:text-primary whitespace-nowrap transition-colors relative group"
-                >
-                  {cat.name}
-                  <span className="absolute bottom-4 left-5 right-5 h-0.5 bg-primary rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                </Link>
-              ))}
-            </nav>
+              <button type="submit" className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
+                Buscar
+              </button>
+              <button type="button" onClick={() => { setSearchOpen(false); setShowSuggestions(false); }} className="p-2.5 text-[hsl(215_15%_70%)] hover:text-white shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </form>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Mobile Search & Menu */}
+      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100">
-          <div className="p-4">
-             <form onSubmit={(e) => { e.preventDefault(); if (searchQuery) navigate(`/loja?search=${searchQuery}`); }} className="relative mb-4">
-               <input
-                 value={searchQuery}
-                 onChange={e => setSearchQuery(e.target.value)}
-                 placeholder="O que você está procurando?"
-                 className="w-full pl-4 pr-10 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm focus:outline-none focus:border-primary"
-               />
-               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-             </form>
-             <nav className="flex flex-col gap-2">
-               {categoriesNav.map(cat => (
-                 <Link key={cat.name} to={cat.link} className="py-2.5 text-sm font-semibold text-gray-600 border-b border-gray-50">
-                   {cat.name}
-                 </Link>
-               ))}
-               <Link to={user ? "/minha-conta" : "/login"} className="py-2.5 text-sm font-bold text-primary mt-2">
-                 {user ? "Minha Conta" : "Entre ou cadastre-se"}
-               </Link>
-             </nav>
-          </div>
+        <div className="lg:hidden bg-background/95 backdrop-blur-xl border-t border-border">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
+            {navLinks.map(l => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setMobileOpen(false)}
+                className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  isActive(l.to) ? "text-highlight bg-highlight/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <div className="border-t border-border mt-2 pt-2">
+              <Link to={user ? "/minha-conta" : "/login"} onClick={() => setMobileOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary flex items-center gap-2">
+                {user ? "Minha Conta" : "Entrar"}
+              </Link>
+              {isAdmin && (
+                <Link to="/admin" onClick={() => setMobileOpen(false)} className="px-4 py-3 rounded-lg text-sm font-medium text-highlight bg-highlight/10 flex items-center gap-2">
+                  <Shield className="w-4 h-4" /> Painel Admin
+                </Link>
+              )}
+            </div>
+          </nav>
         </div>
       )}
     </header>

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Star, Users, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Star, Users, Package } from "lucide-react";
 import { getOptimizedUrl } from "@/lib/image-utils";
 import logo from "@/assets/logo.png";
 
@@ -112,181 +112,166 @@ const HeroSection = () => {
     { icon: Star, value: settings.hero_stat_3_value || "4.9", label: settings.hero_stat_3_label || "Avaliação média" },
   ];
 
-  const categoriesList = [
-    { name: "Adesivos e Etiquetas", icon: "/images/cat-adesivos.jpg", slug: "adesivos" },
-    { name: "Blocos e Talões", icon: "/images/cat-blocos.jpg", slug: "blocos" },
-    { name: "Brindes", icon: "/images/cat-brindes.jpg", slug: "brindes" },
-    { name: "Cartão de Visita", icon: "/images/cat-cartoes.jpg", slug: "cartao" },
-    { name: "Folhetos e Panfletos", icon: "/images/cat-panfletos.jpg", slug: "folhetos" },
-    { name: "Pastas", icon: "/images/cat-pastas.jpg", slug: "pastas" },
-    { name: "Wind Banner", icon: "/images/cat-wind.jpg", slug: "wind" },
-  ];
-
   return (
-    <div className="bg-[#F8FAFC] pb-12">
-      {/* Premium Hero Section - Split Layout */}
-      <section className="relative pt-[110px] md:pt-[165px] overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-8 min-h-[500px] md:min-h-[600px] py-12">
-            
-            {/* Left Column: Headlines & CTAs */}
-            <div className="w-full lg:w-[55%] flex flex-col items-start text-left z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              <span className="bg-[#2563EB]/10 text-[#2563EB] text-[11px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
-                Destaque sua Marca
-              </span>
+    <section className="relative min-h-[85vh] lg:min-h-[100vh] flex items-center bg-blueprint-grid overflow-hidden">
+      {/* Background Overlays */}
+      <div className="absolute inset-0 bg-blueprint-dot opacity-30" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(222_40%_10%)] via-transparent to-[hsl(222_40%_10%)] opacity-80" />
+      
+      {/* Dynamic Guidelines */}
+      <div className="absolute top-1/4 left-0 right-0 h-px bg-highlight/10" />
+      <div className="absolute top-2/3 left-0 right-0 h-px bg-highlight/10" />
+      <div className="absolute left-1/4 top-0 bottom-0 w-px bg-highlight/10" />
+      <div className="absolute left-3/4 top-0 bottom-0 w-px bg-highlight/10" />
+
+      <div className="container mx-auto px-4 relative z-10 pt-24 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          {/* Left Side: Content with Plate for Readability */}
+          <div className="lg:col-span-6">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="glass-content-plate relative overflow-hidden"
+            >
+              {/* Corner accent */}
+              <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-primary/30 rounded-tr-[2.5rem]" />
               
-              <h1 className="text-4xl md:text-6xl xl:text-7xl font-black text-[#111827] leading-[1.05] tracking-tighter mb-6">
-                Sua marca impressa com <span className="text-primary">qualidade profissional</span>
+              <div className="flex items-center gap-3 mb-8">
+                <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border border-primary/20">
+                  <span className="w-1.5 h-1.5 rounded-sm bg-primary animate-pulse" />
+                  {badgeText}
+                </span>
+              </div>
+
+              <h1 className={`${settings.hero_title_font || "font-display"} ${settings.hero_title_size || "text-5xl md:text-6xl lg:text-7xl"} font-black text-white leading-[1.1] mb-8 tracking-tight text-glow-dramatic`}>
+                {title.includes("destacar") ? (
+                  <>
+                    {title.split("destacar")[0]}
+                    <span className="text-highlight">destacar</span>
+                    {title.split("destacar")[1]}
+                  </>
+                ) : (
+                  title
+                )}
               </h1>
-              
-              <p className="text-lg md:text-xl text-gray-500 font-medium mb-10 max-w-xl leading-relaxed">
-                Cartões, banners, adesivos, receituários e materiais personalizados para empresas e profissionais que buscam excelência.
+
+              <p className="text-lg md:text-xl text-[hsl(215_15%_80%)] leading-relaxed mb-10 max-w-lg font-medium">
+                {subtitle}
               </p>
 
               <div className="flex flex-wrap gap-4 mb-12">
-                <Link to="/loja">
-                  <Button size="lg" className="h-14 px-8 bg-primary hover:bg-primary/90 text-white rounded-2xl text-base font-black shadow-xl shadow-primary/20 active:scale-95 transition-all">
-                    Comprar Online
-                  </Button>
-                </Link>
-                <Link to="/fale-conosco">
-                  <Button size="lg" variant="outline" className="h-14 px-8 border-2 border-primary/20 hover:border-primary text-primary rounded-2xl text-base font-bold active:scale-95 transition-all">
-                    Solicitar Orçamento
-                  </Button>
-                </Link>
-                <a 
-                  href={`https://wa.me/${settings.whatsapp?.replace(/\D/g, "")}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="h-14 px-8 flex items-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-2xl text-base font-black shadow-xl shadow-green-500/20 active:scale-95 transition-all duration-300"
-                >
-                  Falar no WhatsApp
-                </a>
-              </div>
-
-              {/* Quick Categories icons */}
-              <div className="w-full pt-8 border-t border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-5">Categorias mais buscadas</p>
-                <div className="flex flex-wrap gap-6">
-                  {categoriesList.slice(0, 5).map((cat) => (
-                    <Link 
-                      key={cat.slug} 
-                      to={`/loja?search=${cat.slug}`} 
-                      className="flex items-center gap-3 group"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center p-1.5 group-hover:scale-110 group-hover:shadow-md transition-all">
-                        <img src={cat.icon} alt={cat.name} className="w-full h-full object-contain" />
-                      </div>
-                      <span className="text-[11px] font-bold text-gray-600 group-hover:text-primary transition-colors">{cat.name}</span>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="hero" size="xl" asChild className="px-10 h-14 text-base font-bold shadow-glow-sm">
+                    <Link to={btnLink}>
+                      {btnText} <ArrowRight className="w-5 h-5 ml-2" />
                     </Link>
-                  ))}
-                </div>
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="hero-outline" size="xl" asChild className="px-10 h-14 text-base font-bold border-white/10 hover:bg-white/5">
+                    <Link to={btn2Link}>{btn2Text}</Link>
+                  </Button>
+                </motion.div>
               </div>
-            </div>
 
-            {/* Right Column: Slider */}
-            <div className="w-full lg:w-[45%] h-[400px] md:h-[500px] relative animate-in fade-in slide-in-from-right-12 duration-1000 delay-300">
-              <div className="w-full h-full rounded-[2.5rem] overflow-hidden shadow-2xl relative border-gradient-premium group">
-                {hasSlides ? (
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentSlide}
-                      initial={{ opacity: 0, scale: 1.1 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute inset-0"
-                    >
-                      <img 
-                        src={getOptimizedUrl(slides[currentSlide].media_url, 1200)} 
-                        alt={slides[currentSlide].title || "Banner"} 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      
-                      {(slides[currentSlide].title || slides[currentSlide].subtitle) && (
-                        <div className="absolute bottom-10 left-10 right-10 text-white z-10 pointer-events-none">
-                          {slides[currentSlide].title && <h3 className="text-2xl md:text-3xl font-black mb-2">{slides[currentSlide].title}</h3>}
-                          {slides[currentSlide].subtitle && <p className="text-white/80 font-medium mb-4">{slides[currentSlide].subtitle}</p>}
-                        </div>
-                      )}
-                    </motion.div>
-                  </AnimatePresence>
-                ) : (
-                  <div className="absolute inset-0 bg-blue-600 flex items-center justify-center rounded-[2.5rem]">
-                    <img src={banner?.image_url || "/images/hero-lcp.jpg"} alt="" className="w-full h-full object-cover" />
+              {/* Stats Footer on Plate */}
+              <div className="flex flex-wrap gap-10 pt-10 border-t border-white/5">
+                {stats.map((stat, i) => (
+                  <div key={i} className="flex flex-col">
+                    <span className="text-2xl font-black text-white font-display mb-1">{stat.value}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[hsl(215_15%_60%)]">{stat.label}</span>
                   </div>
-                )}
-
-                {/* Slider Navigation Controls */}
-                {slides.length > 1 && (
-                  <>
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                      {slides.map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => goToSlide(i)}
-                          className={`h-1 rounded-full transition-all duration-300 ${
-                            currentSlide === i ? "w-8 bg-white" : "w-1.5 bg-white/40"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
+                ))}
               </div>
-              
-              {/* Floating element for depth */}
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse" />
-              <div className="absolute -top-6 -left-6 w-32 h-32 bg-secondary/20 rounded-full blur-3xl -z-10 animate-float" />
-            </div>
+            </motion.div>
+          </div>
 
+          {/* Right Side: Logo Drafting / Construction UI */}
+          <div className="lg:col-span-6 relative flex justify-center items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.4 }}
+              className="relative w-full max-w-[500px] aspect-square flex items-center justify-center"
+            >
+              {/* Drafting Circle 1 */}
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 border border-highlight/10 rounded-full"
+              />
+              {/* Construction Lines Overlay */}
+              <div className="absolute inset-0 preserve-3d">
+                {/* Simulated SVG Path Drawing Component */}
+                <svg viewBox="0 0 400 400" className="w-full h-full stroke-highlight/30 fill-none">
+                  {/* Drawing Path Outline */}
+                  <motion.path
+                    d="M 100,200 L 300,200 M 200,100 L 200,300"
+                    strokeWidth="1"
+                    strokeDasharray="400"
+                    initial={{ strokeDashoffset: 400 }}
+                    animate={{ strokeDashoffset: [400, 0, 0, 400] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  {/* Outer circle drafting */}
+                  <motion.circle
+                    cx="200" cy="200" r="160"
+                    strokeWidth="0.5"
+                    strokeDasharray="1000"
+                    initial={{ strokeDashoffset: 1000 }}
+                    animate={{ strokeDashoffset: 0 }}
+                    transition={{ duration: 2, delay: 1 }}
+                  />
+                </svg>
+              </div>
+
+              {/* Central Logo Container */}
+              <div className="relative z-20 p-12 lg:p-16">
+                <motion.div
+                  animate={{ 
+                    y: [0, -10, 0],
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative"
+                >
+                  <img src={logo} alt="Logo ImPlotter" className="w-full max-w-[280px] drop-shadow-[0_0_30px_hsl(217_85%_55%/0.4)] brightness-110" />
+                  
+                  {/* Construction Nodes around Logo */}
+                  <div className="absolute top-0 left-0 node-point -translate-x-1/2 -translate-y-1/2" />
+                  <div className="absolute top-0 right-0 node-point translate-x-1/2 -translate-y-1/2" />
+                  <div className="absolute bottom-0 left-0 node-point -translate-x-1/2 translate-y-1/2" />
+                  <div className="absolute bottom-0 right-0 node-point translate-x-1/2 translate-y-1/2" />
+                  
+                  {/* Moving Connector Lines */}
+                  <motion.div 
+                    animate={{ x: ["0%", "100%", "0%"] }}
+                    transition={{ duration: 6, repeat: Infinity }}
+                    className="absolute top-0 left-0 w-1/2 h-px bg-highlight/40" 
+                  />
+                </motion.div>
+              </div>
+
+              {/* HUD / CAD Style elements */}
+              <div className="absolute top-5 left-5 flex gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className="w-2 h-2 rounded-full bg-highlight" />
+                <div className="w-2 h-2 rounded-full bg-white/20" />
+              </div>
+              <div className="absolute bottom-5 right-5 text-[9px] font-mono text-highlight/40 tracking-widest uppercase">
+                X: 42.069 Y: 13.37
+              </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Circular Categories Section - Full Grid below Hero */}
-      <section className="container mx-auto px-4 mt-12 py-12 bg-white rounded-[3rem] shadow-xl shadow-gray-200/50 border border-gray-100">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-black text-[#111827] mb-2 tracking-tight">O que você deseja imprimir hoje?</h2>
-            <p className="text-gray-400 font-medium">Explore nossas principais categorias em destaque</p>
-          </div>
-          <Link to="/loja">
-            <Button variant="ghost" className="text-primary font-bold hover:bg-primary/5 rounded-xl gap-2 h-12">
-              Ver todos os produtos <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="flex overflow-x-auto pb-4 hide-scrollbar snap-x snap-mandatory gap-6 md:gap-10 lg:justify-between items-center sm:px-6">
-            {categoriesList.map((cat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05, duration: 0.5 }}
-                className="flex flex-col flex-shrink-0 items-center snap-center group cursor-pointer w-28 md:w-36"
-              >
-                <Link to={`/loja?search=${cat.slug}`} className="flex flex-col items-center">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center p-4 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] group-hover:-translate-y-3 transition-all duration-500 ease-spring">
-                    <img 
-                      src={cat.icon} 
-                      alt={cat.name} 
-                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700"
-                    />
-                  </div>
-                  <span className="text-[#111827] font-black text-xs md:text-sm text-center mt-6 group-hover:text-primary transition-colors tracking-tight">
-                    {cat.name}
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-        </div>
-      </section>
-    </div>
+      {/* Elegant Bottom Transition */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[hsl(222_40%_8%)] to-transparent" />
+    </section>
   );
 };
 
 export default HeroSection;
+

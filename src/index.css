@@ -12,20 +12,20 @@
     --card-foreground: 222 25% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 25% 10%;
-    --primary: 222 47% 11%;
+    --primary: 217 85% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 221 83% 53%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 216 25% 92%;
+    --secondary-foreground: 222 20% 25%;
     --muted: 216 20% 93%;
     --muted-foreground: 215 15% 45%;
-    --accent: 0 72% 51%;
+    --accent: 217 85% 48%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 216 20% 88%;
     --input: 216 20% 88%;
     --ring: 217 85% 48%;
-    --radius: 1.25rem;
+    --radius: 0.75rem;
 
     /* Premium tokens */
     --hero-bg: 222 40% 12%;
@@ -34,8 +34,8 @@
     --surface-dark: 222 40% 12%;
     --surface-dark-foreground: 0 0% 100%;
     --surface-elevated: 0 0% 100%;
-    --highlight: 222 47% 11%;
-    --highlight-glow: 221 83% 53%;
+    --highlight: 217 85% 48%;
+    --highlight-glow: 255 65% 55%;
     --success: 152 60% 38%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;

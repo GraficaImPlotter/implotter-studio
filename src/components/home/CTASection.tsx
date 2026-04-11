@@ -16,9 +16,9 @@ const CTASection = () => {
 
   return (
     <section className="py-24 bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[#111827]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-secondary/10 rounded-full blur-[120px]" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-accent/10 rounded-full blur-[100px]" />
+      {/* Background decorations */}
+      <div className="absolute inset-0 bg-gradient-to-b from-highlight/5 via-transparent to-transparent" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-highlight/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative">
         <motion.div
@@ -27,25 +27,27 @@ const CTASection = () => {
           viewport={{ once: true }}
           className="max-w-4xl mx-auto text-center"
         >
-          <div className="glass-card-premium rounded-[3rem] p-12 md:p-20 border-white/10 relative overflow-hidden shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+          <div className="glass-card rounded-3xl p-12 md:p-16 border-glow relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-highlight/5 to-highlight-glow/5" />
             <div className="relative">
-              <span className="text-secondary font-black uppercase tracking-[0.2em] text-[11px] mb-6 block">Pronto para começar?</span>
-              <h2 className="font-display text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter leading-tight">
-                Tire sua ideia do papel com a <span className="text-secondary text-gradient-primary">ImPlotter</span>
+              <span className="text-highlight text-sm font-semibold tracking-wider uppercase mb-4 block">Vamos conversar</span>
+              <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground mb-5">
+                Precisa de ajuda para
+                <br />
+                <span className="text-gradient-accent">escolher seu material?</span>
               </h2>
-              <p className="text-white/70 text-lg font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-                Nossa equipe de especialistas está pronta para ajudar você a encontrar a solução ideal para destacar o seu negócio no mercado.
+              <p className="text-muted-foreground text-lg mb-10 max-w-xl mx-auto">
+                Nossa equipe de especialistas está pronta para ajudar você a encontrar a solução ideal para destacar sua marca.
               </p>
-              <div className="flex flex-wrap justify-center gap-5">
-                <Button asChild className="h-16 px-10 bg-secondary hover:bg-secondary/90 text-white rounded-2xl text-[13px] font-black uppercase tracking-widest shadow-xl shadow-secondary/25 active:scale-95 transition-all">
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button variant="hero" size="xl" asChild>
                   <Link to="/fale-conosco">
-                    Solicitar Orçamento <ArrowRight className="w-5 h-5 ml-2" />
+                    Fale Conosco <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="h-16 px-10 bg-white/5 hover:bg-white/10 border-white/20 text-white rounded-2xl text-[13px] font-black uppercase tracking-widest active:scale-95 transition-all outline-none">
-                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3">
-                    <MessageCircle className="w-5 h-5 fill-current" /> Falar no WhatsApp
+                <Button variant="premium" size="xl" asChild>
+                  <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="w-5 h-5" /> WhatsApp
                   </a>
                 </Button>
               </div>
