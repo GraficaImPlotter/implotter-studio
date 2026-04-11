@@ -312,8 +312,36 @@
     100% { transform: rotate(360deg) translateX(10px) rotate(-360deg); }
   }
 
-  .animate-orbit {
-    animation: orbit 20s linear infinite;
+  /* Technical Blueprint Grid */
+  .bg-blueprint-grid {
+    background-color: hsla(222, 40% , 8%, 1);
+    background-image: 
+      linear-gradient(rgba(0, 230, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 230, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center center;
+  }
+
+  .bg-blueprint-dot {
+    background-image: radial-gradient(rgba(0, 230, 255, 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+
+  /* Node & Path Styling */
+  .node-point {
+    @apply w-1.5 h-1.5 bg-highlight border border-white/50 rounded-sm shadow-glow-sm;
+  }
+
+  .construction-line {
+    @apply h-px bg-highlight/30;
+  }
+
+  .text-glow-dramatic {
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-content-plate {
+    @apply bg-[hsla(222,40%,10%,0.4)] backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 lg:p-12;
   }
 }
 
