@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "@/integrations/supabase/client";
+import { generateUUID } from "@/lib/uuid";
 
 export interface CartItem {
   id: string;
@@ -89,7 +90,7 @@ export const useCart = create<CartState>()(
         const items = get().items;
         // For per_sqm items, always add as new line (dimensions may differ)
         if (item.pricingType === "per_sqm") {
-          set({ items: [...items, { ...item, id: crypto.randomUUID() }] });
+          set({ items: [...items, { ...item, id: generateUUID() }] });
           debouncedSync(() => get().syncToCloud());
           return;
         }
@@ -101,7 +102,7 @@ export const useCart = create<CartState>()(
             ),
           });
         } else {
-          set({ items: [...items, { ...item, id: crypto.randomUUID() }] });
+          set({ items: [...items, { ...item, id: generateUUID() }] });
         }
         debouncedSync(() => get().syncToCloud());
       },

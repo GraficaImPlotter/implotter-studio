@@ -14,6 +14,7 @@ import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
 import RelatedProductsManager from "@/components/admin/RelatedProductsManager";
 import { useSettings } from "@/hooks/use-settings";
+import { generateUUID } from "@/lib/uuid";
 
 interface CatalogNode {
   id: string;
@@ -278,7 +279,7 @@ const AdminProdutos = () => {
     for (let i = 0; i < pendingFiles.length; i++) {
       const file = pendingFiles[i];
       const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-      const safeName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const safeName = `${Date.now()}-${generateUUID().slice(0, 8)}.${ext}`;
       const path = `${productId}/${safeName}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
       if (error) continue;

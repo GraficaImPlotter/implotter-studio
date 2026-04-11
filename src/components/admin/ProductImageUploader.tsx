@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import { generateUUID } from "@/lib/uuid";
 
 interface ProductImage {
   id: string;
@@ -55,7 +56,7 @@ const ProductImageUploader = ({ productId, onUpdate }: Props) => {
         continue;
       }
       const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-      const safeName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const safeName = `${Date.now()}-${generateUUID().slice(0, 8)}.${ext}`;
       const path = `${productId}/${safeName}`;
       const { error: uploadErr } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
       if (uploadErr) { toast({ title: "Erro no upload", variant: "destructive" }); continue; }

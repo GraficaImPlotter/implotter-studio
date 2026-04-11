@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { X, Send, User, MessageCircle, LogIn, ChevronDown, Sparkles, MoreVertical, Trash2, Paperclip, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { generateUUID } from "@/lib/uuid";
 
 import logo from "@/assets/logo.png";
 
@@ -127,7 +129,7 @@ const AIChatWidget = () => {
   const sendMessage = useCallback(async (text: string, fileInfo?: { url: string, type: string }) => {
     if ((!text.trim() && !fileInfo) || !user || isSending) return;
 
-    const tempId = crypto.randomUUID();
+    const tempId = generateUUID();
     const userMsg: Msg = { 
       role: "user", 
       content: text.trim(), 
@@ -197,7 +199,7 @@ const AIChatWidget = () => {
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+      const fileName = `${user.id}/${generateUUID()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       const { data, error } = await supabase.storage
