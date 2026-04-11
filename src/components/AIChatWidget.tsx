@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 import logo from "@/assets/logo.png";
 
@@ -260,8 +261,8 @@ const AIChatWidget = () => {
               
               <div className="flex items-center gap-4 relative z-10">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30 shadow-inner group overflow-hidden p-2">
-                    <img src={logo} alt="ImPlotter" className="w-full h-full object-contain group-hover:scale-110 transition-transform brightness-110" />
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-white/30 shadow-inner group overflow-hidden p-2">
+                    <img src={logo} alt="ImPlotter" className="w-full h-full object-contain group-hover:scale-110 transition-transform" />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400 border-2 border-highlight animate-pulse shadow-glow" />
                 </div>
@@ -273,12 +274,12 @@ const AIChatWidget = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 relative z-10">
+              <div className="flex items-center gap-3 relative z-10">
                 <button 
                   onClick={() => setShowOptions(!showOptions)}
                   className={cn(
                     "w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300",
-                    showOptions ? "bg-white/20 text-white" : "bg-black/10 text-white/70 hover:text-white hover:bg-black/20"
+                    showOptions ? "bg-white/30 text-white" : "bg-white/10 text-white/90 hover:bg-white/20"
                   )}
                 >
                   <MoreVertical className="w-5 h-5" />
@@ -291,7 +292,7 @@ const AIChatWidget = () => {
                       initial={{ opacity: 0, scale: 0.9, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                      className="absolute top-12 left-0 w-48 bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-20"
+                      className="absolute top-12 right-0 w-48 bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-1 z-20"
                     >
                       <button
                         onClick={handleClearChat}
@@ -306,7 +307,7 @@ const AIChatWidget = () => {
 
                 <button 
                   onClick={() => setOpen(false)} 
-                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-black/10 text-white/70 hover:text-white hover:bg-black/20 hover:rotate-90 transition-all duration-300"
+                  className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 text-white/90 hover:bg-white/20 hover:rotate-90 transition-all duration-300 border border-white/10"
                 >
                   <X className="w-5 h-5" />
                 </button>

@@ -241,9 +241,18 @@ const Header = () => {
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   placeholder="Buscar produtos..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[hsl(222_40%_15%)] border border-[hsl(217_30%_25%)] text-white placeholder:text-[hsl(215_15%_50%)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-[hsl(222_40%_15%)] border border-[hsl(217_30%_25%)] text-white placeholder:text-[hsl(215_15%_50%)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   autoComplete="off"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(""); setSuggestions([]); setShowSuggestions(false); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
                 {/* Autocomplete dropdown */}
                 {showSuggestions && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
@@ -270,10 +279,10 @@ const Header = () => {
                   </div>
                 )}
               </div>
-              <button type="submit" className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+              <button type="submit" className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors shrink-0">
                 Buscar
               </button>
-              <button type="button" onClick={() => { setSearchOpen(false); setShowSuggestions(false); }} className="p-2.5 text-[hsl(215_15%_70%)] hover:text-white">
+              <button type="button" onClick={() => { setSearchOpen(false); setShowSuggestions(false); }} className="p-2.5 text-[hsl(215_15%_70%)] hover:text-white shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </form>

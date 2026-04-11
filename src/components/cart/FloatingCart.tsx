@@ -23,8 +23,8 @@ export const FloatingCart = () => {
             whileTap={{ scale: 0.9 }}
             className="glass-card-premium p-4 rounded-full relative group cursor-pointer animate-glow-pulse border-gradient-premium shadow-xl"
           >
-            <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <ShoppingCart className="w-6 h-6 text-foreground" />
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl opacity-50 transition-opacity" />
+            <ShoppingCart className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
             <motion.span
               key={count}
               initial={{ scale: 1.5, backgroundColor: "hsl(var(--primary))" }}

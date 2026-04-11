@@ -197,16 +197,16 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 0.6 }}
-              className="flex flex-wrap gap-8 md:gap-12"
+              className="flex flex-wrap gap-8 md:gap-12 min-h-[64px]"
             >
               {stats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center carbon-fiber-bg border border-white/5 shadow-lg group-hover:shadow-glow-sm transition-all duration-300">
+                <div key={i} className="flex items-center gap-4 min-w-[140px]">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center carbon-fiber-bg border border-white/5 shadow-lg group-hover:shadow-glow-sm transition-all duration-300 shrink-0">
                     <stat.icon className="w-6 h-6 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-display font-black text-2xl text-foreground tracking-tight">{stat.value}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                  <div className="flex flex-col justify-center">
+                    <p className="font-display font-black text-2xl text-foreground tracking-tight leading-none mb-1">{stat.value}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none whitespace-nowrap">{stat.label}</p>
                   </div>
                 </div>
               ))}
