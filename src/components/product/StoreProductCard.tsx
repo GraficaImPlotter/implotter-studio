@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Ruler, Clock, ShoppingCart } from "lucide-react";
@@ -27,6 +28,9 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
     return name.toLowerCase().replace(/(?:^|\s|["'([{])+\S/g, l => l.toUpperCase());
   };
 
+  const [imgError, setImgError] = useState(false);
+  const displayImage = imgError || !getImage(p) ? "/placeholder.svg" : getImage(p);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -43,12 +47,13 @@ const StoreProductCard = ({ p, index, getImage, onAdd }: ProductCardProps) => {
       {/* Image Container */}
       <Link to={`/loja/${p.slug}`} className="block relative aspect-[4/3] overflow-hidden bg-muted">
         <img 
-          src={getOptimizedUrl(getImage(p), { width: 400 })} 
+          src={displayImage} 
           alt={p.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
           loading="lazy" 
           width={400}
           height={300}
+          onError={() => setImgError(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
