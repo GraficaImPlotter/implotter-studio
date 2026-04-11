@@ -1,6 +1,6 @@
 {
   "name": "Gráfica ImPlotter",
-  "short_name": "ImPlotter",
+  "short_name": "Gráfica ImPlotter",
   "description": "Impressão profissional de cartões, banners, adesivos e panfletos.",
   "start_url": "/",
   "display": "standalone",
@@ -9,6 +9,18 @@
   "orientation": "any",
   "categories": ["business", "shopping"],
   "icons": [
+    {
+      "src": "/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "64x64",
