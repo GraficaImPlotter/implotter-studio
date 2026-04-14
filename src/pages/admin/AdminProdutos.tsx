@@ -787,6 +787,7 @@ const AdminProdutos = () => {
 
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
                 <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
                   </h3>
@@ -795,29 +796,57 @@ const AdminProdutos = () => {
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", ui_type: "select", options: [{ name: "Opção 1", price_adj: 0 }] }])}
+                      className="text-[10px] h-7 bg-primary/5 border-primary/20 hover:bg-primary/10"
+                      onClick={() => setConfigSchema([
+                        { id: "qty-01", label: "Quantidade", type: "select", ui_type: "pills", options: [{ name: "500", price_adj: 100 }, { name: "1000", price_adj: 180 }, { name: "2500", price_adj: 350 }] },
+                        { id: "col-01", label: "Cores", type: "select", ui_type: "pills", options: [{ name: "4x0 (Frente)", price_adj: 0 }, { name: "4x1 (Frente/Verso PB)", price_adj: 15 }, { name: "4x4 (Frente/Verso)", price_adj: 30 }] },
+                        { id: "varn-01", label: "Cobertura", type: "select", ui_type: "pills", options: [{ name: "Sem Verniz", price_adj: 0 }, { name: "UV Total Frente", price_adj: 20 }, { name: "Verniz Localizado", price_adj: 45 }] }
+                      ])}
                     >
-                      <Plus className="w-3 h-3 mr-1" /> Atributo (Seleção)
+                      <Plus className="w-3 h-3 mr-1" /> Preset: Cartão
                     </Button>
                     <Button 
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Adicional", type: "counter", unit_price: 1.0 }])}
+                      className="text-[10px] h-7 bg-highlight/5 border-highlight/20 hover:bg-highlight/10"
+                      onClick={() => setConfigSchema([
+                        { id: "mat-01", label: "Material", type: "select", ui_type: "pills", options: [{ name: "Lona 440g", price_adj: 0 }, { name: "Lona Fosca 440g", price_adj: 12 }, { name: "Adesivo Vinil", price_adj: 25 }] },
+                        { id: "fin-01", label: "Acabamento", type: "checkbox", options: [{ name: "Ilhós", price_adj: 5 }, { name: "Bainha", price_adj: 10 }, { name: "Bastão e Corda", price_adj: 15 }] }
+                      ])}
                     >
-                      <Plus className="w-3 h-3 mr-1" /> Adicional (Contador)
+                      <Plus className="w-3 h-3 mr-1" /> Preset: Banner
                     </Button>
                   </div>
                 </div>
+
+                <div className="flex gap-2 mb-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", ui_type: "pills", options: [{ name: "Opção 1", price_adj: 0 }] }])}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Atributo (Seleção)
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Adicional", type: "counter", unit_price: 1.0 }])}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Adicional (Contador)
+                  </Button>
+                </div>
                 
-                <p className="text-xs text-muted-foreground -mt-3">
-                  Defina os campos que o cliente poderá selecionar ou quantificar na página do produto.
+                <p className="text-xs text-muted-foreground -mt-3 mb-4">
+                  Defina os campos que o cliente poderá selecionar.
                 </p>
 
-                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-2 flex gap-3 items-start">
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 flex gap-3 items-start">
                   <Calculator className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <div className="text-[11px] text-primary/80 leading-relaxed">
-                    <strong className="text-primary">Dica de Precificação:</strong> Para produtos com quantidades fixas (ex: 500, 1000 cartões), crie um atributo "Quantidade" do tipo Seleção. O valor de cada opção somará ao preço unitário. Se o Preço de Venda principal for R$ 0, o valor da primeira seleção será o preço base.
+                    <strong className="text-primary font-bold uppercase tracking-wider">Lógica Aditiva:</strong> O preço final será a soma de todos os acréscimos selecionados. Dica: Se quiser que a primeira opção defina o preço base (ex: 500 un), deixe o preço principal do produto como 0.
                   </div>
                 </div>
 

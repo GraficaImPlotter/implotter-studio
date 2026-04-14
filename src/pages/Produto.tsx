@@ -318,83 +318,127 @@ const Produto = () => {
               </div>
             </div>
 
-            <div className="space-y-6 mb-8">
-              {product.configuration_schema?.filter((it: any) => it.ui_type !== 'checkbox').map((item: any) => (
-                <div key={item.id} className="space-y-2">
-                  <Label className="text-sm font-bold">{item.label}</Label>
-                  {item.ui_type === 'pills' ? (
-                    <div className="flex flex-wrap gap-2">
-                      {item.options.map((opt: any) => (
-                        <button key={opt.name} onClick={() => setConfigValues(v => ({ ...v, [item.id]: opt.name }))} className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${configValues[item.id] === opt.name ? "bg-primary/10 border-primary text-primary" : "bg-background border-border hover:border-primary/50"}`}>{opt.name}</button>
-                      ))}
+            {/* Interactive Configurator */}
+            <div className="space-y-8 mb-10">
+              {product.configuration_schema?.map((item: any, itemIdx: number) => {
+                const isQuantity = item.label?.toLowerCase().includes("quant");
+                
+                return (
+                  <motion.div 
+                    key={item.id} 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: itemIdx * 0.1 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
+                        {isQuantity ? <Package className="w-4 h-4 text-primary" /> : <Layers className="w-4 h-4 text-primary" />}
+                        {item.label}
+                      </Label>
+                      {configValues[item.id] && (
+                        <Badge variant="outline" className="text-[10px] font-bold border-primary/20 text-primary bg-primary/5">
+                          Selecionado
+                        </Badge>
+                      )}
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <select value={configValues[item.id] || ""} onChange={e => setConfigValues(v => ({ ...v, [item.id]: e.target.value }))} className="w-full h-12 rounded-xl border border-border bg-background px-4 text-sm appearance-none">
-                        <option value="">Selecione um {item.label}</option>
-                        {item.options.map((opt: any) => <option key={opt.name} value={opt.name}>{opt.name}</option>)}
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                  )}
-                </div>
-              ))}
 
-              {product.configuration_schema?.filter((it: any) => it.ui_type === 'checkbox').map((item: any) => (
-                 <div key={item.id} className="space-y-3">
-                    <Label className="text-sm font-bold">{item.label}</Label>
-                    <div className="bg-secondary/20 rounded-2xl p-4 space-y-3 border border-border/50">
-                       {item.options.map((opt: any) => {
+                    {item.ui_type === 'checkbox' ? (
+                      <div className="bg-secondary/20 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-border/50">
+                        {item.options.map((opt: any) => {
                           const current = (configValues[item.id] as string[] || []);
                           const isSel = current.includes(opt.name);
                           return (
-                            <button key={opt.name} onClick={() => {
-                              const next = isSel ? current.filter(x => x !== opt.name) : [...current, opt.name];
-                              setConfigValues(v => ({...v, [item.id]: next}));
-                            }} className="flex items-center justify-between w-full group">
+                            <button 
+                              key={opt.name} 
+                              onClick={() => {
+                                const next = isSel ? current.filter(x => x !== opt.name) : [...current, opt.name];
+                                setConfigValues(v => ({...v, [item.id]: next}));
+                              }} 
+                              className={`flex items-center justify-between p-3.5 rounded-xl border transition-all group ${isSel ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-background/50 border-border/50 hover:border-primary/30"}`}
+                            >
                                <div className="flex items-center gap-3">
-                                  <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-muted-foreground/30"}`}>
+                                  <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
                                      {isSel && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
                                   </div>
-                                  <span className="text-sm font-medium">{opt.name}</span>
+                                  <span className={`text-[13px] transition-colors ${isSel ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
                                </div>
-                               {opt.price_adj > 0 && <span className="text-xs font-bold text-primary">+ R$ {opt.price_adj.toFixed(2)}</span>}
+                               {opt.price_adj > 0 && <span className="text-[11px] font-black text-primary">+ R$ {opt.price_adj.toFixed(2)}</span>}
                             </button>
                           );
-                       })}
-                    </div>
-                 </div>
-              ))}
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2.5">
+                        {item.options.map((opt: any) => {
+                          const isSel = configValues[item.id] === opt.name;
+                          return (
+                            <button 
+                              key={opt.name} 
+                              onClick={() => setConfigValues(v => ({ ...v, [item.id]: opt.name }))} 
+                              className={`px-5 py-3 rounded-xl text-xs font-bold border transition-all relative flex flex-col items-center min-w-[100px] overflow-hidden ${isSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-secondary/30 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}
+                            >
+                              <span className="relative z-10">{opt.name}</span>
+                              {opt.price_adj > 0 && (
+                                <span className={`text-[9px] mt-1 font-black ${isSel ? "text-white/80" : "text-primary opacity-80"}`}>
+                                  + R$ {opt.price_adj.toFixed(2)}
+                                </span>
+                              )}
+                              {isSel && (
+                                <motion.div 
+                                  layoutId={`active-bg-${item.id}`}
+                                  className="absolute inset-0 bg-primary z-0"
+                                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
 
             {availableFinishings.length > 0 && (
-              <div className="space-y-4 mb-8">
-                <Separator />
-                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Acabamentos Extras</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-4 mb-10">
+                <Separator className="opacity-50" />
+                <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-primary" /> Acabamentos Extras
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {availableFinishings.map(f => (
-                    <button key={f.id} onClick={() => setSelectedFinishings(p => p.includes(f.id) ? p.filter(id => id !== f.id) : [...p, f.id])} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${selectedFinishings.includes(f.id) ? "bg-primary/5 border-primary" : "bg-secondary/30 border-border/50"}`}>
+                    <button 
+                      key={f.id} 
+                      onClick={() => setSelectedFinishings(p => p.includes(f.id) ? p.filter(id => id !== f.id) : [...p, f.id])} 
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all group ${selectedFinishings.includes(f.id) ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
+                    >
                        <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedFinishings.includes(f.id) ? "bg-primary border-primary" : "border-muted-foreground/30"}`}>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedFinishings.includes(f.id) ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
                              {selectedFinishings.includes(f.id) && <Plus className="w-3 h-3 text-white" strokeWidth={4} />}
                           </div>
-                          <span className="text-sm font-bold">{f.name}</span>
+                          <span className={`text-[13px] transition-colors ${selectedFinishings.includes(f.id) ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{f.name}</span>
                        </div>
-                       <span className="text-xs font-black text-primary">+R$ {Number(f.price).toFixed(2)}</span>
+                       <span className="text-[11px] font-black text-primary">+ R$ {Number(f.price).toFixed(2)}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {!isSqm && (
-              <div className="space-y-4 mb-8">
-                <Label className="text-sm font-bold">Tabela de Quantidade</Label>
-                <div className="grid grid-cols-4 gap-2">
+            {!isSqm && !product.configuration_schema?.some((it: any) => it.label?.toLowerCase().includes("quant")) && (
+              <div className="space-y-4 mb-10">
+                <Label className="text-sm font-black uppercase tracking-widest text-foreground/70">Quantidade Unitária</Label>
+                <div className="grid grid-cols-4 gap-2.5">
                   {[25, 50, 100, 250, 500, 1000, 2500, 5000].map(qty => (
-                    <button key={qty} onClick={() => setSelectedQuantity(qty)} className={`p-3 rounded-xl border text-center transition-all ${selectedQuantity === qty ? "bg-primary/10 border-primary text-primary font-bold shadow-sm" : "bg-background border-border hover:border-primary/30"}`}>
-                       <div className="text-xs">{qty}</div>
-                       <div className="text-[10px] opacity-60">un</div>
+                    <button 
+                      key={qty} 
+                      onClick={() => setSelectedQuantity(qty)} 
+                      className={`p-3.5 rounded-xl border text-center transition-all ${selectedQuantity === qty ? "bg-primary border-primary text-white font-bold shadow-glow-sm scale-105" : "bg-secondary/30 border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"}`}
+                    >
+                       <div className="text-[13px]">{qty}</div>
+                       <div className={`text-[9px] uppercase font-bold tracking-tighter ${selectedQuantity === qty ? "text-white/70" : "opacity-40"}`}>un</div>
                     </button>
                   ))}
                 </div>

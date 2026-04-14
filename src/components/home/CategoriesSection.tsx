@@ -89,13 +89,13 @@ const CategoriesSection = () => {
                 to={`/loja?node=${cat.id}`}
                 className="group block space-y-4"
               >
-                {/* Circular Image Container */}
-                <div className="relative aspect-square rounded-full overflow-hidden bg-white shadow-xl group-hover:shadow-glow transition-all duration-500 border-2 border-white/10 group-hover:border-primary/40 p-4">
-                   <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                {/* Square Image Container */}
+                <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-xl group-hover:shadow-glow transition-all duration-500 border-2 border-white/10 group-hover:border-primary/40 p-4">
+                   <div className="w-full h-full rounded-xl overflow-hidden bg-white">
                     <img
                       src={cat.image_url || "/placeholder.svg"}
                       alt={cat.name}
-                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
                     />
                    </div>
                    {/* Subtle Overlay */}
