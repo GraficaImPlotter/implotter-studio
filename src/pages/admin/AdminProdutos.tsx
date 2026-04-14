@@ -242,10 +242,27 @@ const AdminProdutos = () => {
   };
 
   const handleApplySuggested = () => {
-    if (suggestedPrice > 0) {
-      setPrice(Math.round(suggestedPrice * 100) / 100);
-      setPriceManuallyEdited(false);
-    }
+    setPrice(Math.round(suggestedPrice * 100) / 100);
+    setPriceManuallyEdited(false);
+  };
+
+  const calculatePriceFromCost = (cost: number) => {
+    return Math.round(cost * (1 + defaultMargin / 100) * 100) / 100;
+  };
+
+  const autoCalcularTudo = () => {
+    const next = [...configSchema];
+    next.forEach(item => {
+      if (item.options && Array.isArray(item.options)) {
+        item.options.forEach((opt: any) => {
+          if (opt.cost_adj > 0) {
+            opt.price_adj = calculatePriceFromCost(opt.cost_adj);
+          }
+        });
+      }
+    });
+    setConfigSchema(next);
+    toast({ title: "Preços atualizados!", description: `Todas as opções com custo preenchido foram recalculadas com margem de ${defaultMargin}%.` });
   };
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -797,9 +814,22 @@ const AdminProdutos = () => {
 
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
-                  </h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
+                    </h3>
+                    {configSchema.length > 0 && configSchema.some(it => it.options?.some((o: any) => o.cost_adj > 0)) && (
+                        <Button 
+                            type="button" 
+                            variant="hero" 
+                            size="sm" 
+                            className="bg-success hover:bg-success/90 h-8" 
+                            onClick={autoCalcularTudo}
+                        >
+                            <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Auto-calcular por Margem ({defaultMargin}%)
+                        </Button>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Button 
                       type="button" 
@@ -983,18 +1013,46 @@ const AdminProdutos = () => {
                                   placeholder="Nome da opção"
                                   className="flex-1 h-8 text-xs bg-background"
                                 />
-                                <div className="flex items-center gap-1.5 w-32">
-                                  <Input 
-                                    type="number" 
-                                    step="0.01"
-                                    value={opt.price_adj} 
-                                    onChange={e => {
-                                      const next = [...configSchema];
-                                      next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
-                                      setConfigSchema(next);
-                                    }}
-                                    className="h-8 text-xs bg-background"
-                                  />
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div className="relative flex-1 group/cost">
+                                    <span className="absolute -top-3.5 left-1 text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-0 group-focus-within/cost:opacity-100 group-hover/cost:opacity-100 transition-opacity">Custo (R$)</span>
+                                    <Input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={opt.cost_adj || ""} 
+                                        onChange={e => {
+                                            const next = [...configSchema];
+                                            const cost = parseFloat(e.target.value) || 0;
+                                            next[idx].options[optIdx].cost_adj = cost;
+                                            if (cost > 0) {
+                                                next[idx].options[optIdx].price_adj = calculatePriceFromCost(cost);
+                                            }
+                                            setConfigSchema(next);
+                                        }}
+                                        placeholder="Custo"
+                                        className="h-8 text-xs bg-destructive/5 border-destructive/20 focus:border-destructive/40"
+                                    />
+                                  </div>
+                                  <div className="relative flex-1 group/price">
+                                    <span className="absolute -top-3.5 left-1 text-[9px] text-primary font-bold uppercase tracking-tighter opacity-0 group-focus-within/price:opacity-100 group-hover/price:opacity-100 transition-opacity">Preço (R$)</span>
+                                    <Input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={opt.price_adj} 
+                                        onChange={e => {
+                                            const next = [...configSchema];
+                                            next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
+                                            setConfigSchema(next);
+                                        }}
+                                        placeholder="Venda"
+                                        className="h-8 text-xs bg-primary/5 border-primary/20 focus:border-primary/40 font-bold"
+                                    />
+                                  </div>
+                                  {opt.cost_adj > 0 && opt.price_adj > 0 && (
+                                    <div className="text-[9px] font-black text-success min-w-[30px] text-right">
+                                        +{(((opt.price_adj - opt.cost_adj) / opt.cost_adj) * 100).toFixed(0)}%
+                                    </div>
+                                  )}
                                 </div>
                                 <Button 
                                   type="button" 
