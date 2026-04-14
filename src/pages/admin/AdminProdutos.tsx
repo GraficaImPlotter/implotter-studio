@@ -88,6 +88,7 @@ const AdminProdutos = () => {
   const [defaultMargin, setDefaultMargin] = useState(80);
   const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [rawJson, setRawJson] = useState("");
+  const [processingBulk, setProcessingBulk] = useState(false);
 
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
@@ -1275,16 +1276,25 @@ const AdminProdutos = () => {
       {selectedProducts.size > 0 && (
         <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-lg border border-primary/20 mb-4 animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-medium text-primary ml-2">{selectedProducts.size} produtos selecionados</span>
-          <Button size="sm" className="ml-auto" onClick={async () => {
+          <Button size="sm" className="ml-auto" disabled={processingBulk} onClick={async () => {
+            setProcessingBulk(true);
             await supabase.from("products").update({ is_active: true }).in("id", Array.from(selectedProducts));
             toast({ title: "Produtos ativados!" }); setSelectedProducts(new Set()); load();
-          }}>Ativar</Button>
-          <Button size="sm" variant="outline" onClick={async () => {
+            setProcessingBulk(false);
+          }}>
+            {processingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : "Ativar"}
+          </Button>
+          <Button size="sm" variant="outline" disabled={processingBulk} onClick={async () => {
+            setProcessingBulk(true);
             await supabase.from("products").update({ is_active: false }).in("id", Array.from(selectedProducts));
             toast({ title: "Produtos desativados!" }); setSelectedProducts(new Set()); load();
-          }}>Desativar</Button>
-          <Button size="sm" variant="destructive" onClick={async () => {
+            setProcessingBulk(false);
+          }}>
+            {processingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : "Desativar"}
+          </Button>
+          <Button size="sm" variant="destructive" disabled={processingBulk} onClick={async () => {
             if (!confirm(`Excluir ${selectedProducts.size} produtos definitivamente? Itens com histórico de pedidos darão erro e permanecerão no sistema.`)) return;
+            setProcessingBulk(true);
             const ids = Array.from(selectedProducts);
             const { error } = await supabase.from("products").delete().in("id", ids);
             if (error) {
@@ -1298,7 +1308,10 @@ const AdminProdutos = () => {
             }
             setSelectedProducts(new Set()); 
             load();
-          }}>Excluir</Button>
+            setProcessingBulk(false);
+          }}>
+            {processingBulk ? <Loader2 className="w-4 h-4 animate-spin" /> : "Excluir"}
+          </Button>
         </div>
       )}
 
