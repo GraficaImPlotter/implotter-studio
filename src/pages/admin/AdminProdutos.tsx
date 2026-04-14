@@ -62,6 +62,7 @@ const AdminProdutos = () => {
   const [slug, setSlug] = useState("");
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDesc, setMetaDesc] = useState("");
+  const [configSchema, setConfigSchema] = useState<any[]>([]);
   const [onSale, setOnSale] = useState(false);
   const [fullDescription, setFullDescription] = useState("");
   const [specifications, setSpecifications] = useState("");
@@ -217,6 +218,7 @@ const AdminProdutos = () => {
     setOnSale(!!product?.sale_price);
     setFullDescription(product?.full_description || "");
     setSpecifications(product?.specifications || "");
+    setConfigSchema(Array.isArray(product?.configuration_schema) ? product.configuration_schema : []);
     setSavedProductId(product?.id || null);
     setProductFaqs([]);
     setPendingFiles([]);
@@ -335,6 +337,7 @@ const AdminProdutos = () => {
       shipping_height: shippingHeight,
       shipping_width: shippingWidth,
       shipping_length: shippingLength,
+      configuration_schema: configSchema,
     };
 
     const saveFaqs = async (productId: string) => {
@@ -803,6 +806,149 @@ const AdminProdutos = () => {
                 <Button type="button" variant="outline" size="sm" onClick={() => setProductFaqs(prev => [...prev, { question: "", answer: "" }])}>
                   <Plus className="w-3 h-3 mr-1" /> Adicionar Pergunta
                 </Button>
+              </div>
+
+              {/* Dynamic Configurator */}
+              <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", options: [{ name: "Opção 1", price_adj: 0 }] }])}
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Atributo (Lista)
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Adicional", type: "counter", unit_price: 1.0 }])}
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Adicional (Contador)
+                    </Button>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground -mt-3">
+                  Defina os campos que o cliente poderá selecionar ou quantificar na página do produto.
+                </p>
+
+                {configSchema.length === 0 ? (
+                  <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
+                    <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground italic">Nenhum campo personalizado definido.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {configSchema.map((item, idx) => (
+                      <div key={item.id} className="bg-background rounded-xl p-4 border border-border shadow-sm group">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <Input 
+                              value={item.label} 
+                              onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, label: e.target.value } : it))}
+                              className="w-48 font-bold text-sm bg-secondary/30 h-8"
+                              placeholder="Ex: Material"
+                            />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                              {item.type === "select" ? "Seleção" : "Contador"}
+                            </span>
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setConfigSchema(prev => prev.filter((_, i) => i !== idx))}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+
+                        {item.type === "select" ? (
+                          <div className="space-y-2">
+                            {item.options.map((opt: any, optIdx: number) => (
+                              <div key={optIdx} className="flex gap-2 items-center">
+                                <Input 
+                                  value={opt.name} 
+                                  onChange={e => {
+                                    const next = [...configSchema];
+                                    next[idx].options[optIdx].name = e.target.value;
+                                    setConfigSchema(next);
+                                  }}
+                                  placeholder="Nome da opção"
+                                  className="flex-1 h-8 text-xs"
+                                />
+                                <div className="flex items-center gap-1.5 w-32">
+                                  <span className="text-[10px] text-muted-foreground">R$</span>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    value={opt.price_adj} 
+                                    onChange={e => {
+                                      const next = [...configSchema];
+                                      next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
+                                      setConfigSchema(next);
+                                    }}
+                                    className="h-8 text-xs"
+                                  />
+                                </div>
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6"
+                                  onClick={() => {
+                                    const next = [...configSchema];
+                                    next[idx].options = next[idx].options.filter((_: any, i: number) => i !== optIdx);
+                                    setConfigSchema(next);
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-[10px] h-7 px-2 text-primary"
+                              onClick={() => {
+                                const next = [...configSchema];
+                                next[idx].options.push({ name: "Nova Opção", price_adj: 0 });
+                                setConfigSchema(next);
+                              }}
+                            >
+                              <Plus className="w-3 h-3 mr-1" /> Adicionar Opção
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              <label className="text-[10px] text-muted-foreground uppercase font-bold mb-1 block">Valor por Unidade (R$)</label>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={item.unit_price} 
+                                onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
+                                className="h-8 text-xs bg-secondary/30"
+                              />
+                            </div>
+                            <div className="w-1/2 flex items-center gap-2 pt-4">
+                               <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                               <span className="text-[10px] text-muted-foreground italic">Pede a quantidade ao cliente na loja.</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Image uploader */}

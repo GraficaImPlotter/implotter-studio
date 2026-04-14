@@ -17,6 +17,10 @@ import SmartRecommendations from "@/components/product/SmartRecommendations";
 import ArtEditor from "@/components/product/ArtEditor";
 import { generateClientQuotePDF } from "@/lib/quote-client-pdf";
 import SEOHead from "@/components/SEOHead";
+import QuantityPriceTable from "@/components/product/QuantityPriceTable";
+import ShippingCalculator, { type ShippingOption } from "@/components/shipping/ShippingCalculator";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 // Dimension state for per_sqm products
 // ... earlier imports
@@ -65,6 +69,8 @@ const Produto = () => {
   const [companySettings, setCompanySettings] = useState({ name: "", cnpj: "", address: "", phone: "", email: "", website: "" });
   const [showSticky, setShowSticky] = useState(false);
   const [activeTab, setActiveTab] = useState("preço");
+  const [configValues, setConfigValues] = useState<Record<string, any>>({});
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setShowSticky(window.scrollY > 450);
@@ -78,7 +84,7 @@ const Produto = () => {
       const [{ data }, { data: nodes }] = await Promise.all([
         supabase
           .from("products_public")
-          .select("id, name, slug, short_description, full_description, specifications, price, sale_price, pricing_type, sale_unit, price_per_sqm, min_width, max_width, min_height, max_height, min_area, max_area, catalog_node_id, category_id, subcategory_id, is_active, is_featured, estimated_days, video_url, keywords, meta_title, meta_description, product_code, color_mode, default_quantity, sort_order, created_at, updated_at, categories(name, slug), subcategories(name), product_images(id, image_url, alt_text, sort_order)")
+          .select("id, name, slug, short_description, full_description, specifications, price, sale_price, pricing_type, sale_unit, price_per_sqm, min_width, max_width, min_height, max_height, min_area, max_area, catalog_node_id, category_id, subcategory_id, is_active, is_featured, estimated_days, video_url, keywords, meta_title, meta_description, product_code, color_mode, default_quantity, sort_order, configuration_schema, created_at, updated_at, categories(name, slug), subcategories(name), product_images(id, image_url, alt_text, sort_order)")
           .eq("slug", slug)
           .eq("is_active", true)
           .maybeSingle(),
@@ -145,7 +151,28 @@ const Produto = () => {
   const defaultQty = Number(product?.default_quantity) || 1;
   const selectedQuantity = defaultQty * quantityMultiplier;
   const baseUnitPrice = Number(product?.sale_price || product?.price) || 0;
-  const calculatedPrice = (isSqm ? area * pricePerSqm : baseUnitPrice * quantityMultiplier) + finishingsTotal;
+
+  // New Dynamic Price Calculation
+  const dynamicTotal = useMemo(() => {
+    let total = isSqm ? area * pricePerSqm : baseUnitPrice * quantityMultiplier;
+    
+    // Add selections from configSchema
+    if (product?.configuration_schema) {
+      product.configuration_schema.forEach((item: any) => {
+        const val = configValues[item.id];
+        if (item.type === "select" && val) {
+          const opt = item.options.find((o: any) => o.name === val);
+          if (opt) total += (opt.price_adj || 0);
+        } else if (item.type === "counter" && val) {
+          total += (item.unit_price || 0) * val;
+        }
+      });
+    }
+
+    return total + finishingsTotal;
+  }, [isSqm, area, pricePerSqm, baseUnitPrice, quantityMultiplier, product?.configuration_schema, configValues, finishingsTotal]);
+
+  const calculatedPrice = dynamicTotal;
 
   const dimensionError = useMemo(() => {
     if (!isSqm || !wNum || !hNum) return null;
@@ -166,12 +193,12 @@ const Produto = () => {
 
   const canAddToCart = isSqm ? (wNum > 0 && hNum > 0 && !dimensionError) : true;
 
-  const handleAddToCart = () => {
-    if (!product || !canAddToCart) return;
-    const selectedFinishingNames = availableFinishings.filter(f => selectedFinishings.includes(f.id)).map(f => {
-      if (f.pricing_mode === "per_unit") return `${f.name} (×${finishingQuantities[f.id] || 0})`;
-      return f.name;
-    });
+    const configDetails = product.configuration_schema?.map((item: any) => {
+      const val = configValues[item.id];
+      if (!val) return null;
+      return `${item.label}: ${val}${item.type === "counter" ? " un" : ""}`;
+    }).filter(Boolean);
+
     addItem({
       productId: product.id,
       name: product.name + (defaultQty > 1 && quantityMultiplier > 1 ? ` (${selectedQuantity} un)` : ""),
@@ -184,7 +211,10 @@ const Produto = () => {
       itemWidth: isSqm ? wNum : undefined,
       itemHeight: isSqm ? hNum : undefined,
       itemArea: isSqm ? area : undefined,
-      finishings: selectedFinishingNames.length > 0 ? selectedFinishingNames : undefined,
+      finishings: [
+        ...(selectedFinishingNames.length > 0 ? selectedFinishingNames : []),
+        ...(configDetails || [])
+      ],
       finishingsTotal: finishingsTotal > 0 ? finishingsTotal : undefined,
       shippingWeight: Number(product.shipping_weight) || 0.3,
       shippingHeight: Number(product.shipping_height) || 2,
@@ -520,114 +550,138 @@ const Produto = () => {
                   )}
                 </div>
 
-                {/* Acabamentos */}
-                {availableFinishings.length > 0 && (
-                  <div className="glass-card rounded-2xl p-5 mb-6 space-y-3">
-                    <h3 className="font-display font-semibold text-foreground flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-highlight" /> Acabamentos
-                    </h3>
-                    <div className="space-y-2">
-                      {availableFinishings.map(f => (
-                        <div key={f.id} className="space-y-2">
-                          <label className="flex items-center gap-3 p-3 rounded-xl border border-border bg-secondary/30 cursor-pointer hover:bg-secondary/60 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={selectedFinishings.includes(f.id)}
-                              onChange={e => {
-                                if (e.target.checked) setSelectedFinishings(prev => [...prev, f.id]);
-                                else {
-                                  setSelectedFinishings(prev => prev.filter(id => id !== f.id));
-                                  setFinishingQuantities(prev => { const n = { ...prev }; delete n[f.id]; return n; });
-                                }
-                              }}
-                              className="rounded"
-                            />
-                            <span className="text-sm font-medium text-foreground flex-1">{f.name}</span>
-                            <span className="text-sm text-highlight font-semibold">
-                              +R$ {Number(f.price).toFixed(2)}{f.pricing_mode === "per_unit" ? "/un" : ""}
-                            </span>
-                          </label>
-                          {f.pricing_mode === "per_unit" && selectedFinishings.includes(f.id) && (
-                            <div className="flex items-center gap-2 pl-10">
-                              <label className="text-xs text-muted-foreground">Quantidade:</label>
-                              <Input
-                                type="number"
-                                min={1}
-                                value={finishingQuantities[f.id] || ""}
-                                onChange={e => setFinishingQuantities(prev => ({ ...prev, [f.id]: parseInt(e.target.value) || 0 }))}
-                                placeholder="Ex: 60"
-                                className="w-24 h-8 text-sm"
-                              />
-                              {(finishingQuantities[f.id] || 0) > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  = R$ {(Number(f.price) * (finishingQuantities[f.id] || 0)).toFixed(2)}
-                                </span>
-                              )}
-                            </div>
-                          )}
+                <div className="space-y-6 mb-8">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1 uppercase tracking-widest text-[10px] font-black">
+                      Configuração
+                    </Badge>
+                    <Separator className="flex-1" />
+                  </div>
+
+                  <div className="space-y-5">
+                    {/* Fixed Core Options */}
+                    <div className="flex flex-col gap-1.5 p-4 rounded-2xl bg-secondary/30 border border-border/50">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cores</Label>
+                      <div className="flex flex-wrap gap-2">
+                         <span className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-bold border border-primary/20">
+                           {product.color_mode || "4x0"}
+                         </span>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Configurator Fields */}
+                    {product.configuration_schema?.map((item: any) => (
+                      <div key={item.id} className="flex flex-col gap-2 p-4 rounded-2xl bg-secondary/30 border border-border/50">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">{item.label}</Label>
+                        {item.type === "select" ? (
+                          <div className="flex flex-wrap gap-2">
+                             {item.options.map((opt: any) => (
+                               <button
+                                 key={opt.name}
+                                 onClick={() => setConfigValues(p => ({ ...p, [item.id]: opt.name }))}
+                                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                                   configValues[item.id] === opt.name 
+                                    ? "bg-primary text-primary-foreground border-primary shadow-glow-sm scale-105" 
+                                    : "bg-background text-foreground border-border hover:border-primary/50"
+                                 }`}
+                               >
+                                 {opt.name}
+                                 {opt.price_adj > 0 && <span className="ml-1.5 opacity-60 text-[10px]">+R$ {opt.price_adj}</span>}
+                               </button>
+                             ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-4">
+                             <Input 
+                               type="number" 
+                               min={0}
+                               value={configValues[item.id] || ""}
+                               onChange={e => setConfigValues(p => ({ ...p, [item.id]: parseInt(e.target.value) || 0 }))}
+                               placeholder="Quantidade..."
+                               className="w-32 h-10 bg-background"
+                             />
+                             <span className="text-xs text-muted-foreground">Valor: R$ {item.unit_price?.toFixed(2)}/un</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Format / Dimensions */}
+                    {isSqm && (
+                      <div className="bg-primary/5 rounded-2xl p-6 space-y-4 border border-primary/20">
+                        <p className="text-sm font-black text-foreground flex items-center gap-2">
+                          <Ruler className="w-5 h-5 text-primary" /> Informe as Medidas (em metros)
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Largura (m)</Label>
+                            <Input type="number" step="0.01" value={width} onChange={e => setWidth(e.target.value)} placeholder="0.00" className="h-12 bg-background font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Altura (m)</Label>
+                            <Input type="number" step="0.01" value={height} onChange={e => setHeight(e.target.value)} placeholder="0.00" className="h-12 bg-background font-bold" />
+                          </div>
                         </div>
+                        {area > 0 && (
+                           <div className="flex justify-between items-center bg-background/50 rounded-xl p-3 border border-primary/10">
+                              <span className="text-xs font-bold text-muted-foreground uppercase">Área Total:</span>
+                              <span className="text-lg font-black text-primary">{area.toFixed(2)} m²</span>
+                           </div>
+                        )}
+                        {dimensionError && (
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-destructive bg-destructive/10 rounded-xl p-3 border border-destructive/20 animate-in fade-in zoom-in-95">
+                            <AlertTriangle className="w-4 h-4" /> {dimensionError}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Acabamentos Adicionais */}
+                {availableFinishings.length > 0 && (
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">Opções Adicionais</Label>
+                      <Separator className="flex-1" />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {availableFinishings.map(f => (
+                        <button
+                          key={f.id}
+                          onClick={() => {
+                            if (selectedFinishings.includes(f.id)) {
+                              setSelectedFinishings(p => p.filter(id => id !== f.id));
+                            } else {
+                              setSelectedFinishings(p => [...p, f.id]);
+                            }
+                          }}
+                          className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-left
+                            ${selectedFinishings.includes(f.id) 
+                              ? "bg-primary/5 border-primary shadow-glow-sm" 
+                              : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                              ${selectedFinishings.includes(f.id) ? "bg-primary border-primary" : "border-muted-foreground/30"}`}>
+                              {selectedFinishings.includes(f.id) && <Plus className="w-3 h-3 text-white" strokeWidth={4} />}
+                            </div>
+                            <span className="text-sm font-bold text-foreground">{f.name}</span>
+                          </div>
+                          <span className="text-xs font-black text-primary">+R$ {Number(f.price).toFixed(2)}</span>
+                        </button>
                       ))}
                     </div>
-                    {finishingsTotal > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Acabamentos selecionados: +R$ {finishingsTotal.toFixed(2)}
-                      </p>
-                    )}
                   </div>
                 )}
 
-                {!isSqm && defaultQty > 1 && (
-                  <div className="glass-card-premium rounded-3xl p-6 mb-8 border-gradient-premium">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                        <ShoppingCart className="w-5 h-5 text-primary" /> Selecione a Quantidade
-                      </h3>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded">
-                        Múltiplos de {defaultQty}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                      {Array.from({ length: 10 }, (_, i) => i + 1).map(mult => {
-                        const qty = defaultQty * mult;
-                        const totalForMult = baseUnitPrice * mult + finishingsTotal;
-                        const isSelected = quantityMultiplier === mult;
-                        const isBestValue = mult === 10;
-                        const isPopular = mult === 5;
-
-                        return (
-                          <button
-                            key={mult}
-                            onClick={() => setQuantityMultiplier(mult)}
-                            className={`relative group rounded-2xl border-2 p-4 text-center transition-all duration-300 flex flex-col items-center
-                              ${isSelected
-                                ? "border-primary bg-primary/5 shadow-glow-sm"
-                                : "border-white/5 hover:border-primary/50 bg-black/20"
-                              }`}
-                          >
-                            {(isBestValue || isPopular) && (
-                              <span className={`absolute -top-2 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tight shadow-sm
-                                ${isBestValue ? "bg-warning text-warning-foreground" : "bg-primary text-primary-foreground"}`}>
-                                {isBestValue ? "Melhor Preço" : "Popular"}
-                              </span>
-                            )}
-                            <span className={`block text-xl font-black ${isSelected ? "text-primary" : "text-foreground group-hover:text-primary"} transition-colors`}>
-                              {qty.toLocaleString("pt-BR")}
-                            </span>
-                            <span className="block text-[9px] font-bold text-muted-foreground uppercase mb-2">Unidades</span>
-                            <div className="mt-auto pt-2 border-t border-white/5 w-full">
-                              <span className="block text-[11px] font-bold text-foreground">
-                                R$ {totalForMult.toFixed(2)}
-                              </span>
-                              <span className="block text-[8px] text-muted-foreground opacity-60">
-                                R$ {(totalForMult / qty).toFixed(2)}/un
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                {/* Pricing Details Table */}
+                {!isSqm && (
+                  <QuantityPriceTable 
+                    basePrice={calculatedPrice} 
+                    defaultQuantity={defaultQty} 
+                    pricingType={product.pricing_type} 
+                  />
                 )}
 
 
@@ -742,6 +796,56 @@ const Produto = () => {
                     </div>
                   </div>
                 )}
+                {/* Shipping Section */}
+                <div className="glass-card-premium rounded-3xl p-6 mb-8 border-gradient-premium">
+                   <div className="mb-4">
+                      <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-primary" /> Entrega & Retirada
+                      </h3>
+                   </div>
+                   
+                   <div className="space-y-4">
+                      {/* Store Pickup (Fixed) */}
+                      <button 
+                        className="w-full text-left p-4 rounded-2xl border border-success/30 bg-success/5 flex items-center justify-between gap-4"
+                        type="button"
+                      >
+                         <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center text-success">
+                               <Home className="w-5 h-5" />
+                            </div>
+                            <div>
+                               <p className="text-sm font-black text-foreground uppercase tracking-tight">Retirada na Loja</p>
+                               <p className="text-[11px] text-success font-black uppercase tracking-widest">
+                                  Pronto em: {product.estimated_days || 0} dias úteis
+                               </p>
+                            </div>
+                         </div>
+                         <span className="text-sm font-black text-success">GRÁTIS</span>
+                      </button>
+
+                      <Separator className="bg-white/5" />
+
+                      {/* Mejor Envio Calculator */}
+                      <ShippingCalculator 
+                        cartTotal={calculatedPrice}
+                        items={[{
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          price: calculatedPrice,
+                          quantity: 1,
+                          shippingWeight: Number(product.shipping_weight) || 0.3,
+                          shippingHeight: Number(product.shipping_height) || 2,
+                          shippingWidth: Number(product.shipping_width) || 11,
+                          shippingLength: Number(product.shipping_length) || 16,
+                        }]}
+                        selected={selectedShipping}
+                        onSelect={setSelectedShipping}
+                      />
+                   </div>
+                </div>
+
                 {product.specifications && (
                   <div>
                     <h2 className="font-display text-xl font-bold text-foreground mb-3">Especificações</h2>

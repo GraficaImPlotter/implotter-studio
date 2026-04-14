@@ -169,12 +169,28 @@ const Loja = () => {
   const load = useCallback(async () => {
     setLoading(true);
     const { data: nodes } = await supabase.from("catalog_nodes").select("*").eq("is_active", true).order("name");
-    setAllNodes((nodes ?? []) as CatalogNode[]);
+    const nodesList = (nodes ?? []) as CatalogNode[];
+    setAllNodes(nodesList);
 
     const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, product_images(image_url, sort_order)";
     let q = supabase.from("products_public").select(PUBLIC_PRODUCT_COLS).eq("is_active", true);
+    
     const nodeId = new URLSearchParams(window.location.search).get("node");
-    if (nodeId) q = q.eq("catalog_node_id", nodeId);
+    if (nodeId) {
+      // Get recursive children IDs
+      const getDescendants = (id: string): string[] => {
+        const children = nodesList.filter(n => n.parent_id === id);
+        let ids = children.map(c => c.id);
+        children.forEach(c => {
+          ids = [...ids, ...getDescendants(c.id)];
+        });
+        return ids;
+      };
+      
+      const allCategoryIds = [nodeId, ...getDescendants(nodeId)];
+      q = q.in("catalog_node_id", allCategoryIds);
+    }
+
     const searchTerm = search.trim() || new URLSearchParams(window.location.search).get("search")?.trim();
     if (searchTerm) q = q.ilike("name", `%${searchTerm}%`);
 
