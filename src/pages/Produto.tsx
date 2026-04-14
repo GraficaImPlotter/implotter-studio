@@ -142,10 +142,10 @@ const Produto = () => {
       total = area * pricePerSqm;
     } else {
       const unitPrice = baseUnitPrice * (selectedQuantity >= 1000 ? 0.8 : selectedQuantity >= 500 ? 0.9 : 1);
-      total = unitPrice * selectedQuantity;
+      total = unitPrice;
     }
     
-    if (product?.configuration_schema) {
+    if (product?.configuration_schema && Array.isArray(product.configuration_schema)) {
       product.configuration_schema.forEach((item: any) => {
         const val = configValues[item.id];
         if (item.ui_type === 'checkbox' && Array.isArray(val)) {
@@ -158,6 +158,11 @@ const Produto = () => {
           if (opt) total += (opt.price_adj || 0);
         }
       });
+    }
+
+    // If schema has no price adjustments, fall back to baseUnitPrice * selectedQuantity
+    if (total === 0 && !isSqm) {
+      total = baseUnitPrice * selectedQuantity;
     }
 
     return total + finishingsTotal;
@@ -239,8 +244,8 @@ const Produto = () => {
     <PublicLayout>
       <SEOHead title={product.name} description={product.short_description} />
       
-      <article className="py-8 container mx-auto px-4 max-w-6xl">
-        <nav className="flex items-center gap-1.5 text-sm mb-8 flex-wrap">
+      <article className="py-12 container mx-auto px-4 max-w-6xl mt-6 lg:mt-10">
+        <nav className="flex items-center gap-1.5 text-sm mb-10 flex-wrap">
           <Link to="/loja" className="text-muted-foreground hover:text-highlight transition-colors flex items-center gap-1">
             <Home className="w-3.5 h-3.5" /> Loja
           </Link>

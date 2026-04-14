@@ -814,6 +814,13 @@ const AdminProdutos = () => {
                   Defina os campos que o cliente poderá selecionar ou quantificar na página do produto.
                 </p>
 
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-2 flex gap-3 items-start">
+                  <Calculator className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-primary/80 leading-relaxed">
+                    <strong className="text-primary">Dica de Precificação:</strong> Para produtos com quantidades fixas (ex: 500, 1000 cartões), crie um atributo "Quantidade" do tipo Seleção. O valor de cada opção somará ao preço unitário. Se o Preço de Venda principal for R$ 0, o valor da primeira seleção será o preço base.
+                  </div>
+                </div>
+
                 {configSchema.length === 0 ? (
                   <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
                     <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
@@ -874,8 +881,8 @@ const AdminProdutos = () => {
                                   placeholder="Nome da opção"
                                   className="flex-1 h-8 text-xs"
                                 />
-                                <div className="flex items-center gap-1.5 w-32">
-                                  <span className="text-[10px] text-muted-foreground">R$</span>
+                                <div className="flex items-center gap-1.5 w-36">
+                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">R$ (Base/Adic.)</span>
                                   <Input 
                                     type="number" 
                                     step="0.01"

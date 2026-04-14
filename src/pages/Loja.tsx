@@ -41,8 +41,9 @@ const SidebarFilters = ({
   categories: any[]; 
   onSelectCategory: (id: string) => void;
   selectedCategoryId: string | null;
-  filters: any;
+  filters: Record<string, string[]>;
   setFilter: (key: string, val: string) => void;
+  availableOptions: Record<string, string[]>;
 }) => {
   const [searchCat, setSearchCat] = useState("");
   
@@ -83,15 +84,27 @@ const SidebarFilters = ({
       {['Material', 'Cor', 'Formato'].map(attr => (
         <div key={attr} className="space-y-3 pt-6 border-t border-border/50">
           <h3 className="text-sm font-bold text-foreground font-display">{attr}</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input 
-              placeholder={`Buscar ${attr.toLowerCase()}`} 
-              className="pl-9 h-9 text-xs bg-secondary/30 border-border rounded-lg" 
-            />
-          </div>
-          <div className="space-y-1">
-             <p className="text-[11px] text-muted-foreground italic px-2">Em breve: filtros de {attr.toLowerCase()}</p>
+          
+          <div className="flex flex-wrap gap-2">
+            {(availableOptions[attr] || []).length > 0 ? (
+              availableOptions[attr].map(val => {
+                const isSelected = filters[attr]?.includes(val);
+                return (
+                  <button
+                    key={val}
+                    onClick={() => setFilter(attr, val)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border
+                      ${isSelected 
+                        ? 'bg-primary border-primary text-white shadow-glow-sm' 
+                        : 'bg-secondary/30 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}
+                  >
+                    {val}
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-[11px] text-muted-foreground italic px-2">Nenhuma opção disponível</p>
+            )}
           </div>
         </div>
       ))}
@@ -108,6 +121,11 @@ const Loja = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({
+    "Material": [],
+    "Cor": [],
+    "Formato": []
+  });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const selectedNodeId = searchParams.get("node") || null;
@@ -157,7 +175,63 @@ const Loja = () => {
     }
   }, [search, sortBy]);
 
-  useEffect(() => { load(); }, [selectedNodeId, sortBy, load]);
+  useEffect(() => { load(); }, [selectedNodeId, sortBy, search, load]);
+
+  const availableFilters = useMemo(() => {
+    const opts: Record<string, Set<string>> = { "Material": new Set(), "Cor": new Set(), "Formato": new Set() };
+    products.forEach(p => {
+      if (Array.isArray(p.configuration_schema)) {
+        p.configuration_schema.forEach((attr: any) => {
+          if (['Material', 'Cor', 'Formato'].includes(attr.label) && Array.isArray(attr.options)) {
+            attr.options.forEach((opt: any) => opts[attr.label].add(opt.name));
+          }
+        });
+      }
+    });
+    return {
+      "Material": Array.from(opts["Material"]).sort(),
+      "Cor": Array.from(opts["Cor"]).sort(),
+      "Formato": Array.from(opts["Formato"]).sort(),
+    };
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      for (const [attr, selectedVals] of Object.entries(activeFilters)) {
+        if (selectedVals.length === 0) continue;
+        const productHasAttr = p.configuration_schema?.some((schemaAttr: any) => {
+          return schemaAttr.label === attr && schemaAttr.options?.some((opt: any) => selectedVals.includes(opt.name));
+        });
+        if (!productHasAttr) return false;
+      }
+      return true;
+    });
+  }, [products, activeFilters]);
+
+  const toggleFilter = (key: string, val: string) => {
+    setActiveFilters(prev => {
+      const current = prev[key] || [];
+      const next = current.includes(val) 
+        ? current.filter(v => v !== val)
+        : [...current, val];
+      return { ...prev, [key]: next };
+    });
+  };
+
+  const findRootNodeName = useCallback((nodeId: string | null) => {
+    if (!nodeId || allNodes.length === 0) return "";
+    let current = allNodes.find(n => n.id === nodeId);
+    let depth = 0;
+    while (current && current.parent_id && depth < 5) {
+      const parent = allNodes.find(n => n.id === current?.parent_id);
+      if (!parent) break;
+      current = parent;
+      depth++;
+    }
+    return current?.name || "";
+  }, [allNodes]);
+
+  const selectedNodeName = useMemo(() => selectedNodeId ? allNodes.find(n => n.id === selectedNodeId)?.name : null, [allNodes, selectedNodeId]);
 
   const navigateToBreadcrumb = (nodeId: string | null) => {
     const p = new URLSearchParams(searchParams);
@@ -166,14 +240,6 @@ const Loja = () => {
   };
 
   const roots = useMemo(() => allNodes.filter(n => !n.parent_id).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")), [allNodes]);
-  const selectedNodeName = selectedNodeId ? allNodes.find(n => n.id === selectedNodeId)?.name : null;
-
-  const handleAddToCart = (p: any) => {
-    if (p.pricing_type === "per_sqm") { window.location.href = `/loja/${p.slug}`; return; }
-    const img = p.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.image_url;
-    addItem({ productId: p.id, name: p.name, price: Number(p.sale_price || p.price), quantity: 1, image: img });
-    toast({ title: "Adicionado!", description: `${p.name} está no carrinho.` });
-  };
 
   const getProductImage = (p: any) => {
     const imgs = p.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order);
@@ -191,15 +257,16 @@ const Loja = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col md:flex-row gap-12">
             
-            {/* Sidebar */}
-            <aside className="w-full md:w-72 flex-shrink-0">
+            {/* Sidebar Desktop */}
+            <aside className="hidden lg:block w-72 flex-shrink-0">
               <div className="sticky top-24 bg-white rounded-[2rem] border border-border/60 p-8 shadow-sm">
                 <SidebarFilters 
                   categories={roots}
                   onSelectCategory={id => navigateToBreadcrumb(id)}
                   selectedCategoryId={selectedNodeId}
-                  filters={{}}
-                  setFilter={() => {}}
+                  filters={activeFilters}
+                  setFilter={toggleFilter}
+                  availableOptions={availableFilters}
                 />
               </div>
             </aside>
@@ -209,7 +276,6 @@ const Loja = () => {
               {/* Banner */}
               <div className="relative rounded-[2.5rem] overflow-hidden bg-slate-50 border border-border/40 min-h-[180px] md:min-h-[220px] flex items-center px-8 md:px-12 mb-10 group">
                 <div className="relative z-10 max-w-lg">
-                  <Badge variant="outline" className="mb-4 bg-primary/5 text-primary border-primary/20 px-3 py-1 font-bold">CATÁLOGO 2024</Badge>
                   <h1 className="font-display text-3xl md:text-5xl font-black text-foreground mb-4 tracking-tight leading-tight">
                     {selectedNodeName || "Nossa Loja"}
                   </h1>
@@ -235,7 +301,7 @@ const Loja = () => {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <p className="text-xs md:text-sm text-muted-foreground font-medium">
-                      Exibindo <span className="text-foreground font-bold">{products.length}</span> produtos
+                      Exibindo <span className="text-foreground font-bold">{filteredProducts.length}</span> produtos
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -257,15 +323,20 @@ const Loja = () => {
                 <ProductCardSkeletonGrid count={6} />
               ) : products.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {products.map((p, i) => (
-                    <StoreProductCard 
-                      key={p.id} 
-                      p={p} 
-                      index={i} 
-                      getImage={getProductImage} 
-                      onAdd={handleAddToCart} 
-                      categoryName={selectedNodeName || "Papelaria"}
-                    />
+                  {filteredProducts.map((p, i) => (
+                    <div key={p.id} className="flex h-full">
+                      <StoreProductCard 
+                        p={p} 
+                        index={i} 
+                        getImage={getProductImage} 
+                        onAdd={(p) => {
+                          const img = getProductImage(p);
+                          addItem({ productId: p.id, name: p.name, price: Number(p.sale_price || p.price), quantity: 1, image: img });
+                          toast({ title: "Adicionado!", description: `${p.name} está no carrinho.` });
+                        }} 
+                        categoryName={findRootNodeName(p.catalog_node_id)}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (

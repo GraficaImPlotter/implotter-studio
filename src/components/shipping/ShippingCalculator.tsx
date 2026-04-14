@@ -95,7 +95,7 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
 
       if (fnError) {
         console.error("Function error:", fnError);
-        throw new Error("Erro na comunicação com o servidor.");
+        throw new Error(fnError.message || "Erro na comunicação com o servidor de frete.");
       }
 
       if (data?.error) {

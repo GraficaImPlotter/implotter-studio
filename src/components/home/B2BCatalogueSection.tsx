@@ -96,15 +96,24 @@ const B2BCatalogueSection = () => {
                 >
                   <Link
                     to={`/loja?node=${cat.id}`}
-                    className="group flex flex-col justify-center items-center gap-4 p-6 rounded-3xl glass-card-premium border-gradient-premium hover:shadow-glow-sm hover:-translate-y-1.5 transition-all duration-300 text-center h-full min-h-[140px] relative overflow-hidden active:scale-95"
+                    className="group flex flex-col justify-center items-center gap-4 p-6 rounded-xl glass-card-premium border-gradient-premium hover:shadow-glow-sm hover:-translate-y-1.5 transition-all duration-300 text-center h-full min-h-[140px] relative overflow-hidden active:scale-95"
                   >
                     <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-bl-full -mr-10 -mt-10 group-hover:bg-primary/20 transition-all duration-500" />
-                    <div className="w-14 h-14 rounded-2xl carbon-fiber-bg border border-white/5 group-hover:border-primary/30 flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg group-hover:shadow-glow-sm">
-                      <Icon className="w-7 h-7 text-white/50 group-hover:text-primary transition-colors" />
-                    </div>
-                    <span className="font-display text-xs md:text-sm font-black tracking-tight text-foreground/80 group-hover:text-foreground line-clamp-2 leading-tight transition-colors">
-                      {cat.name.toUpperCase()}
-                    </span>
+                    
+                    {cat.image_url ? (
+                      <div className="w-full h-full absolute inset-0">
+                        <img 
+                          src={cat.image_url} 
+                          alt={cat.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg carbon-fiber-bg border border-white/5 group-hover:border-primary/30 flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg group-hover:shadow-glow-sm">
+                        <Icon className="w-7 h-7 text-white/50 group-hover:text-primary transition-colors" />
+                      </div>
+                    )}
                   </Link>
                 </motion.div>
               );
