@@ -287,7 +287,7 @@ const AdminCategorias = () => {
                   <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) { toast({ title: "Máximo 5MB", variant: "destructive" }); return; }
+                    if (file.size > 10 * 1024 * 1024) { toast({ title: "Máximo 10MB", variant: "destructive" }); return; }
                     const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
                     const path = `categories/${Date.now()}-${generateUUID().slice(0,8)}.${ext}`;
                     const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });

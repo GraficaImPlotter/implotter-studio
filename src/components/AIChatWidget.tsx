@@ -190,9 +190,9 @@ const AIChatWidget = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validar tamanho (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("O arquivo é muito grande (máximo 5MB)");
+    // Validar tamanho (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("O arquivo é muito grande (máximo 10MB)");
       return;
     }
 

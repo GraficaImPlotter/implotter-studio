@@ -37,7 +37,7 @@ const ProductImageUploader = ({ productId, onUpdate }: Props) => {
   useEffect(() => { load(); }, [productId]);
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -52,7 +52,7 @@ const ProductImageUploader = ({ productId, onUpdate }: Props) => {
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        toast({ title: `Arquivo muito grande: ${file.name}`, description: "Máximo 5MB por imagem.", variant: "destructive" });
+        toast({ title: `Arquivo muito grande: ${file.name}`, description: "Máximo 10MB por imagem.", variant: "destructive" });
         continue;
       }
       const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
