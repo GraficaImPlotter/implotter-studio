@@ -44,7 +44,7 @@ const B2BCatalogueSection = () => {
     const fetchCategories = async () => {
       const { data, error } = await supabase
         .from("catalog_nodes")
-        .select("id, name, slug")
+        .select("id, name, slug, image_url")
         .eq("is_active", true)
         .is("parent_id", null) // Pega apenas categorias macro (pai)
         .order("name")

@@ -36,7 +36,8 @@ const SidebarFilters = ({
   onSelectCategory, 
   selectedCategoryId,
   filters,
-  setFilter
+  setFilter,
+  availableOptions
 }: { 
   categories: any[]; 
   onSelectCategory: (id: string) => void;
