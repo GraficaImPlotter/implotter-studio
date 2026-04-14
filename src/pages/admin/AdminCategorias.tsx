@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree, Upload, Image as ImageIcon, Loader2, Home } from "lucide-react";
 import { generateSlug } from "@/lib/slug";
 import { generateUUID } from "@/lib/uuid";
 
@@ -18,6 +18,7 @@ interface CatalogNode {
   description: string | null;
   image_url: string | null;
   is_active: boolean;
+  show_on_home: boolean;
   sort_order: number;
   children?: CatalogNode[];
 }
@@ -97,6 +98,7 @@ const AdminCategorias = () => {
         description: (fd.get("description") as string) || null,
         image_url: (fd.get("image_url") as string) || null,
         is_active: fd.get("is_active") === "on",
+        show_on_home: fd.get("show_on_home") === "on",
         parent_id: parentId,
       };
 
@@ -162,6 +164,11 @@ const AdminCategorias = () => {
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${node.is_active ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"}`}>
                 {node.is_active ? "Ativo" : "Inativo"}
               </span>
+              {node.show_on_home && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary flex items-center gap-1">
+                  <Home className="w-2.5 h-2.5" /> Home
+                </span>
+              )}
             </div>
             {depth > 0 && (
               <p className="text-[11px] text-muted-foreground truncate">{path.join(" › ")}</p>
@@ -297,11 +304,18 @@ const AdminCategorias = () => {
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">Cole uma URL ou faça upload de uma imagem.</p>
             </div>
-            <div className="pt-1">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" defaultChecked={editing?.is_active ?? true} />
-                Ativo
+            <div className="pt-2 flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
+                <input type="checkbox" name="is_active" defaultChecked={editing?.is_active ?? true} className="rounded border-input text-primary focus:ring-primary" />
+                Ativo (visível no catálogo)
               </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground transition-colors">
+                <input type="checkbox" name="show_on_home" defaultChecked={editing?.show_on_home ?? false} className="rounded border-input text-primary focus:ring-primary" />
+                <span className="flex items-center gap-1.5 text-highlight font-semibold">
+                  <Home className="w-3.5 h-3.5" /> Mostrar como destaque na Home
+                </span>
+              </label>
+              <p className="text-[11px] text-muted-foreground ml-6">Marque apenas 6 categorias macro para um visual limpo.</p>
             </div>
             {editing && (
               <div>

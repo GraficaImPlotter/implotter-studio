@@ -3,6 +3,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import SEOHead from "@/components/SEOHead";
 import HeroSection from "@/components/home/HeroSection";
 import B2BCatalogueSection from "@/components/home/B2BCatalogueSection";
+import CategoriesSection from "@/components/home/CategoriesSection";
 import PromoCarouselSection from "@/components/home/PromoCarouselSection";
 
 // Lazy assets below the fold
@@ -72,7 +73,7 @@ const Index = () => {
       
       {/* Above the fold - Eager */}
       <HeroSection />
-      <B2BCatalogueSection />
+      <CategoriesSection />
       <PromoCarouselSection />
 
       {/* Below the fold - Lazy */}
