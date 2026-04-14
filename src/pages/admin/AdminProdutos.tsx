@@ -391,13 +391,23 @@ const AdminProdutos = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir produto?")) return;
+    if (!confirm("Excluir produto definitivamente? Se este produto tiver histórico de pedidos, ele não poderá ser excluído, apenas desativado.")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
-      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      if (error.code === "23503") {
+        toast({ 
+          title: "Não é possível excluir", 
+          description: "Este produto possui histórico de pedidos e não pode ser removido do banco. Considere 'Desativar' o produto em vez de excluir.", 
+          variant: "destructive",
+          duration: 6000
+        });
+      } else {
+        toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      }
     } else {
       toast({ title: "Produto excluído" });
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      load();
     }
   };
 
@@ -1134,9 +1144,20 @@ const AdminProdutos = () => {
             toast({ title: "Produtos desativados!" }); setSelectedProducts(new Set()); load();
           }}>Desativar</Button>
           <Button size="sm" variant="destructive" onClick={async () => {
-            if (!confirm(`Excluir ${selectedProducts.size} produtos?`)) return;
-            for (const id of selectedProducts) await supabase.from("products").delete().eq("id", id);
-            toast({ title: "Produtos excluídos!" }); setSelectedProducts(new Set()); load();
+            if (!confirm(`Excluir ${selectedProducts.size} produtos definitivamente? Itens com histórico de pedidos darão erro e permanecerão no sistema.`)) return;
+            const ids = Array.from(selectedProducts);
+            const { error } = await supabase.from("products").delete().in("id", ids);
+            if (error) {
+                if (error.code === "23503") {
+                    toast({ title: "Erro de Vínculo", description: "Alguns produtos selecionados possuem pedidos e não podem ser excluídos. Tente desativá-los.", variant: "destructive", duration: 7000 });
+                } else {
+                    toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+                }
+            } else {
+                toast({ title: "Produtos excluídos!" });
+            }
+            setSelectedProducts(new Set()); 
+            load();
           }}>Excluir</Button>
         </div>
       )}

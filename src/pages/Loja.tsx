@@ -71,7 +71,7 @@ const SidebarFilters = ({
                 ${selectedCategoryId === c.id ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
             >
               <div className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedCategoryId === c.id ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0 ${selectedCategoryId === c.id ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
                   {selectedCategoryId === c.id && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
                 </div>
                 <span className="text-[13px]">{c.name}</span>
