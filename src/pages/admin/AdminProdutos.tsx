@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
@@ -858,8 +858,38 @@ const AdminProdutos = () => {
                   <div className="space-y-4">
                     {configSchema.map((item, idx) => (
                       <div key={item.id} className="bg-background rounded-xl p-4 border border-border shadow-sm group">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
                           <div className="flex items-center gap-3 flex-1">
+                            <div className="flex flex-col gap-0.5">
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                disabled={idx === 0}
+                                onClick={() => {
+                                  const next = [...configSchema];
+                                  [next[idx-1], next[idx]] = [next[idx], next[idx-1]];
+                                  setConfigSchema(next);
+                                }}
+                              >
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                disabled={idx === configSchema.length - 1}
+                                onClick={() => {
+                                  const next = [...configSchema];
+                                  [next[idx+1], next[idx]] = [next[idx], next[idx+1]];
+                                  setConfigSchema(next);
+                                }}
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                             <Input 
                               value={item.label} 
                               onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, label: e.target.value } : it))}
@@ -898,7 +928,41 @@ const AdminProdutos = () => {
                         {item.type === "select" ? (
                           <div className="space-y-2">
                             {item.options.map((opt: any, optIdx: number) => (
-                              <div key={optIdx} className="flex gap-2 items-center">
+                              <div key={optIdx} className="flex gap-2 items-center bg-secondary/10 p-1.5 rounded-lg border border-border/30">
+                                <div className="flex flex-col">
+                                  <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-4 w-4 disabled:opacity-20"
+                                    disabled={optIdx === 0}
+                                    onClick={() => {
+                                      const next = [...configSchema];
+                                      const opts = [...next[idx].options];
+                                      [opts[optIdx-1], opts[optIdx]] = [opts[optIdx], opts[optIdx-1]];
+                                      next[idx].options = opts;
+                                      setConfigSchema(next);
+                                    }}
+                                  >
+                                    <ChevronUp className="w-2.5 h-2.5" />
+                                  </Button>
+                                  <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-4 w-4 disabled:opacity-20"
+                                    disabled={optIdx === item.options.length - 1}
+                                    onClick={() => {
+                                      const next = [...configSchema];
+                                      const opts = [...next[idx].options];
+                                      [opts[optIdx+1], opts[optIdx]] = [opts[optIdx], opts[optIdx+1]];
+                                      next[idx].options = opts;
+                                      setConfigSchema(next);
+                                    }}
+                                  >
+                                    <ChevronDown className="w-2.5 h-2.5" />
+                                  </Button>
+                                </div>
                                 <Input 
                                   value={opt.name} 
                                   onChange={e => {
@@ -907,10 +971,9 @@ const AdminProdutos = () => {
                                     setConfigSchema(next);
                                   }}
                                   placeholder="Nome da opção"
-                                  className="flex-1 h-8 text-xs"
+                                  className="flex-1 h-8 text-xs bg-background"
                                 />
-                                <div className="flex items-center gap-1.5 w-36">
-                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">R$ (Base/Adic.)</span>
+                                <div className="flex items-center gap-1.5 w-32">
                                   <Input 
                                     type="number" 
                                     step="0.01"
@@ -920,14 +983,14 @@ const AdminProdutos = () => {
                                       next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
                                       setConfigSchema(next);
                                     }}
-                                    className="h-8 text-xs"
+                                    className="h-8 text-xs bg-background"
                                   />
                                 </div>
                                 <Button 
                                   type="button" 
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-6 w-6"
+                                  className="h-6 w-6 text-destructive"
                                   onClick={() => {
                                     const next = [...configSchema];
                                     next[idx].options = next[idx].options.filter((_: any, i: number) => i !== optIdx);

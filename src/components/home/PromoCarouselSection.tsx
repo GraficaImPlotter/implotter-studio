@@ -22,24 +22,18 @@ const PromoCarouselSection = () => {
 
   useEffect(() => {
     const fetchPromos = async () => {
+      // Usando 'products' diretamente para garantir consistência com a Loja
       const { data, error } = await supabase
-        .from("products_public")
+        .from("products")
         .select("id, name, slug, short_description, price, sale_price, pricing_type, price_per_sqm, is_featured, catalog_node_id, default_quantity, product_images(image_url, sort_order)")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
+        // Filtrar apenas produtos que têm preço promocional ou são destaques
         const promos = data.filter(
-          (p: any) => p.sale_price && Number(p.sale_price) < Number(p.price) && p.pricing_type !== "per_sqm"
+          (p: any) => (p.sale_price && Number(p.sale_price) < Number(p.price)) || p.is_featured
         );
-        
-        if (promos.length < 4) {
-          const featured = data.filter((p: any) => p.is_featured && p.pricing_type !== "per_sqm");
-          for (const f of featured) {
-            if (!promos.find(p => p.id === f.id)) promos.push(f);
-            if (promos.length >= 8) break;
-          }
-        }
         
         setPromoProducts(promos.slice(0, 8));
       }
@@ -50,18 +44,20 @@ const PromoCarouselSection = () => {
   }, []);
 
   const getProductImage = (p: any) => {
-    const imgs = p.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order);
-    return imgs?.[0]?.image_url || "/placeholder.svg";
+    if (!p || !p.product_images) return "/placeholder.svg";
+    const imgs = [...p.product_images].sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+    return imgs[0]?.image_url || "/placeholder.svg";
   };
 
-  if (loading || promoProducts.length === 0) {
-    if (!loading && promoProducts.length === 0) return null;
+  if (loading) {
     return (
       <section className="py-16 pt-8 bg-background relative overflow-hidden flex justify-center">
         <span className="w-8 h-8 border-2 border-highlight border-t-transparent rounded-full animate-spin"></span>
       </section>
     );
   }
+
+  if (promoProducts.length === 0) return null;
 
   return (
     <section className="py-16 pt-8 bg-background relative overflow-hidden">

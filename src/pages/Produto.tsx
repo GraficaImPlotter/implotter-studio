@@ -145,27 +145,31 @@ const Produto = () => {
       total = unitPrice;
     }
     
+    // Safely iterate through schema
     if (product?.configuration_schema && Array.isArray(product.configuration_schema)) {
       product.configuration_schema.forEach((item: any) => {
+        if (!item || !item.id) return;
         const val = configValues[item.id];
+        if (!val) return;
+
         if (item.ui_type === 'checkbox' && Array.isArray(val)) {
-           val.forEach((v: string) => {
-             const opt = item.options?.find((o: any) => o.name === v);
-             if (opt) total += (opt.price_adj || 0);
-           });
-        } else if (val) {
-          const opt = item.options?.find((o: any) => o.name === val);
-          if (opt) total += (opt.price_adj || 0);
+            val.forEach((v: string) => {
+              const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === v) : null;
+              if (opt) total += (Number(opt.price_adj) || 0);
+            });
+        } else {
+          const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === val) : null;
+          if (opt) total += (Number(opt.price_adj) || 0);
         }
       });
     }
 
-    // If schema has no price adjustments, fall back to baseUnitPrice * selectedQuantity
-    if (total === 0 && !isSqm) {
+    // fallback for simple products without additions
+    if (total <= 0 && !isSqm) {
       total = baseUnitPrice * selectedQuantity;
     }
 
-    return total + finishingsTotal;
+    return Number((total + finishingsTotal).toFixed(2));
   }, [isSqm, area, pricePerSqm, baseUnitPrice, selectedQuantity, product?.configuration_schema, configValues, finishingsTotal]);
 
   const dimensionError = useMemo(() => {
@@ -320,12 +324,14 @@ const Produto = () => {
 
             {/* Interactive Configurator */}
             <div className="space-y-8 mb-10">
-              {product.configuration_schema?.map((item: any, itemIdx: number) => {
+              {Array.isArray(product.configuration_schema) && product.configuration_schema.map((item: any, itemIdx: number) => {
+                if (!item || !item.label) return null;
                 const isQuantity = item.label?.toLowerCase().includes("quant");
+                const options = Array.isArray(item.options) ? item.options : [];
                 
                 return (
                   <motion.div 
-                    key={item.id} 
+                    key={item.id || itemIdx} 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: itemIdx * 0.1 }}
@@ -345,7 +351,8 @@ const Produto = () => {
 
                     {item.ui_type === 'checkbox' ? (
                       <div className="bg-secondary/20 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-border/50">
-                        {item.options.map((opt: any) => {
+                        {options.map((opt: any) => {
+                          if (!opt || !opt.name) return null;
                           const current = (configValues[item.id] as string[] || []);
                           const isSel = current.includes(opt.name);
                           return (
@@ -363,14 +370,15 @@ const Produto = () => {
                                   </div>
                                   <span className={`text-[13px] transition-colors ${isSel ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
                                </div>
-                               {opt.price_adj > 0 && <span className="text-[11px] font-black text-primary">+ R$ {opt.price_adj.toFixed(2)}</span>}
+                               {opt.price_adj > 0 && <span className="text-[11px] font-black text-primary">+ R$ {Number(opt.price_adj).toFixed(2)}</span>}
                             </button>
                           );
                         })}
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2.5">
-                        {item.options.map((opt: any) => {
+                        {options.map((opt: any) => {
+                          if (!opt || !opt.name) return null;
                           const isSel = configValues[item.id] === opt.name;
                           return (
                             <button 
@@ -381,7 +389,7 @@ const Produto = () => {
                               <span className="relative z-10">{opt.name}</span>
                               {opt.price_adj > 0 && (
                                 <span className={`text-[9px] mt-1 font-black ${isSel ? "text-white/80" : "text-primary opacity-80"}`}>
-                                  + R$ {opt.price_adj.toFixed(2)}
+                                  + R$ {Number(opt.price_adj).toFixed(2)}
                                 </span>
                               )}
                               {isSel && (
