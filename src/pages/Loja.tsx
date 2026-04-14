@@ -94,7 +94,7 @@ const SidebarFilters = ({
                   <button
                     key={val}
                     onClick={() => setFilter(attr, val)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border
                       ${isSelected 
                         ? 'bg-primary border-primary text-white shadow-glow-sm' 
                         : 'bg-secondary/30 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}

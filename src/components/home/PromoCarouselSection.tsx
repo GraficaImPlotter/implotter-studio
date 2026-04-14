@@ -11,27 +11,28 @@ import {
 } from "@/components/ui/carousel";
 import { ArrowRight } from "lucide-react";
 import StoreProductCard from "@/components/product/StoreProductCard";
+import { useCart } from "@/hooks/use-cart";
+import { useToast } from "@/hooks/use-toast";
 
 const PromoCarouselSection = () => {
   const [promoProducts, setPromoProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPromos = async () => {
-      // Usando products_public igual na Loja.tsx para puxar imagens fáceis
       const { data, error } = await supabase
         .from("products_public")
-        .select("id, name, slug, short_description, price, sale_price, pricing_type, price_per_sqm, is_featured, catalog_node_id, product_images(image_url, sort_order)")
+        .select("id, name, slug, short_description, price, sale_price, pricing_type, price_per_sqm, is_featured, catalog_node_id, default_quantity, product_images(image_url, sort_order)")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        // Filtrar apenas produtos que têm preço promocional real
         const promos = data.filter(
           (p: any) => p.sale_price && Number(p.sale_price) < Number(p.price) && p.pricing_type !== "per_sqm"
         );
         
-        // Se não tiver promos suficientes, puxamos os destacados
         if (promos.length < 4) {
           const featured = data.filter((p: any) => p.is_featured && p.pricing_type !== "per_sqm");
           for (const f of featured) {
@@ -47,6 +48,11 @@ const PromoCarouselSection = () => {
 
     fetchPromos();
   }, []);
+
+  const getProductImage = (p: any) => {
+    const imgs = p.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order);
+    return imgs?.[0]?.image_url || "/placeholder.svg";
+  };
 
   if (loading || promoProducts.length === 0) {
     if (!loading && promoProducts.length === 0) return null;
@@ -106,9 +112,18 @@ const PromoCarouselSection = () => {
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="h-full pt-4 pb-12"
+                  className="h-full pt-4 pb-12 px-2"
                 >
-                  <StoreProductCard product={product} />
+                  <StoreProductCard 
+                    p={product} 
+                    index={index} 
+                    getImage={getProductImage}
+                    onAdd={(p) => {
+                      const img = getProductImage(p);
+                      addItem({ productId: p.id, name: p.name, price: Number(p.sale_price || p.price), quantity: 1, image: img });
+                      toast({ title: "Adicionado!", description: `${p.name} está no carrinho.` });
+                    }}
+                  />
                 </motion.div>
               </CarouselItem>
             ))}

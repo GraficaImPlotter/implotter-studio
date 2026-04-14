@@ -15,11 +15,13 @@ interface ProductCardProps {
 }
 
 const StoreProductCard = ({ p, index, getImage, onAdd, categoryName }: ProductCardProps) => {
+  if (!p) return null;
+
   const isSqm = p.pricing_type === "per_sqm";
-  const displayPrice = Number(p.sale_price || p.price);
+  const displayPrice = Number(p.sale_price || p.price || 0);
   
   const [imgError, setImgError] = useState(false);
-  const displayImage = imgError || !getImage(p) ? "/placeholder.svg" : getImage(p);
+  const displayImage = imgError || !getImage || !getImage(p) ? "/placeholder.svg" : getImage(p);
 
   return (
     <motion.div
