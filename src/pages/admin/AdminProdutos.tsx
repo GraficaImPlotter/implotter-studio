@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
 import RelatedProductsManager from "@/components/admin/RelatedProductsManager";
 import { useSettings } from "@/hooks/use-settings";
 import { generateUUID } from "@/lib/uuid";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { parsePdfText, generateSql } from "@/lib/migration-utils";
 
 interface CatalogNode {
   id: string;
@@ -86,9 +89,16 @@ const AdminProdutos = () => {
   const [shippingLength, setShippingLength] = useState(16);
   const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
   const [defaultMargin, setDefaultMargin] = useState(80);
-  const [showJsonEditor, setShowJsonEditor] = useState(false);
-  const [rawJson, setRawJson] = useState("");
   const [processingBulk, setProcessingBulk] = useState(false);
+  const [activeTab, setActiveTab] = useState("manage");
+  const [groupByCategory, setGroupByCategory] = useState(true);
+  
+  // Migration Tool states
+  const [importPdfText, setImportPdfText] = useState("");
+  const [importTargetNode, setImportTargetNode] = useState("");
+  const [aiEnabledForImport, setAiEnabledForImport] = useState(false);
+  const [generatedSql, setGeneratedSql] = useState("");
+  const [processingImport, setProcessingImport] = useState(false);
 
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
@@ -1249,180 +1259,244 @@ const AdminProdutos = () => {
         </Dialog>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou código..."
-            value={adminSearch}
-            onChange={e => { setAdminSearch(e.target.value); setCurrentPage(0); }}
-            className="pl-10"
-          />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex items-center justify-between border-b border-border pb-1">
+            <TabsList className="bg-transparent h-auto p-0 gap-6">
+                <TabsTrigger value="manage" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 py-2 text-sm font-bold uppercase tracking-widest">
+                    Gerenciar Produtos
+                </TabsTrigger>
+                <TabsTrigger value="import" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-highlight data-[state=active]:border-b-2 data-[state=active]:border-highlight rounded-none px-0 py-2 text-sm font-bold uppercase tracking-widest">
+                    <Upload className="w-4 h-4 mr-2" /> Migração PDF
+                </TabsTrigger>
+            </TabsList>
+
+            {activeTab === "manage" && (
+                <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                        <input type="checkbox" checked={groupByCategory} onChange={e => setGroupByCategory(e.target.checked)} className="rounded border-border text-primary focus:ring-primary" />
+                        Agrupar por Categoria
+                    </label>
+                </div>
+            )}
         </div>
-        <select
-          value={adminFilterColor}
-          onChange={e => { setAdminFilterColor(e.target.value); setCurrentPage(0); }}
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-        >
-          <option value="">Todas as cores</option>
-          <option value="1x0">1x0</option>
-          <option value="1x1">1x1</option>
-          <option value="4x0">4x0</option>
-          <option value="4x1">4x1</option>
-          <option value="4x4">4x4</option>
-        </select>
-      </div>
 
-      {selectedProducts.size > 0 && (
-        <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-lg border border-primary/20 mb-4 animate-in fade-in slide-in-from-top-2">
-          <span className="text-sm font-medium text-primary ml-2">{selectedProducts.size} produtos selecionados</span>
-          <Button size="sm" className="ml-auto" disabled={processingBulk} onClick={async () => {
-            setProcessingBulk(true);
-            await supabase.from("products").update({ is_active: true }).in("id", Array.from(selectedProducts));
-            toast({ title: "Produtos ativados!" }); setSelectedProducts(new Set()); load();
-            setProcessingBulk(false);
-          }}>
-            {processingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : "Ativar"}
-          </Button>
-          <Button size="sm" variant="outline" disabled={processingBulk} onClick={async () => {
-            setProcessingBulk(true);
-            await supabase.from("products").update({ is_active: false }).in("id", Array.from(selectedProducts));
-            toast({ title: "Produtos desativados!" }); setSelectedProducts(new Set()); load();
-            setProcessingBulk(false);
-          }}>
-            {processingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : "Desativar"}
-          </Button>
-          <Button size="sm" variant="destructive" disabled={processingBulk} onClick={async () => {
-            if (!confirm(`Excluir ${selectedProducts.size} produtos definitivamente? Itens com histórico de pedidos darão erro e permanecerão no sistema.`)) return;
-            setProcessingBulk(true);
-            const ids = Array.from(selectedProducts);
-            const { error } = await supabase.from("products").delete().in("id", ids);
-            if (error) {
-                if (error.code === "23503") {
-                    toast({ title: "Erro de Vínculo", description: "Alguns produtos selecionados possuem pedidos e não podem ser excluídos. Tente desativá-los.", variant: "destructive", duration: 7000 });
-                } else {
-                    toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
-                }
-            } else {
-                toast({ title: "Produtos excluídos!" });
-            }
-            setSelectedProducts(new Set()); 
-            load();
-            setProcessingBulk(false);
-          }}>
-            {processingBulk ? <Loader2 className="w-4 h-4 animate-spin" /> : "Excluir"}
-          </Button>
-        </div>
-      )}
-
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="bg-card rounded-xl border border-border overflow-hidden shadow-card border-gradient-premium"
-      >
-        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
-          <table className="w-full text-sm table-fixed min-w-[800px]">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="p-3 w-10 text-center">
-                <input type="checkbox" checked={products.length > 0 && selectedProducts.size === products.length} onChange={() => {
-                  if (selectedProducts.size === products.length) setSelectedProducts(new Set());
-                  else setSelectedProducts(new Set(products.map(p => p.id)));
-                }} className="rounded border-primary text-primary focus:ring-primary" />
-              </th>
-              <th className="text-left p-3 font-medium text-muted-foreground w-[140px]">Código</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Nome</th>
-              <th className="text-left p-3 font-medium text-muted-foreground w-[80px]">Cores</th>
-              <th className="text-right p-3 font-medium text-muted-foreground w-[120px]">Preço</th>
-              <th className="text-center p-3 font-medium text-muted-foreground w-[80px]">Status</th>
-              <th className="text-right p-3 font-medium text-muted-foreground w-[100px]">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(() => {
-              const filtered = products.filter(p => {
-                const matchSearch = !adminSearch.trim() || 
-                  p.name?.toLowerCase().includes(adminSearch.toLowerCase()) ||
-                  p.product_code?.toLowerCase().includes(adminSearch.toLowerCase());
-                const matchColor = !adminFilterColor || p.color_mode === adminFilterColor;
-                return matchSearch && matchColor;
-              });
-              const paged = filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
-              
-              if (paged.length === 0) {
-                return <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Nenhum produto encontrado</td></tr>;
-              }
-
-              return paged.map(p => (
-                 <tr key={p.id} className="border-t border-border hover:bg-muted/30">
-                  <td className="p-3 text-center">
-                    <input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => {
-                      const next = new Set(selectedProducts);
-                      if (next.has(p.id)) {
-                        next.delete(p.id);
-                      } else {
-                        next.add(p.id);
-                      }
-                      setSelectedProducts(next);
-                    }} className="rounded border-primary text-primary focus:ring-primary" />
-                  </td>
-                  <td className="p-3 text-xs text-muted-foreground font-mono truncate">{p.product_code || "—"}</td>
-                  <td className="p-3 font-medium text-foreground truncate">
-                    {p.name}
-                    {p.is_featured && <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full ml-2">Destaque</span>}
-                    {p.sale_price && <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded-full ml-1">Promoção</span>}
-                  </td>
-                  <td className="p-3 text-xs text-muted-foreground">{p.color_mode || "—"}</td>
-                  <td className="p-3 text-right text-foreground whitespace-nowrap">
-                    {p.sale_price ? (
-                      <span>
-                        <span className="line-through text-muted-foreground text-xs mr-1">R$ {Number(p.price).toFixed(2)}</span>
-                        <span className="text-destructive font-bold">R$ {Number(p.sale_price).toFixed(2)}</span>
-                      </span>
-                    ) : p.pricing_type === "per_sqm"
-                      ? `R$ ${Number(p.price_per_sqm).toFixed(2)}/m²`
-                      : `R$ ${Number(p.price).toFixed(2)}`
-                    }
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${p.is_active ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"}`}>
-                      {p.is_active ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleDuplicate(p)} title="Duplicar produto"><Copy className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => openForm(p)}><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </div>
-                  </td>
-                </tr>
-              ));
-            })()}
-          </tbody>
-          </table>
-          {(() => {
-          const filtered = products.filter(p => {
-            const matchSearch = !adminSearch.trim() || 
-              p.name?.toLowerCase().includes(adminSearch.toLowerCase()) ||
-              p.product_code?.toLowerCase().includes(adminSearch.toLowerCase());
-            const matchColor = !adminFilterColor || p.color_mode === adminFilterColor;
-            return matchSearch && matchColor;
-          });
-          return filtered.length > ITEMS_PER_PAGE ? (
-            <div className="flex items-center justify-between p-3 border-t border-border bg-muted/30">
-              <span className="text-xs text-muted-foreground">
-                Mostrando {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filtered.length)} de {filtered.length}
-              </span>
-              <div className="flex gap-1">
-                <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Anterior</Button>
-                <Button variant="outline" size="sm" disabled={(currentPage + 1) * ITEMS_PER_PAGE >= filtered.length} onClick={() => setCurrentPage(p => p + 1)}>Próximo</Button>
-              </div>
+        <TabsContent value="manage" className="space-y-6 m-0 animate-in fade-in slide-in-from-left-4 duration-300">
+            <div className="flex flex-wrap gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Buscar por nome ou código..." value={adminSearch} onChange={e => { setAdminSearch(e.target.value); setCurrentPage(0); }} className="pl-10 h-11" />
+                </div>
+                <select value={adminFilterColor} onChange={e => { setAdminFilterColor(e.target.value); setCurrentPage(0); }} className="rounded-lg border border-input bg-background px-3 py-2 text-sm h-11">
+                    <option value="">Todas as cores</option>
+                    <option value="1x0">1x0</option><option value="1x1">1x1</option>
+                    <option value="4x0">4x0</option><option value="4x1">4x1</option><option value="4x4">4x4</option>
+                </select>
             </div>
-          ) : null;
-        })()}
-        </div>
-      </motion.div>
+
+            {selectedProducts.size > 0 && (
+                <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-lg border border-primary/20 animate-in fade-in zoom-in-95">
+                    <span className="text-sm font-medium text-primary ml-2">{selectedProducts.size} selecionados</span>
+                    <div className="flex gap-2 ml-auto">
+                        <Button size="sm" variant="outline" onClick={() => setSelectedProducts(new Set())}>Cancelar</Button>
+                        <Button size="sm" onClick={async () => { setProcessingBulk(true); await supabase.from("products").update({ is_active: true }).in("id", Array.from(selectedProducts)); toast({ title: "Ativados!" }); setSelectedProducts(new Set()); load(); setProcessingBulk(false); }}>Ativar</Button>
+                        <Button size="sm" variant="destructive" onClick={async () => { if (!confirm("Excluir definitivamente?")) return; setProcessingBulk(true); await supabase.from("products").delete().in("id", Array.from(selectedProducts)); toast({ title: "Excluídos!" }); setSelectedProducts(new Set()); load(); setProcessingBulk(false); }}>Excluir</Button>
+                    </div>
+                </div>
+            )}
+
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                {!groupByCategory ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/30 border-b border-border">
+                                <tr>
+                                    <th className="p-4 w-10"><input type="checkbox" onChange={e => setSelectedProducts(e.target.checked ? new Set(filteredProducts.map(p => p.id)) : new Set())} /></th>
+                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Código</th>
+                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Produto</th>
+                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Categoria</th>
+                                    <th className="text-right p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Venda</th>
+                                    <th className="text-center p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Status</th>
+                                    <th className="text-right p-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map(p => (
+                                    <tr key={p.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                                        <td className="p-4 text-center"><input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => { const n = new Set(selectedProducts); n.has(p.id) ? n.delete(p.id) : n.add(p.id); setSelectedProducts(n); }} /></td>
+                                        <td className="p-4 font-mono text-xs text-muted-foreground">{p.product_code || "—"}</td>
+                                        <td className="p-4 font-bold">{p.name} {p.is_featured && <span className="text-[9px] bg-warning/20 text-warning px-1.5 py-0.5 rounded ml-2">HOT</span>}</td>
+                                        <td className="p-4 text-xs text-muted-foreground">{p.categories?.name || "—"}</td>
+                                        <td className="p-4 text-right font-black">R$ {Number(p.price).toFixed(2)}</td>
+                                        <td className="p-4 text-center">
+                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.is_active ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                                                {p.is_active ? "Ativo" : "Inativo"}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDuplicate(p)}><Copy className="w-4 h-4" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openForm(p)}><Pencil className="w-4 h-4" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-4 h-4" /></Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <Accordion type="multiple" defaultValue={Object.keys(groupedProducts || {})} className="w-full">
+                        {Object.entries(groupedProducts || {}).map(([catName, items]) => (
+                            <AccordionItem key={catName} value={catName} className="border-b border-border last:border-0">
+                                <AccordionTrigger className="hover:no-underline px-6 py-4 bg-muted/20 group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                            <FolderTree className="w-4 h-4" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-display font-black text-sm uppercase tracking-tight">{catName}</p>
+                                            <p className="text-[10px] text-muted-foreground font-bold">{items.length} PRODUTOS NESTE GRUPO</p>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-0">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <tbody>
+                                                {items.map(p => (
+                                                    <tr key={p.id} className="border-t border-border/30 hover:bg-muted/10 transition-colors">
+                                                        <td className="p-4 w-10"><input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => { const n = new Set(selectedProducts); n.has(p.id) ? n.delete(p.id) : n.add(p.id); setSelectedProducts(n); }} /></td>
+                                                        <td className="p-4 w-32 font-mono text-[10px] text-muted-foreground">{p.product_code || "—"}</td>
+                                                        <td className="p-4 font-bold text-foreground">
+                                                            {p.name}
+                                                            <div className="flex gap-1 mt-1">
+                                                                {p.is_featured && <span className="text-[8px] bg-warning/20 text-warning px-1 py-0.5 rounded font-black uppercase">Destaque</span>}
+                                                                {!p.is_active && <span className="text-[8px] bg-destructive/20 text-destructive px-1 py-0.5 rounded font-black uppercase">Inativo</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-xs text-muted-foreground">{p.color_mode || "—"}</td>
+                                                        <td className="p-4 text-right font-black text-primary">R$ {Number(p.price).toFixed(2)}</td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex justify-end gap-1">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDuplicate(p)}><Copy className="w-3.5 h-3.5" /></Button>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openForm(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+
+                {filteredProducts.length > ITEMS_PER_PAGE && !groupByCategory && (
+                    <div className="p-4 bg-muted/10 border-t border-border flex justify-between items-center">
+                         <span className="text-xs text-muted-foreground">Mostrando {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length}</span>
+                         <div className="flex gap-2">
+                             <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Anterior</Button>
+                             <Button variant="outline" size="sm" disabled={(currentPage + 1) * ITEMS_PER_PAGE >= filteredProducts.length} onClick={() => setCurrentPage(p => p + 1)}>Próximo</Button>
+                         </div>
+                    </div>
+                )}
+            </div>
+        </TabsContent>
+
+        <TabsContent value="import" className="m-0 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-highlight/10 flex items-center justify-center text-highlight shadow-glow-sm">
+                                <Layers className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h2 className="font-display font-black text-xl tracking-tight uppercase">Extrator de PDF</h2>
+                                <p className="text-xs text-muted-foreground">Converta tabelas brutas em comandos SQL</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">1. Nome da Categoria Macro</label>
+                            <Input value={importTargetNode} onChange={e => setImportTargetNode(e.target.value.toUpperCase())} placeholder="EX: ADESIVOS, BANNERS, AGENDAS..." className="h-12 font-bold" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">2. Conteúdo do PDF (Copiar/Colar)</label>
+                            <Textarea value={importPdfText} onChange={e => setImportPdfText(e.target.value)} placeholder="Cole aqui as linhas da tabela...&#10;Ex: ADCASOV05 ADESIVOS ADESIVO... R$ 34,99" className="h-64 font-mono text-[11px] bg-muted/20 border-border focus:bg-background transition-colors" />
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-xl border border-border">
+                            <div className="flex items-center gap-3">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                                <div>
+                                    <p className="text-xs font-bold">Enriquecer com IA</p>
+                                    <p className="text-[10px] text-muted-foreground">Gera descritivo e metadados para cada produto</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setAiEnabledForImport(!aiEnabledForImport)} className={`w-10 h-5 rounded-full relative transition-colors ${aiEnabledForImport ? "bg-primary" : "bg-muted-foreground/30"}`}>
+                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${aiEnabledForImport ? "left-5.5" : "left-0.5"}`} />
+                            </button>
+                        </div>
+
+                        <Button variant="hero" className="w-full h-14 bg-highlight hover:bg-highlight/90 text-white font-black uppercase tracking-widest text-sm shadow-glow-sm" onClick={handleProcessImport} disabled={processingImport || !importPdfText}>
+                            {processingImport ? <><Loader2 className="w-5 h-5 mr-3 animate-spin" /> Processando Dados...</> : <><Save className="w-5 h-5 mr-3" /> Gerar Script de Importação</>}
+                        </Button>
+                    </div>
+
+                    <div className="bg-secondary/50 rounded-2xl p-6 border border-border">
+                        <h3 className="font-display font-bold text-sm mb-3 text-foreground uppercase tracking-widest">Dicas do Sistema</h3>
+                        <ul className="text-xs text-muted-foreground space-y-3 leading-relaxed">
+                            <li className="flex gap-2">
+                                <span className="text-highlight font-black">•</span>
+                                <div><strong>Lógica de Preço:</strong> Aplicamos automaticamente 80% de margem sobre o custo + R$ 8,90 de frete fixo.</div>
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-highlight font-black">•</span>
+                                <div><strong>Formatação:</strong> O sistema detecta automaticamente variações de tamanho e quantidade.</div>
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-highlight font-black">•</span>
+                                <div><strong>Segurança:</strong> Todos os produtos são criados como "Inativos" por padrão para você validar antes de publicar.</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                         <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">3. Resultado SQL (Script Final)</h3>
+                         {generatedSql && (
+                             <Button variant="ghost" size="sm" className="h-7 text-[9px] uppercase font-black" onClick={() => { navigator.clipboard.writeText(generatedSql); toast({ title: "Copiado!" }); }}>
+                                <Copy className="w-3 h-3 mr-1.5" /> Copiar SQL
+                             </Button>
+                         )}
+                    </div>
+                    <div className="relative">
+                        <Textarea readOnly value={generatedSql} placeholder="O script gerado aparecerá aqui..." className="h-[600px] font-mono text-[10px] leading-relaxed bg-black/90 text-success border-border p-6 shadow-2xl resize-none" />
+                        {!generatedSql && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground opacity-50">
+                                <Loader2 className="w-10 h-10 mb-4 animate-pulse opacity-10" />
+                                <p className="text-xs uppercase font-black tracking-widest">Aguardando Processamento</p>
+                            </div>
+                        )}
+                    </div>
+                    {generatedSql && (
+                        <div className="p-4 bg-warning/10 border border-warning/20 rounded-xl flex gap-3">
+                            <HelpCircle className="w-5 h-5 text-warning shrink-0" />
+                            <p className="text-[11px] text-warning/90 leading-relaxed font-medium">
+                                <strong>Importante:</strong> Vá até o Supabase SQL Editor, abra uma nova aba, cole este script e execute. Ele cuidará da criação de categorias e vinculará os produtos corretamente.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </TabsContent>
+      </Tabs>
     </AdminLayout>
   );
 };
