@@ -86,6 +86,8 @@ const AdminProdutos = () => {
   const [shippingLength, setShippingLength] = useState(16);
   const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
   const [defaultMargin, setDefaultMargin] = useState(80);
+  const [showJsonEditor, setShowJsonEditor] = useState(false);
+  const [rawJson, setRawJson] = useState("");
 
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
@@ -813,23 +815,40 @@ const AdminProdutos = () => {
               </div>
 
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
-                <div className="flex items-center justify-between mb-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
-                    </h3>
-                    {configSchema.length > 0 && configSchema.some(it => it.options?.some((o: any) => o.cost_adj > 0)) && (
-                        <Button 
-                            type="button" 
-                            variant="hero" 
-                            size="sm" 
-                            className="bg-success hover:bg-success/90 h-8" 
-                            onClick={autoCalcularTudo}
-                        >
-                            <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Auto-calcular por Margem ({defaultMargin}%)
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-4">
+                        <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
+                        </h3>
+                        <div className="flex items-center gap-2 bg-secondary/30 px-2 py-1 rounded-lg border border-border/50">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Modo JSON</span>
+                            <button 
+                                type="button" 
+                                onClick={() => {
+                                    if (!showJsonEditor) setRawJson(JSON.stringify(configSchema, null, 2));
+                                    setShowJsonEditor(!showJsonEditor);
+                                }}
+                                className={`w-8 h-4 rounded-full relative transition-colors ${showJsonEditor ? "bg-primary" : "bg-muted-foreground/30"}`}
+                            >
+                                <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showJsonEditor ? "left-4.5" : "left-0.5"}`} />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {configSchema.length > 0 && configSchema.some(it => it.options?.some((o: any) => o.cost_adj > 0)) && (
+                            <Button 
+                                type="button" 
+                                variant="hero" 
+                                size="sm" 
+                                className="bg-success hover:bg-success/90 h-8 font-bold" 
+                                onClick={autoCalcularTudo}
+                            >
+                                <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Auto-calcular por Margem ({defaultMargin}%)
+                            </Button>
+                        )}
+                    </div>
                   </div>
+
                   <div className="flex gap-2">
                     <Button 
                       type="button" 
@@ -857,7 +876,6 @@ const AdminProdutos = () => {
                       <Plus className="w-3 h-3 mr-1" /> Preset: Banner
                     </Button>
                   </div>
-                </div>
 
                 <div className="flex gap-2 mb-4">
                   <Button 
@@ -889,220 +907,284 @@ const AdminProdutos = () => {
                   </div>
                 </div>
 
-                {configSchema.length === 0 ? (
-                  <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
-                    <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground italic">Nenhum campo personalizado definido.</p>
-                  </div>
+                {showJsonEditor ? (
+                    <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex gap-2">
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 bg-secondary/50"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(JSON.stringify(configSchema, null, 2));
+                                    toast({ title: "Copiado!", description: "Código JSON copiado para sua área de transferência." });
+                                }}
+                            >
+                                <Copy className="w-3.5 h-3.5 mr-2" /> Copiar Tudo
+                            </Button>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 bg-secondary/50"
+                                onClick={async () => {
+                                    const text = await navigator.clipboard.readText();
+                                    setRawJson(text);
+                                    try {
+                                        const parsed = JSON.parse(text);
+                                        if (Array.isArray(parsed)) {
+                                            setConfigSchema(parsed);
+                                            toast({ title: "Importado!", description: "Dados JSON carregadados com sucesso." });
+                                        }
+                                    } catch (e) {
+                                        toast({ title: "JSON Inválido", variant: "destructive" });
+                                    }
+                                }}
+                            >
+                                <Plus className="w-3.5 h-3.5 mr-2" /> Colar e Importar
+                            </Button>
+                        </div>
+                        <div className="relative">
+                            <Textarea 
+                                value={rawJson}
+                                onChange={e => {
+                                    setRawJson(e.target.value);
+                                    try {
+                                        const parsed = JSON.parse(e.target.value);
+                                        if (Array.isArray(parsed)) setConfigSchema(parsed);
+                                    } catch (e) { /* silent parse during typing */ }
+                                }}
+                                className="font-mono text-[11px] h-96 bg-background border-primary/20"
+                                placeholder='[ { "id": "...", "label": "...", "options": [...] } ]'
+                            />
+                            <div className="absolute top-2 right-4 text-[9px] font-bold text-muted-foreground uppercase opacity-50">JSON RAW Editor</div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground italic flex items-center gap-1.5">
+                            <HelpCircle className="w-3 h-3" /> 
+                            Este modo é ideal para colar configurações que eu (seu assistente) te passar no chat.
+                        </p>
+                    </div>
                 ) : (
                   <div className="space-y-4">
-                    {configSchema.map((item, idx) => (
-                      <div key={item.id} className="bg-background rounded-xl p-4 border border-border shadow-sm group">
-                        <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className="flex flex-col gap-0.5">
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                disabled={idx === 0}
-                                onClick={() => {
-                                  const next = [...configSchema];
-                                  [next[idx-1], next[idx]] = [next[idx], next[idx-1]];
-                                  setConfigSchema(next);
-                                }}
-                              >
-                                <ChevronUp className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                disabled={idx === configSchema.length - 1}
-                                onClick={() => {
-                                  const next = [...configSchema];
-                                  [next[idx+1], next[idx]] = [next[idx], next[idx+1]];
-                                  setConfigSchema(next);
-                                }}
-                              >
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                            <Input 
-                              value={item.label} 
-                              onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, label: e.target.value } : it))}
-                              className="w-48 font-bold text-sm bg-secondary/30 h-8"
-                              placeholder="Ex: Material"
-                            />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                              {item.type === "select" ? (
-                                <select 
-                                  value={item.ui_type || "select"}
-                                  onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, ui_type: e.target.value } : it))}
-                                  className="text-[10px] font-black uppercase tracking-widest text-primary px-2 py-0.5 bg-primary/10 rounded border-none outline-none cursor-pointer"
-                                >
-                                  <option value="select">Lista</option>
-                                  <option value="pills">Botões</option>
-                                  <option value="checkbox">Multi-Seleção</option>
-                                </select>
-                              ) : (
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                                  Contador
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => setConfigSchema(prev => prev.filter((_, i) => i !== idx))}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-
-                        {item.type === "select" ? (
-                          <div className="space-y-2">
-                            {item.options.map((opt: any, optIdx: number) => (
-                              <div key={optIdx} className="flex gap-2 items-center bg-secondary/10 p-1.5 rounded-lg border border-border/30">
-                                <div className="flex flex-col">
+                    {configSchema.length === 0 ? (
+                      <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
+                        <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground italic">Nenhum campo personalizado definido.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(configSchema || []).map((item, idx) => (
+                          <div key={item.id} className="bg-background rounded-xl p-4 border border-border shadow-sm group">
+                            <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="flex flex-col gap-0.5">
                                   <Button 
                                     type="button" 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-4 w-4 disabled:opacity-20"
-                                    disabled={optIdx === 0}
+                                    className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                    disabled={idx === 0}
                                     onClick={() => {
                                       const next = [...configSchema];
-                                      const opts = [...next[idx].options];
-                                      [opts[optIdx-1], opts[optIdx]] = [opts[optIdx], opts[optIdx-1]];
-                                      next[idx].options = opts;
+                                      [next[idx-1], next[idx]] = [next[idx], next[idx-1]];
                                       setConfigSchema(next);
                                     }}
                                   >
-                                    <ChevronUp className="w-2.5 h-2.5" />
+                                    <ChevronUp className="w-3.5 h-3.5" />
                                   </Button>
                                   <Button 
                                     type="button" 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="h-4 w-4 disabled:opacity-20"
-                                    disabled={optIdx === item.options.length - 1}
+                                    className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
+                                    disabled={idx === configSchema.length - 1}
                                     onClick={() => {
                                       const next = [...configSchema];
-                                      const opts = [...next[idx].options];
-                                      [opts[optIdx+1], opts[optIdx]] = [opts[optIdx], opts[optIdx+1]];
-                                      next[idx].options = opts;
+                                      const temp = next[idx];
+                                      next[idx] = next[idx+1];
+                                      next[idx+1] = temp;
                                       setConfigSchema(next);
                                     }}
                                   >
-                                    <ChevronDown className="w-2.5 h-2.5" />
+                                    <ChevronDown className="w-3.5 h-3.5" />
                                   </Button>
                                 </div>
                                 <Input 
-                                  value={opt.name} 
-                                  onChange={e => {
-                                    const next = [...configSchema];
-                                    next[idx].options[optIdx].name = e.target.value;
-                                    setConfigSchema(next);
-                                  }}
-                                  placeholder="Nome da opção"
-                                  className="flex-1 h-8 text-xs bg-background"
+                                  value={item.label} 
+                                  onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, label: e.target.value } : it))}
+                                  className="w-48 font-bold text-sm bg-secondary/30 h-8"
+                                  placeholder="Ex: Material"
                                 />
-                                <div className="flex items-center gap-2 flex-1">
-                                  <div className="relative flex-1 group/cost">
-                                    <span className="absolute -top-3.5 left-1 text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-0 group-focus-within/cost:opacity-100 group-hover/cost:opacity-100 transition-opacity">Custo (R$)</span>
-                                    <Input 
-                                        type="number" 
-                                        step="0.01"
-                                        value={opt.cost_adj || ""} 
-                                        onChange={e => {
-                                            const next = [...configSchema];
-                                            const cost = parseFloat(e.target.value) || 0;
-                                            next[idx].options[optIdx].cost_adj = cost;
-                                            if (cost > 0) {
-                                                next[idx].options[optIdx].price_adj = calculatePriceFromCost(cost);
-                                            }
-                                            setConfigSchema(next);
-                                        }}
-                                        placeholder="Custo"
-                                        className="h-8 text-xs bg-destructive/5 border-destructive/20 focus:border-destructive/40"
-                                    />
-                                  </div>
-                                  <div className="relative flex-1 group/price">
-                                    <span className="absolute -top-3.5 left-1 text-[9px] text-primary font-bold uppercase tracking-tighter opacity-0 group-focus-within/price:opacity-100 group-hover/price:opacity-100 transition-opacity">Preço (R$)</span>
-                                    <Input 
-                                        type="number" 
-                                        step="0.01"
-                                        value={opt.price_adj} 
-                                        onChange={e => {
-                                            const next = [...configSchema];
-                                            next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
-                                            setConfigSchema(next);
-                                        }}
-                                        placeholder="Venda"
-                                        className="h-8 text-xs bg-primary/5 border-primary/20 focus:border-primary/40 font-bold"
-                                    />
-                                  </div>
-                                  {opt.cost_adj > 0 && opt.price_adj > 0 && (
-                                    <div className="text-[9px] font-black text-success min-w-[30px] text-right">
-                                        +{(((opt.price_adj - opt.cost_adj) / opt.cost_adj) * 100).toFixed(0)}%
-                                    </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                                  {item.type === "select" ? (
+                                    <select 
+                                      value={item.ui_type || "select"}
+                                      onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, ui_type: e.target.value } : it))}
+                                      className="text-[10px] font-black uppercase tracking-widest text-primary px-2 py-0.5 bg-primary/10 rounded border-none outline-none cursor-pointer"
+                                    >
+                                      <option value="select">Lista</option>
+                                      <option value="pills">Botões</option>
+                                      <option value="checkbox">Multi-Seleção</option>
+                                    </select>
+                                  ) : (
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                                      Contador
+                                    </span>
                                   )}
-                                </div>
+                                </span>
+                              </div>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setConfigSchema(prev => prev.filter((_, i) => i !== idx))}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+
+                            {item.type === "select" ? (
+                              <div className="space-y-2">
+                                {(item.options || []).map((opt: any, optIdx: number) => (
+                                  <div key={optIdx} className="flex gap-2 items-center bg-secondary/10 p-1.5 rounded-lg border border-border/30">
+                                    <div className="flex flex-col">
+                                      <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-4 w-4 disabled:opacity-20"
+                                        disabled={optIdx === 0}
+                                        onClick={() => {
+                                          const next = [...configSchema];
+                                          const opts = [...next[idx].options];
+                                          [opts[optIdx-1], opts[optIdx]] = [opts[optIdx], opts[optIdx-1]];
+                                          next[idx].options = opts;
+                                          setConfigSchema(next);
+                                        }}
+                                      >
+                                        <ChevronUp className="w-2.5 h-2.5" />
+                                      </Button>
+                                      <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-4 w-4 disabled:opacity-20"
+                                        disabled={optIdx === item.options.length - 1}
+                                        onClick={() => {
+                                          const next = [...configSchema];
+                                          const opts = [...next[idx].options];
+                                          [opts[optIdx+1], opts[optIdx]] = [opts[optIdx], opts[optIdx+1]];
+                                          next[idx].options = opts;
+                                          setConfigSchema(next);
+                                        }}
+                                      >
+                                        <ChevronDown className="w-2.5 h-2.5" />
+                                      </Button>
+                                    </div>
+                                    <Input 
+                                      value={opt.name} 
+                                      onChange={e => {
+                                        const next = [...configSchema];
+                                        next[idx].options[optIdx].name = e.target.value;
+                                        setConfigSchema(next);
+                                      }}
+                                      placeholder="Nome da opção"
+                                      className="flex-1 h-8 text-xs bg-background"
+                                    />
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <div className="relative flex-1 group/cost">
+                                        <span className="absolute -top-3.5 left-1 text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-0 group-focus-within/cost:opacity-100 group-hover/cost:opacity-100 transition-opacity">Custo (R$)</span>
+                                        <Input 
+                                            type="number" 
+                                            step="0.01"
+                                            value={opt.cost_adj || ""} 
+                                            onChange={e => {
+                                                const next = [...configSchema];
+                                                const cost = parseFloat(e.target.value) || 0;
+                                                next[idx].options[optIdx].cost_adj = cost;
+                                                if (cost > 0) {
+                                                    next[idx].options[optIdx].price_adj = calculatePriceFromCost(cost);
+                                                }
+                                                setConfigSchema(next);
+                                            }}
+                                            placeholder="Custo"
+                                            className="h-8 text-xs bg-destructive/5 border-destructive/20 focus:border-destructive/40"
+                                        />
+                                      </div>
+                                      <div className="relative flex-1 group/price">
+                                        <span className="absolute -top-3.5 left-1 text-[9px] text-primary font-bold uppercase tracking-tighter opacity-0 group-focus-within/price:opacity-100 group-hover/price:opacity-100 transition-opacity">Preço (R$)</span>
+                                        <Input 
+                                            type="number" 
+                                            step="0.01"
+                                            value={opt.price_adj} 
+                                            onChange={e => {
+                                                const next = [...configSchema];
+                                                next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
+                                                setConfigSchema(next);
+                                            }}
+                                            placeholder="Venda"
+                                            className="h-8 text-xs bg-primary/5 border-primary/20 focus:border-primary/40 font-bold"
+                                        />
+                                      </div>
+                                      {opt.cost_adj > 0 && opt.price_adj > 0 && (
+                                        <div className="text-[9px] font-black text-success min-w-[30px] text-right">
+                                            +{(((opt.price_adj - opt.cost_adj) / opt.cost_adj) * 100).toFixed(0)}%
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Button 
+                                      type="button" 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-6 w-6 text-destructive"
+                                      onClick={() => {
+                                        const next = [...configSchema];
+                                        next[idx].options = next[idx].options.filter((_: any, i: number) => i !== optIdx);
+                                        setConfigSchema(next);
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                ))}
                                 <Button 
                                   type="button" 
                                   variant="ghost" 
-                                  size="icon" 
-                                  className="h-6 w-6 text-destructive"
+                                  size="sm" 
+                                  className="text-[10px] h-7 px-2 text-primary"
                                   onClick={() => {
                                     const next = [...configSchema];
-                                    next[idx].options = next[idx].options.filter((_: any, i: number) => i !== optIdx);
+                                    if (!next[idx].options) next[idx].options = [];
+                                    next[idx].options.push({ name: "Nova Opção", price_adj: 0 });
                                     setConfigSchema(next);
                                   }}
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Plus className="w-3 h-3 mr-1" /> Adicionar Opção
                                 </Button>
                               </div>
-                            ))}
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-[10px] h-7 px-2 text-primary"
-                              onClick={() => {
-                                const next = [...configSchema];
-                                next[idx].options.push({ name: "Nova Opção", price_adj: 0 });
-                                setConfigSchema(next);
-                              }}
-                            >
-                              <Plus className="w-3 h-3 mr-1" /> Adicionar Opção
-                            </Button>
+                            ) : (
+                              <div className="flex items-center gap-4">
+                                <div className="flex-1">
+                                  <label className="text-[10px] text-muted-foreground uppercase font-bold mb-1 block">Valor por Unidade (R$)</label>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    value={item.unit_price} 
+                                    onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
+                                    className="h-8 text-xs bg-secondary/30"
+                                  />
+                                </div>
+                                <div className="w-1/2 flex items-center gap-2 pt-4">
+                                   <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                                   <span className="text-[10px] text-muted-foreground italic">Pede a quantidade ao cliente na loja.</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-4">
-                            <div className="flex-1">
-                              <label className="text-[10px] text-muted-foreground uppercase font-bold mb-1 block">Valor por Unidade (R$)</label>
-                              <Input 
-                                type="number" 
-                                step="0.01"
-                                value={item.unit_price} 
-                                onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
-                                className="h-8 text-xs bg-secondary/30"
-                              />
-                            </div>
-                            <div className="w-1/2 flex items-center gap-2 pt-4">
-                               <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                               <span className="text-[10px] text-muted-foreground italic">Pede a quantidade ao cliente na loja.</span>
-                            </div>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
