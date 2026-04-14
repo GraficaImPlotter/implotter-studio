@@ -90,24 +90,16 @@ const CategoriesSection = () => {
                 className="group block space-y-4"
               >
                 {/* Circular Image Container */}
-                <div className="relative aspect-square rounded-full overflow-hidden bg-white shadow-xl group-hover:shadow-glow transition-all duration-500 border-2 border-white/10 group-hover:border-primary/40 p-2">
-                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-50">
+                <div className="relative aspect-square rounded-full overflow-hidden bg-white shadow-xl group-hover:shadow-glow transition-all duration-500 border-2 border-white/10 group-hover:border-primary/40 p-4">
+                   <div className="w-full h-full rounded-full overflow-hidden bg-white">
                     <img
                       src={cat.image_url || "/placeholder.svg"}
                       alt={cat.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
                     />
                    </div>
                    {/* Subtle Overlay */}
                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-
-                {/* Title Below */}
-                <div>
-                  <h3 className="font-display font-bold text-foreground text-sm md:text-base leading-tight group-hover:text-primary transition-colors">
-                    {cat.name}
-                  </h3>
-                  <div className="mt-2 h-0.5 w-0 group-hover:w-full bg-primary mx-auto transition-all duration-500 rounded-full" />
                 </div>
               </Link>
             </motion.div>
