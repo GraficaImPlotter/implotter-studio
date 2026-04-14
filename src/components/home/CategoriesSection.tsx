@@ -75,44 +75,39 @@ const CategoriesSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {categories.map((cat, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 max-w-7xl mx-auto">
+          {categories.slice(0, 6).map((cat, i) => (
             <motion.div
               key={cat.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               viewport={{ once: true }}
+              className="text-center"
             >
               <Link
                 to={`/loja?node=${cat.id}`}
-                className="group relative block aspect-[4/5] rounded-[2.5rem] overflow-hidden glass-card-premium border-gradient-premium shadow-2xl hover:shadow-glow transition-all duration-500 hover:-translate-y-2"
+                className="group block space-y-4"
               >
-                {/* Image Wrap */}
-                <div className="absolute inset-0">
-                  <img
-                    src={cat.image_url || "/placeholder.svg"}
-                    alt={cat.name}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                  />
-                  {/* Premium Overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
-                  <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
+                {/* Circular Image Container */}
+                <div className="relative aspect-square rounded-full overflow-hidden bg-white shadow-xl group-hover:shadow-glow transition-all duration-500 border-2 border-white/10 group-hover:border-primary/40 p-2">
+                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-50">
+                    <img
+                      src={cat.image_url || "/placeholder.svg"}
+                      alt={cat.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                   </div>
+                   {/* Subtle Overlay */}
+                   <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
 
-                {/* Content */}
-                <div className="absolute inset-0 p-8 flex flex-col justify-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                  <div className="space-y-3">
-                    <h3 className="font-display font-black text-white text-3xl leading-tight tracking-tight drop-shadow-lg">{cat.name}</h3>
-                    {cat.description && (
-                      <p className="text-white/70 text-sm line-clamp-2 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100 max-w-[85%]">{cat.description}</p>
-                    )}
-                    <div className="pt-2">
-                       <span className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg group-hover:shadow-glow-sm transition-all active:scale-95">
-                        Explorar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </div>
-                  </div>
+                {/* Title Below */}
+                <div>
+                  <h3 className="font-display font-bold text-foreground text-sm md:text-base leading-tight group-hover:text-primary transition-colors">
+                    {cat.name}
+                  </h3>
+                  <div className="mt-2 h-0.5 w-0 group-hover:w-full bg-primary mx-auto transition-all duration-500 rounded-full" />
                 </div>
               </Link>
             </motion.div>

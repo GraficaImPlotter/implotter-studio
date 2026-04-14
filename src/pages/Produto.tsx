@@ -83,7 +83,7 @@ const Produto = () => {
     const load = async () => {
       const [{ data }, { data: nodes }] = await Promise.all([
         supabase
-          .from("products_public")
+          .from("products")
           .select("id, name, slug, short_description, full_description, specifications, price, sale_price, pricing_type, sale_unit, price_per_sqm, min_width, max_width, min_height, max_height, min_area, max_area, catalog_node_id, category_id, subcategory_id, is_active, is_featured, estimated_days, video_url, keywords, meta_title, meta_description, product_code, color_mode, default_quantity, sort_order, configuration_schema, created_at, updated_at, categories(name, slug), subcategories(name), product_images(id, image_url, alt_text, sort_order)")
           .eq("slug", slug)
           .eq("is_active", true)
