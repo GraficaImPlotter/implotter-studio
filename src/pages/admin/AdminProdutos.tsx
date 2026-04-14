@@ -33,13 +33,13 @@ const getNodePath = (nodes: CatalogNode[], nodeId: string): string => {
   const parts: string[] = [];
   let current = nodes.find(n => n.id === nodeId);
   let depth = 0;
-  const MAX_DEPTH = 10; // Prevent infinite loops if there's circularity
+  const MAX_DEPTH = 10;
 
   while (current && depth < MAX_DEPTH) {
     parts.unshift(current.name);
     if (!current.parent_id) break;
     const parent = nodes.find(n => n.id === current?.parent_id);
-    if (!parent || parent.id === current.id) break; // Break if no parent found or self-reference
+    if (!parent || parent.id === current.id) break;
     current = parent;
     depth++;
   }
@@ -74,14 +74,12 @@ const AdminProdutos = () => {
   const [generatingAI, setGeneratingAI] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Cost & margin state
   const [costProduction, setCostProduction] = useState(0);
   const [costSupplier, setCostSupplier] = useState(0);
   const [costMaterial, setCostMaterial] = useState(0);
   const [costArt, setCostArt] = useState(0);
   const [costExtra, setCostExtra] = useState(0);
   const [price, setPrice] = useState(0);
-  // Shipping fields
   const [shippingWeight, setShippingWeight] = useState(0.3);
   const [shippingHeight, setShippingHeight] = useState(2);
   const [shippingWidth, setShippingWidth] = useState(11);
@@ -124,14 +122,12 @@ const AdminProdutos = () => {
 
   const { data: companySettings = {} } = useSettings();
 
-  // Load default margin from settings
   useEffect(() => {
     if (companySettings.profit_margin_default) {
       setDefaultMargin(parseFloat(companySettings.profit_margin_default) || 80);
     }
   }, [companySettings]);
 
-  // Auto-fill price when costs change (only if not manually edited)
   useEffect(() => {
     if (!priceManuallyEdited && totalCost > 0 && suggestedPrice > 0) {
       setPrice(Math.round(suggestedPrice * 100) / 100);
@@ -179,7 +175,6 @@ const AdminProdutos = () => {
         const sdInput = formRef.current.querySelector<HTMLInputElement>('[name="short_description"]');
         if (sdInput) {
           sdInput.value = data.short_description;
-          // Trigger React's change detection
           const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
           nativeInputValueSetter?.call(sdInput, data.short_description);
           sdInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -225,7 +220,6 @@ const AdminProdutos = () => {
     setPendingPreviews([]);
     setSelectedFinishingIds([]);
 
-    // Set cost fields
     setCostProduction(Number(product?.cost_production) || 0);
     setCostSupplier(Number(product?.cost_supplier) || 0);
     setCostMaterial(Number(product?.cost_material) || 0);
@@ -240,7 +234,6 @@ const AdminProdutos = () => {
 
     if (product?.id) {
       loadFaqs(product.id);
-      // Load linked finishings
       supabase.from("product_finishings").select("finishing_id").eq("product_id", product.id).then(({ data }) => {
         setSelectedFinishingIds((data ?? []).map((r: any) => r.finishing_id));
       });
@@ -420,7 +413,6 @@ const AdminProdutos = () => {
     const { data, error } = await supabase.from("products").insert(payload).select("id").single();
     if (error) { toast({ title: "Erro ao duplicar", variant: "destructive" }); return; }
     
-    // Duplicate finishings
     const { data: fins } = await supabase.from("product_finishings").select("finishing_id").eq("product_id", id);
     if (fins && fins.length > 0) {
       await supabase.from("product_finishings").insert(fins.map((f: any) => ({ product_id: data.id, finishing_id: f.finishing_id })));
@@ -441,7 +433,6 @@ const AdminProdutos = () => {
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Editar Produto" : "Novo Produto"}</DialogTitle></DialogHeader>
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-               {/* Basic info */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
                    <label className="text-sm font-medium">Nome *</label>
@@ -469,7 +460,6 @@ const AdminProdutos = () => {
                  </div>
                </div>
 
-              {/* Catalog node path */}
               <div className="bg-secondary/50 rounded-xl p-4 border border-border">
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <FolderTree className="w-4 h-4 text-highlight" /> Caminho no Catálogo
@@ -486,7 +476,6 @@ const AdminProdutos = () => {
                 </select>
               </div>
 
-              {/* Cost & Auto-Pricing Section */}
               <div className="bg-success/5 rounded-xl p-4 space-y-4 border border-success/20">
                 <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                   <Calculator className="w-4 h-4 text-success" /> Custos & Precificação Automática
@@ -517,7 +506,6 @@ const AdminProdutos = () => {
                   </div>
                 </div>
 
-                {/* Shipping dimensions */}
                 <div className="mt-4 pt-4 border-t border-border">
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
                     📦 Dimensões para Frete
@@ -542,7 +530,6 @@ const AdminProdutos = () => {
                   </div>
                 </div>
 
-                {/* Summary cards */}
                 {totalCost > 0 && (
                   <div className="bg-card rounded-lg p-4 border border-border space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
@@ -582,7 +569,6 @@ const AdminProdutos = () => {
                 )}
               </div>
 
-              {/* Pricing section */}
               <div className="bg-secondary/50 rounded-xl p-4 space-y-4 border border-border">
                 <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                   <Package className="w-4 h-4 text-highlight" /> Precificação
@@ -627,7 +613,6 @@ const AdminProdutos = () => {
                   </div>
                 </div>
 
-                {/* Promotion */}
                 <div className="bg-background rounded-lg p-3 border border-border space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <input type="checkbox" checked={onSale} onChange={e => setOnSale(e.target.checked)} />
@@ -666,7 +651,6 @@ const AdminProdutos = () => {
                 )}
               </div>
 
-              {/* AI Generate Button */}
               <div className="bg-gradient-to-r from-highlight/10 to-highlight-glow/10 rounded-xl p-4 border border-highlight/20">
                 <div className="flex items-center justify-between">
                   <div>
@@ -683,20 +667,17 @@ const AdminProdutos = () => {
 
               <div><label className="text-sm font-medium">Descrição Curta</label><Input name="short_description" defaultValue={editing?.short_description} placeholder="Frase curta que aparece na listagem e meta description" /></div>
 
-              {/* Rich text description */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Descrição Completa (SEO)</label>
                 <RichTextEditor value={fullDescription} onChange={setFullDescription} placeholder="Descrição detalhada do produto para indexação e conversão..." />
                 <p className="text-[10px] text-muted-foreground mt-1">Conteúdo rico e útil melhora o ranqueamento no Google</p>
               </div>
 
-              {/* Specifications */}
               <div>
                 <label className="text-sm font-medium mb-2 block">Especificações Técnicas</label>
                 <RichTextEditor value={specifications} onChange={setSpecifications} placeholder="Material, gramatura, acabamento, cores, dimensões..." />
               </div>
 
-              {/* Video URL */}
               <div>
                 <label className="text-sm font-medium">URL do Vídeo (YouTube, Vimeo, etc)</label>
                 <Input name="video_url" defaultValue={editing?.video_url || ""} placeholder="https://youtube.com/watch?v=..." />
@@ -710,7 +691,6 @@ const AdminProdutos = () => {
                 </div>
               </div>
 
-              {/* SEO Section */}
               <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-4">
                 <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                   <Search className="w-4 h-4 text-highlight" /> SEO & Indexação
@@ -741,7 +721,6 @@ const AdminProdutos = () => {
                   <Input name="keywords" defaultValue={editing?.keywords || ""} placeholder="cartão de visita, impressão, gráfica..." />
                   <p className="text-[10px] text-muted-foreground mt-0.5">Separadas por vírgula</p>
                 </div>
-                {/* SEO Preview */}
                 <div className="bg-background rounded-lg p-3 border border-border">
                   <p className="text-[10px] text-muted-foreground mb-1 font-semibold uppercase tracking-wider">Prévia do Google</p>
                   <p className="text-highlight text-sm font-medium truncate">{metaTitle || "Título do Produto | Gráfica ImPlotter"}</p>
@@ -750,7 +729,6 @@ const AdminProdutos = () => {
                 </div>
               </div>
 
-              {/* Acabamentos */}
               {allFinishings.length > 0 && (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
                   <h3 className="font-display font-bold text-foreground flex items-center gap-2">
@@ -776,7 +754,6 @@ const AdminProdutos = () => {
                 </div>
               )}
 
-              {/* Product FAQs */}
               <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
                 <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-highlight" /> Perguntas Frequentes do Produto
@@ -808,7 +785,6 @@ const AdminProdutos = () => {
                 </Button>
               </div>
 
-              {/* Dynamic Configurator */}
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display font-bold text-foreground flex items-center gap-2">
@@ -871,6 +847,7 @@ const AdminProdutos = () => {
                                   Contador
                                 </span>
                               )}
+                            </span>
                           </div>
                           <Button 
                             type="button" 
@@ -964,7 +941,6 @@ const AdminProdutos = () => {
                 )}
               </div>
 
-              {/* Image uploader */}
               {savedProductId ? (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border">
                   <ProductImageUploader productId={savedProductId} />
@@ -1004,7 +980,6 @@ const AdminProdutos = () => {
                 </div>
               )}
 
-              {/* Related Products */}
               {savedProductId && (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border">
                   <RelatedProductsManager productId={savedProductId} />
@@ -1025,7 +1000,6 @@ const AdminProdutos = () => {
         </Dialog>
       </div>
 
-      {/* Search & Filter bar */}
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1050,7 +1024,6 @@ const AdminProdutos = () => {
         </select>
       </div>
 
-      {/* Bulk Actions */}
       {selectedProducts.size > 0 && (
         <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-lg border border-primary/20 mb-4 animate-in fade-in slide-in-from-top-2">
           <span className="text-sm font-medium text-primary ml-2">{selectedProducts.size} produtos selecionados</span>
@@ -1155,8 +1128,8 @@ const AdminProdutos = () => {
               ));
             })()}
           </tbody>
-        </table>
-        {(() => {
+          </table>
+          {(() => {
           const filtered = products.filter(p => {
             const matchSearch = !adminSearch.trim() || 
               p.name?.toLowerCase().includes(adminSearch.toLowerCase()) ||
