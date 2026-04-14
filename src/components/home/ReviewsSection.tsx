@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Star, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const fallbackReviews = [
@@ -62,11 +62,6 @@ const ReviewsSection = () => {
           {/* Overall rating */}
           {displayCount !== null && displayCount > 0 && (
             <div className="flex items-center justify-center gap-2 mt-5">
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5].map(j => (
-                  <Star key={j} className={`w-5 h-5 ${j <= Math.round(avgRating) ? 'fill-gold text-gold' : 'text-muted-foreground'}`} />
-                ))}
-              </div>
               <span className="font-display font-bold text-foreground text-lg">{avgRating.toFixed(1)}</span>
               <span className="text-muted-foreground text-sm">• {displayCount} {displayCount === 1 ? 'avaliação' : 'avaliações'}</span>
             </div>
@@ -84,11 +79,6 @@ const ReviewsSection = () => {
               className="p-7 rounded-2xl glass-card glass-card-hover transition-all duration-500 relative"
             >
               <Quote className="absolute top-5 right-5 w-8 h-8 text-highlight/10" />
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: review.rating }).map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-gold text-gold" />
-                ))}
-              </div>
               <p className="text-foreground/80 leading-relaxed mb-5">"{review.comment}"</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-accent flex items-center justify-center text-accent-foreground font-bold text-sm">
