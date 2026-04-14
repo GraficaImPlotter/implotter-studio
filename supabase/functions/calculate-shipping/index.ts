@@ -122,9 +122,19 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Melhor Envio error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "Erro ao consultar frete", details: errText }), {
-        status: 502,
+      let details = errText;
+      try {
+        const errJson = JSON.parse(errText);
+        details = errJson.message || errJson.error || errText;
+      } catch { /* use raw text */ }
+      
+      console.error("Melhor Envio API Error:", response.status, errText);
+      return new Response(JSON.stringify({ 
+        error: "Erro na API do Melhor Envio", 
+        details: details,
+        status: response.status 
+      }), {
+        status: 200, // Return 200 so the client can read the error JSON smoothly
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

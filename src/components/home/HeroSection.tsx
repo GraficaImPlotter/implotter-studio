@@ -106,10 +106,9 @@ const HeroSection = () => {
   const currentMedia = hasSlides ? slides[currentSlide] : null;
   const fallbackImage = banner?.image_url || "/images/hero-lcp.jpg";
 
-  const stats = [
     { icon: Users, value: settings.hero_stat_1_value || "1.250+", label: settings.hero_stat_1_label || "Clientes atendidos" },
     { icon: Package, value: settings.hero_stat_2_value || "3.000+", label: settings.hero_stat_2_label || "Pedidos entregues" },
-    { icon: Star, value: settings.hero_stat_3_value || "4.9", label: settings.hero_stat_3_label || "Avaliação média" },
+    { icon: Clock, value: settings.hero_stat_3_value || "5+", label: settings.hero_stat_3_label || "Anos de experiência" },
   ];
 
   return (

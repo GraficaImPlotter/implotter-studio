@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Truck, Loader2, Package, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { CartItem } from "@/hooks/use-cart";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export interface ShippingOption {
   id: number;
@@ -56,6 +58,16 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
   const [options, setOptions] = useState<ShippingOption[]>([]);
   const [error, setError] = useState("");
 
+  // Fetch company settings for origin CEP
+  const { data: companySettings } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("company_settings").select("*").maybeSingle();
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const calculate = async () => {
     const digits = cep.replace(/\D/g, "");
     if (digits.length !== 8) {
@@ -68,15 +80,26 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
     setOptions([]);
     onSelect(null);
 
+    const originCep = companySettings?.zip_code || companySettings?.address?.match(/\d{5}-?\d{3}/)?.[0] || "01001000";
+
     try {
       const pkg = aggregatePackage(items);
       const { data, error: fnError } = await supabase.functions.invoke("calculate-shipping", {
-        body: { cep_destino: digits, valor: cartTotal, ...pkg },
+        body: { 
+          cep_destino: digits, 
+          cep_origem: originCep,
+          valor: cartTotal, 
+          ...pkg 
+        },
       });
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        console.error("Function error:", fnError);
+        throw new Error("Erro na comunicação com o servidor.");
+      }
+
       if (data?.error) {
-        setError(data.error);
+        setError(data.details || data.error);
         return;
       }
 
@@ -88,8 +111,8 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
       
       const topOptions = opts.sort((a, b) => a.price - b.price).slice(0, 3);
       setOptions(topOptions);
-    } catch {
-      setError("Erro ao calcular frete. Tente novamente.");
+    } catch (err: any) {
+      setError(err.message || "Erro ao calcular frete. Tente novamente.");
     } finally {
       setLoading(false);
     }

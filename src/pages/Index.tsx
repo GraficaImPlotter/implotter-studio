@@ -102,9 +102,7 @@ const Index = () => {
         />
       </Suspense>
 
-      <Suspense fallback={<SectionLoader />}>
-        <ReviewsSection />
-      </Suspense>
+      {/* Reviews removed as per user request for minimalist / no-rating look */}
 
       <Suspense fallback={<SectionLoader height="300px" />}>
         <CTASection />

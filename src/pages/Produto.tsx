@@ -451,9 +451,9 @@ const Produto = () => {
                   </div>
                 )}
 
-                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mt-1 mb-4" itemProp="name">{product.name}</h1>
+                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mt-1 mb-2" itemProp="name">{product.name}</h1>
                 {product.short_description && (
-                  <p className="text-muted-foreground text-lg mb-6 leading-relaxed" itemProp="description">{product.short_description}</p>
+                  <p className="text-muted-foreground text-sm mb-6 leading-relaxed" itemProp="description">{product.short_description}</p>
                 )}
 
                 {/* Hidden structured data */}
@@ -554,95 +554,81 @@ const Produto = () => {
                       <Clock className="w-4 h-4 text-highlight" />
                       Prazo estimado: ~{product.estimated_days} dias úteis
                     </p>
-                  )}
-                </div>
+                                  <div className="space-y-6 mb-8">
+                  {/* Dynamic Configurator Fields */}
+                  {product.configuration_schema?.filter((it: any) => it.ui_type !== 'checkbox').map((item: any) => (
+                    <div key={item.id} className="flex flex-col gap-2">
+                      <Label className="text-sm font-bold text-foreground ml-1">{item.label}</Label>
+                      {item.ui_type === "pills" ? (
+                        <div className="flex flex-wrap gap-2">
+                           {item.options.map((opt: any) => (
+                             <button
+                               key={opt.name}
+                               onClick={() => setConfigValues(p => ({ ...p, [item.id]: opt.name }))}
+                               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                                 configValues[item.id] === opt.name 
+                                  ? "bg-primary/5 text-primary border-primary shadow-sm" 
+                                  : "bg-background text-foreground border-border hover:border-primary/50"
+                               }`}
+                             >
+                               {opt.name}
+                             </button>
+                           ))}
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select 
+                            value={configValues[item.id] || ""}
+                            onChange={e => setConfigValues(p => ({ ...p, [item.id]: e.target.value }))}
+                            className="w-full h-12 rounded-xl bg-background border border-border px-4 text-sm appearance-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                          >
+                            <option value="" disabled>Selecione o {item.label}</option>
+                            {item.options.map((opt: any) => (
+                              <option key={opt.name} value={opt.name}>{opt.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
 
-                <div className="space-y-6 mb-8">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1 uppercase tracking-widest text-[10px] font-black">
-                      Configuração
-                    </Badge>
-                    <Separator className="flex-1" />
-                  </div>
-
-                  <div className="space-y-5">
-                    {/* Fixed Core Options */}
-                    <div className="flex flex-col gap-1.5 p-4 rounded-2xl bg-secondary/30 border border-border/50">
-                      <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cores</Label>
-                      <div className="flex flex-wrap gap-2">
-                         <span className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-bold border border-primary/20">
-                           {product.color_mode || "4x0"}
-                         </span>
+                  {/* Multi-select Checkboxes (Enobrecimento Extra / etc) */}
+                  {product.configuration_schema?.filter((it: any) => it.ui_type === 'checkbox').map((item: any) => (
+                    <div key={item.id} className="space-y-4">
+                      <Label className="text-sm font-bold text-foreground ml-1">{item.label}</Label>
+                      <div className="bg-secondary/20 rounded-2xl p-4 space-y-3 border border-border/50">
+                        {item.options.map((opt: any) => {
+                          const isSelected = (configValues[item.id] as string[] || []).includes(opt.name);
+                          return (
+                            <button
+                              key={opt.name}
+                              type="button"
+                              onClick={() => {
+                                const current = (configValues[item.id] as string[] || []);
+                                const next = isSelected 
+                                  ? current.filter(v => v !== opt.name) 
+                                  : [...current, opt.name];
+                                setConfigValues(p => ({ ...p, [item.id]: next }));
+                              }}
+                              className="flex items-center justify-between w-full group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center
+                                  ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
+                                </div>
+                                <span className="text-sm text-foreground font-medium">{opt.name}</span>
+                              </div>
+                              {opt.price_adj > 0 && <span className="text-xs font-bold text-primary">+ R$ {opt.price_adj.toFixed(2)}</span>}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
-
-                    {/* Dynamic Configurator Fields */}
-                    {product.configuration_schema?.map((item: any) => (
-                      <div key={item.id} className="flex flex-col gap-2 p-4 rounded-2xl bg-secondary/30 border border-border/50">
-                        <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">{item.label}</Label>
-                        {item.type === "select" ? (
-                          <div className="flex flex-wrap gap-2">
-                             {item.options.map((opt: any) => (
-                               <button
-                                 key={opt.name}
-                                 onClick={() => setConfigValues(p => ({ ...p, [item.id]: opt.name }))}
-                                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
-                                   configValues[item.id] === opt.name 
-                                    ? "bg-primary text-primary-foreground border-primary shadow-glow-sm scale-105" 
-                                    : "bg-background text-foreground border-border hover:border-primary/50"
-                                 }`}
-                               >
-                                 {opt.name}
-                                 {opt.price_adj > 0 && <span className="ml-1.5 opacity-60 text-[10px]">+R$ {opt.price_adj}</span>}
-                               </button>
-                             ))}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-4">
-                             <Input 
-                               type="number" 
-                               min={0}
-                               value={configValues[item.id] || ""}
-                               onChange={e => setConfigValues(p => ({ ...p, [item.id]: parseInt(e.target.value) || 0 }))}
-                               placeholder="Quantidade..."
-                               className="w-32 h-10 bg-background"
-                             />
-                             <span className="text-xs text-muted-foreground">Valor: R$ {item.unit_price?.toFixed(2)}/un</span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Format / Dimensions */}
-                    {isSqm && (
-                      <div className="bg-primary/5 rounded-2xl p-6 space-y-4 border border-primary/20">
-                        <p className="text-sm font-black text-foreground flex items-center gap-2">
-                          <Ruler className="w-5 h-5 text-primary" /> Informe as Medidas (em metros)
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <Label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Largura (m)</Label>
-                            <Input type="number" step="0.01" value={width} onChange={e => setWidth(e.target.value)} placeholder="0.00" className="h-12 bg-background font-bold" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[11px] font-bold text-muted-foreground uppercase ml-1">Altura (m)</Label>
-                            <Input type="number" step="0.01" value={height} onChange={e => setHeight(e.target.value)} placeholder="0.00" className="h-12 bg-background font-bold" />
-                          </div>
-                        </div>
-                        {area > 0 && (
-                           <div className="flex justify-between items-center bg-background/50 rounded-xl p-3 border border-primary/10">
-                              <span className="text-xs font-bold text-muted-foreground uppercase">Área Total:</span>
-                              <span className="text-lg font-black text-primary">{area.toFixed(2)} m²</span>
-                           </div>
-                        )}
-                        {dimensionError && (
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-destructive bg-destructive/10 rounded-xl p-3 border border-destructive/20 animate-in fade-in zoom-in-95">
-                            <AlertTriangle className="w-4 h-4" /> {dimensionError}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  ))}
+                </div>
+  </div>
                 </div>
 
                 {/* Acabamentos Adicionais */}
@@ -682,13 +668,49 @@ const Produto = () => {
                   </div>
                 )}
 
-                {/* Pricing Details Table */}
+                {/* Quantity Table */}
                 {!isSqm && (
-                  <QuantityPriceTable 
-                    basePrice={calculatedPrice} 
-                    defaultQuantity={defaultQty} 
-                    pricingType={product.pricing_type} 
-                  />
+                  <div className="space-y-4 mb-8">
+                    <Label className="text-sm font-bold text-foreground ml-1">Escolha a quantidade</Label>
+                    <div className="overflow-hidden rounded-xl border border-border">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-secondary/50">
+                          <tr>
+                            <th className="px-4 py-3 font-bold">Quantidade</th>
+                            <th className="px-4 py-3 font-bold text-right">Valor por unidade</th>
+                            <th className="px-4 py-3 font-bold text-right">Valor Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {[25, 50, 100, 250, 500, 1000, 2500, 5000].map(qty => {
+                            const unitPrice = baseUnitPrice * (qty >= 1000 ? 0.8 : qty >= 500 ? 0.9 : 1);
+                            const total = unitPrice * qty;
+                            const isSelected = selectedQuantity === qty;
+                            
+                            return (
+                              <tr 
+                                key={qty} 
+                                className={`cursor-pointer transition-colors group ${isSelected ? 'bg-primary/5' : 'hover:bg-secondary/20'}`}
+                                onClick={() => setSelectedQuantity(qty)}
+                              >
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all
+                                      ${isSelected ? "border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                      {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                    </div>
+                                    <span className={isSelected ? "font-bold" : ""}>{qty.toLocaleString()} unidades</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-right text-muted-foreground">R$ {unitPrice.toFixed(2)}/un</td>
+                                <td className="px-4 py-3 text-right font-bold text-foreground">R$ {total.toFixed(2)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
 
 

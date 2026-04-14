@@ -819,9 +819,9 @@ const AdminProdutos = () => {
                       type="button" 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", options: [{ name: "Opção 1", price_adj: 0 }] }])}
+                      onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", ui_type: "select", options: [{ name: "Opção 1", price_adj: 0 }] }])}
                     >
-                      <Plus className="w-3 h-3 mr-1" /> Atributo (Lista)
+                      <Plus className="w-3 h-3 mr-1" /> Atributo (Seleção)
                     </Button>
                     <Button 
                       type="button" 
@@ -856,8 +856,21 @@ const AdminProdutos = () => {
                               placeholder="Ex: Material"
                             />
                             <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                              {item.type === "select" ? "Seleção" : "Contador"}
-                            </span>
+                              {item.type === "select" ? (
+                                <select 
+                                  value={item.ui_type || "select"}
+                                  onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, ui_type: e.target.value } : it))}
+                                  className="text-[10px] font-black uppercase tracking-widest text-primary px-2 py-0.5 bg-primary/10 rounded border-none outline-none cursor-pointer"
+                                >
+                                  <option value="select">Lista</option>
+                                  <option value="pills">Botões</option>
+                                  <option value="checkbox">Multi-Seleção</option>
+                                </select>
+                              ) : (
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                                  Contador
+                                </span>
+                              )}
                           </div>
                           <Button 
                             type="button" 
