@@ -554,7 +554,9 @@ const Produto = () => {
                       <Clock className="w-4 h-4 text-highlight" />
                       Prazo estimado: ~{product.estimated_days} dias úteis
                     </p>
-                                  <div className="space-y-6 mb-8">
+                  )}
+
+                  <div className="space-y-6 mb-8">
                   {/* Dynamic Configurator Fields */}
                   {product.configuration_schema?.filter((it: any) => it.ui_type !== 'checkbox').map((item: any) => (
                     <div key={item.id} className="flex flex-col gap-2">
@@ -665,8 +667,8 @@ const Produto = () => {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
 
                 {/* Quantity Table */}
                 {!isSqm && (
