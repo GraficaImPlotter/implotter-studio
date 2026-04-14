@@ -13,8 +13,10 @@ import {
 import { useDashboardStats } from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
+  const { toast } = useToast();
   const { data: stats, isLoading } = useDashboardStats();
 
   const { data: recentOrders = [] } = useQuery({
@@ -238,6 +240,7 @@ const AdminDashboard = () => {
                 abandonedOrders.map(order => {
                   const whatsappMsg = `Olá ${order.customer_name.split(' ')[0]}! Notamos que você iniciou um pedido na ImPlotter (#${order.order_number}) e parou na etapa de pagamento. Posso te ajudar com alguma dúvida técnica ou cupom?`;
                   const phone = order.customer_phone?.replace(/\D/g, "");
+                  const hasPhone = !!phone && phone.length >= 8;
                   
                   return (
                     <div key={order.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col gap-3">
@@ -249,9 +252,18 @@ const AdminDashboard = () => {
                           <span className="text-[8px] bg-amber-400/20 text-amber-400 px-1.5 py-0.5 rounded font-black">PENDENTE</span>
                        </div>
                        <a 
-                        href={`https://wa.me/${phone}?text=${encodeURIComponent(whatsappMsg)}`} 
-                        target="_blank" rel="noreferrer"
-                        className="w-full py-2.5 rounded-xl bg-success/10 text-success text-[10px] font-black uppercase tracking-widest hover:bg-success hover:text-white transition-all text-center flex items-center justify-center gap-2"
+                        href={hasPhone ? `https://wa.me/${phone}?text=${encodeURIComponent(whatsappMsg)}` : "#"} 
+                        onClick={(e) => {
+                          if (!hasPhone) {
+                            e.preventDefault();
+                            toast({ title: "Telefone não disponível", description: "Este cliente não possui um número de WhatsApp cadastrado.", variant: "destructive" });
+                          }
+                        }}
+                        target={hasPhone ? "_blank" : "_self"} 
+                        rel="noreferrer"
+                        className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center flex items-center justify-center gap-2 ${
+                          hasPhone ? "bg-success/10 text-success hover:bg-success hover:text-white" : "bg-muted text-muted-foreground cursor-not-allowed"
+                        }`}
                        >
                           Recuperar no Whats
                        </a>
@@ -261,7 +273,10 @@ const AdminDashboard = () => {
               )}
            </div>
 
-           <button className="w-full py-4 mt-6 rounded-2xl border border-white/5 text-muted-foreground text-[9px] font-black uppercase tracking-[0.2em] hover:bg-white/[0.03] transition-all">
+           <button 
+             onClick={() => toast({ title: "Relatório em Processamento", description: "O relatório detalhado de abandono está sendo gerado e será enviado para o seu e-mail." })}
+             className="w-full py-4 mt-6 rounded-2xl border border-white/5 text-muted-foreground text-[9px] font-black uppercase tracking-[0.2em] hover:bg-white/[0.03] transition-all"
+           >
               Ver Relatório de Abandono
            </button>
         </div>

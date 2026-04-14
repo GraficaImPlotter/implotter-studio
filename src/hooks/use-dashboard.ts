@@ -43,7 +43,8 @@ export const useDashboardStats = () => {
         projectedRevenue
       };
     },
-    refetchInterval: 60000, // Refresh every minute
+    staleTime: 1000 * 60 * 5, // Data remains fresh for 5 minutes
+    refetchInterval: 60000, // Still refresh every minute in the background
   });
 };
 
@@ -70,6 +71,7 @@ export const useSalesData = (days = 30) => {
 
       return Object.entries(grouped).map(([date, total]) => ({ date, total }));
     },
+    staleTime: 1000 * 60 * 15, // 15 minutes
   });
 };
 
@@ -96,6 +98,7 @@ export const useProductPerformance = () => {
           qty 
         }));
     },
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 };
 
@@ -123,5 +126,6 @@ export const useMonthlyRevenue = (months = 6) => {
 
       return Object.entries(grouped).map(([month, d]) => ({ month, ...d }));
     },
+    staleTime: 1000 * 60 * 60, // 1 hour (static historical data)
   });
 };

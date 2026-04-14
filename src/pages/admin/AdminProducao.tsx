@@ -138,7 +138,18 @@ export default function AdminProducao() {
               <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg hover:bg-highlight/10 hover:text-highlight" onClick={() => generateOrderLabel(order as any, order.order_items as any)}>
                  <Tag className="w-3.5 h-3.5" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => {}}>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-7 w-7 rounded-lg hover:bg-highlight/10 hover:text-highlight" 
+                onClick={() => {
+                  const itemsSummary = order.order_items.map(it => `${it.product_name} (x${it.quantity})`).join(", ");
+                  toast({
+                    title: `Pedido #${order.order_number}`,
+                    description: `Itens: ${itemsSummary}${order.notes ? `\n\nObs: ${order.notes}` : ""}`,
+                  });
+                }}
+              >
                  <Info className="w-3.5 h-3.5" />
               </Button>
            </div>

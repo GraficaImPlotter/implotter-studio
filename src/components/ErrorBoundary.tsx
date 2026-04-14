@@ -45,12 +45,24 @@ class ErrorBoundary extends React.Component<
             <p className="text-muted-foreground mb-6">
               Ocorreu um erro inesperado. Tente recarregar a página.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
-            >
-              Recarregar Página
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
+              >
+                Recarregar Página
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  window.location.href = "/";
+                }}
+                className="w-full px-6 py-2.5 border border-border text-muted-foreground rounded-xl font-medium hover:bg-muted transition-colors text-sm"
+              >
+                Limpar Cache e Início
+              </button>
+            </div>
             {process.env.NODE_ENV === "development" && this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-sm text-muted-foreground cursor-pointer">
