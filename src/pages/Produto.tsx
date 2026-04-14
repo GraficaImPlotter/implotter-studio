@@ -193,6 +193,13 @@ const Produto = () => {
 
   const canAddToCart = isSqm ? (wNum > 0 && hNum > 0 && !dimensionError) : true;
 
+  const handleAddToCart = () => {
+    if (!product || !canAddToCart) return;
+    
+    const selectedFinishingNames = availableFinishings
+      .filter(f => selectedFinishings.includes(f.id))
+      .map(f => f.name);
+
     const configDetails = product.configuration_schema?.map((item: any) => {
       const val = configValues[item.id];
       if (!val) return null;
