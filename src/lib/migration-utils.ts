@@ -143,21 +143,36 @@ export function generateSql(
       let finalSchema = [];
       
       if (options.separateAttributes) {
-        // Find unique quantities
+        // Find unique quantities and unique colors
         const uniqueQtys = Array.from(new Set(variations.map(v => v._qty)));
         const uniqueCores = Array.from(new Set(variations.map(v => v._cores)));
         
-        // Use Quantidade as base prices, Cores as adj
+        // Base combination for 0-delta reference
+        const baseQty = uniqueQtys[0];
+        const baseColor = uniqueCores[0];
+        
+        // Quantidades as Base Prices (using the first color as reference)
         const qtyOptions = uniqueQtys.map(q => {
-          const matching = variations.find(v => v._qty === q && v._cores === uniqueCores[0]);
-          return { name: `${q} UNIDADES`, price_adj: matching?.price_adj || 0 };
+          const matching = variations.find(v => v._qty === q && v._cores === baseColor);
+          const p = matching?.price_adj || 0;
+          return { 
+            name: `${q} UNIDADES${p > 0 ? ` (+ R$ ${p.toFixed(2)})` : ""}`, 
+            price_adj: p,
+            _val: q 
+          };
         });
         
+        // Cores as Adjustments (using the first quantity as reference)
         const colorOptions = uniqueCores.map(c => {
-          const base = variations.find(v => v._qty === uniqueQtys[0] && v._cores === uniqueCores[0]);
-          const variant = variations.find(v => v._qty === uniqueQtys[0] && v._cores === c);
-          const delta = (variant?.price_adj || 0) - (base?.price_adj || 0);
-          return { name: c, price_adj: delta };
+          const baseVar = variations.find(v => v._qty === baseQty && v._cores === baseColor);
+          const variantVar = variations.find(v => v._qty === baseQty && v._cores === c);
+          const delta = (variantVar?.price_adj || 0) - (baseVar?.price_adj || 0);
+          
+          return { 
+            name: `${c}${delta !== 0 ? ` (${delta > 0 ? "+" : "-"} R$ ${Math.abs(delta).toFixed(2)})` : ""}`, 
+            price_adj: Math.round(delta * 100) / 100,
+            _val: c
+          };
         });
 
         finalSchema = [
