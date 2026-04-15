@@ -43,42 +43,28 @@ export function parsePdfText(text: string): Record<string, MigrationCategory> {
     line = line.trim();
     if (!line || line.includes('TABELA DE SERVIÇOS') || line.includes('Código Categoria')) return;
 
-    // Standard pattern: CODE CATEGORY DESCRIPTION CORES WEIGHT QTY W x H DURATION PRICE
-    let m = line.match(/^(\S+)\s+(.*?)\s+(.*?)\s+(\d+X\d+)\s+(\d+)\s+(\d+)\s+([\d,.]+)\s+x\s+([\d,.]+)\s+(\d+)\s+R\$\s*([\d,.]+)/);
+    // Improved regex: CODE (optional, 2-10 chars or numeric), CATEGORY, DESCRIPTION...
+    // Pattern: (CODE)? CATEGORY DESCRIPTION CORES WEIGHT QTY WxH DURATION PRICE
+    let m = line.match(/^(\S{2,15})?\s*(.*?)\s+(.*?)\s+(\d+X\d+)\s+(\d+)\s+(\d+)\s+([\d,.]+)\s+x\s+([\d,.]+)\s+(\d+)\s+R\$\s*([\d,.]+)/);
     
-    // Hardcoded fallback for specific categories that might fail regex due to spacing
-    if (!m && (line.includes('AGENDAS, CADERNOS E APOSTILAS') || line.includes('BANNERS E LONAS'))) {
-      const code = line.split(' ')[0];
-      let cat = '';
-      if (line.includes('AGENDAS, CADERNOS E APOSTILAS')) cat = 'AGENDAS, CADERNOS E APOSTILAS';
-      else if (line.includes('BANNERS E LONAS')) cat = 'BANNERS E LONAS';
-      
-      const catIdx = line.indexOf(cat);
-      if (catIdx === -1) return;
+    if (m) {
+      const [_, potentialCode, cat, desc, cores, weight, qty, w, h, duration, priceStr] = m;
+      let code = potentialCode || "";
+      let finalCat = cat;
+      let finalDesc = desc;
 
-      const afterCat = line.substring(catIdx + cat.length).trim();
-      let m2 = afterCat.match(/^(.*?)\s+(\d+X\d+)\s+(\d+)\s+(\d+)\s+([\d,.]+)\s+x\s+([\d,.]+)\s+(\d+)\s+R\$\s*([\d,.]+)/);
-      
-      if (m2) {
-        const [_, desc, cores, weight, qty, w, h, duration, priceStr] = m2;
-        const fullCat = toCaps(cat);
-        const subCat = toCaps(desc);
-        if (!categories[fullCat]) categories[fullCat] = { name: fullCat, products: {} };
-        if (!categories[fullCat].products[subCat]) categories[fullCat].products[subCat] = { name: subCat, variations: [] };
-        categories[fullCat].products[subCat].variations.push({
-          code: toCaps(code),
-          cores: toCaps(cores),
-          weight: toCaps(weight),
-          qty, w, h,
-          price: parseFloat(priceStr.replace('.', '').replace(',', '.'))
-        });
+      // Validate if potentialCode is actually a word of the category
+      if (potentialCode && potentialCode.length > 10 && !/\d/.test(potentialCode)) {
+         code = "";
+         finalCat = potentialCode + " " + cat;
       }
-    } else if (m) {
-      const [_, code, cat, desc, cores, weight, qty, w, h, duration, priceStr] = m;
-      const fullCat = toCaps(cat);
-      const subCat = toCaps(desc);
+
+      const fullCat = toCaps(finalCat);
+      const subCat = toCaps(finalDesc);
+      
       if (!categories[fullCat]) categories[fullCat] = { name: fullCat, products: {} };
       if (!categories[fullCat].products[subCat]) categories[fullCat].products[subCat] = { name: subCat, variations: [] };
+      
       categories[fullCat].products[subCat].variations.push({
         code: toCaps(code),
         cores: toCaps(cores),
@@ -92,12 +78,19 @@ export function parsePdfText(text: string): Record<string, MigrationCategory> {
   return categories;
 }
 
+export interface MigrationOptions {
+  includeDescriptions?: boolean;
+  descriptions?: Record<string, { short: string; full: string; metaTitle?: string; metaDesc?: string; keywords?: string }>;
+  separateAttributes?: boolean;
+  showSize?: boolean;
+  showWeight?: boolean;
+  showCores?: boolean;
+  showQty?: boolean;
+}
+
 export function generateSql(
   categories: Record<string, MigrationCategory>, 
-  options: { 
-    includeDescriptions?: boolean;
-    descriptions?: Record<string, { short: string; full: string; metaTitle?: string; metaDesc?: string; keywords?: string }>;
-  } = {}
+  options: MigrationOptions = { showSize: true, showCores: true, showWeight: true, showQty: true }
 ): string {
   let sql = "-- SCRIPT DE IMPORTAÇÃO GERADO PELO SISTEMA\nBEGIN;\n\n";
 
@@ -128,22 +121,60 @@ export function generateSql(
       const variations = sortedVariations.map(v => {
         const costAdj = v.price + SHIPPING_COST;
         const priceAdj = Math.round(costAdj * DEFAULT_MARKUP * 100) / 100;
-        const optName = `${v.qty} UN - ${v.cores} - VERNIZ/PAPEL ${v.weight} (${v.w}X${v.h}MM)`.toUpperCase();
+        
+        let labelParts = [];
+        if (options.showQty) labelParts.push(`${v.qty} UN`);
+        if (options.showCores) labelParts.push(v.cores);
+        if (options.showWeight) labelParts.push(`PAPEL ${v.weight}`);
+        if (options.showSize) labelParts.push(`(${v.w}X${v.h}MM)`);
+        
+        const optName = labelParts.length > 0 ? labelParts.join(" - ").toUpperCase() : `OPÇÃO ${v.code}`;
+        
         return {
           name: optName,
           price_adj: priceAdj,
           cost_adj: Math.round(costAdj * 100) / 100,
-          code: v.code
+          code: v.code,
+          _qty: v.qty,
+          _cores: v.cores
         };
       });
 
-      const schema = JSON.stringify([{
-        id: "format",
-        label: "VARIAÇÃO TÉCNICA E QUANTIDADE",
-        type: "select",
-        ui_type: "select",
-        options: variations
-      }]).replace(/'/g, "''");
+      let finalSchema = [];
+      
+      if (options.separateAttributes) {
+        // Find unique quantities
+        const uniqueQtys = Array.from(new Set(variations.map(v => v._qty)));
+        const uniqueCores = Array.from(new Set(variations.map(v => v._cores)));
+        
+        // Use Quantidade as base prices, Cores as adj
+        const qtyOptions = uniqueQtys.map(q => {
+          const matching = variations.find(v => v._qty === q && v._cores === uniqueCores[0]);
+          return { name: `${q} UNIDADES`, price_adj: matching?.price_adj || 0 };
+        });
+        
+        const colorOptions = uniqueCores.map(c => {
+          const base = variations.find(v => v._qty === uniqueQtys[0] && v._cores === uniqueCores[0]);
+          const variant = variations.find(v => v._qty === uniqueQtys[0] && v._cores === c);
+          const delta = (variant?.price_adj || 0) - (base?.price_adj || 0);
+          return { name: c, price_adj: delta };
+        });
+
+        finalSchema = [
+          { id: "qty", label: "QUANTIDADE", type: "select", ui_type: "select", options: qtyOptions },
+          { id: "cores", label: "CORES", type: "select", ui_type: "select", options: colorOptions }
+        ];
+      } else {
+        finalSchema = [{
+          id: "format",
+          label: "VARIAÇÃO TÉCNICA",
+          type: "select",
+          ui_type: "select",
+          options: variations.map(({_qty, _cores, ...rest}) => rest)
+        }];
+      }
+
+      const schema = JSON.stringify(finalSchema).replace(/'/g, "''");
 
       const shortDesc = descData.short.replace(/'/g, "''");
       const fullDesc = descData.full.replace(/'/g, "''");

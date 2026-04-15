@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload, Settings, AlertTriangle } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
@@ -97,6 +97,11 @@ const AdminProdutos = () => {
   const [importPdfText, setImportPdfText] = useState("");
   const [importTargetNode, setImportTargetNode] = useState("");
   const [aiEnabledForImport, setAiEnabledForImport] = useState(false);
+  const [importSeparateAttributes, setImportSeparateAttributes] = useState(false);
+  const [importShowSize, setImportShowSize] = useState(true);
+  const [importShowWeight, setImportShowWeight] = useState(true);
+  const [importShowCores, setImportShowCores] = useState(true);
+  const [importShowQty, setImportShowQty] = useState(true);
   const [generatedSql, setGeneratedSql] = useState("");
   const [processingImport, setProcessingImport] = useState(false);
 
@@ -241,7 +246,12 @@ const AdminProdutos = () => {
 
       const sql = generateSql(categories, { 
         includeDescriptions: aiEnabledForImport,
-        descriptions 
+        descriptions,
+        separateAttributes: importSeparateAttributes,
+        showSize: importShowSize,
+        showWeight: importShowWeight,
+        showCores: importShowCores,
+        showQty: importShowQty
       });
       setGeneratedSql(sql);
       toast({ title: "Script gerado com sucesso!", description: `${Object.keys(categories).length} categorias processadas.` });
@@ -1504,6 +1514,51 @@ const AdminProdutos = () => {
                             <button onClick={() => setAiEnabledForImport(!aiEnabledForImport)} className={`w-10 h-5 rounded-full relative transition-colors ${aiEnabledForImport ? "bg-primary" : "bg-muted-foreground/30"}`}>
                                 <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${aiEnabledForImport ? "left-5.5" : "left-0.5"}`} />
                             </button>
+                        </div>
+
+                        <div className="bg-secondary/30 rounded-2xl p-5 border border-border space-y-4">
+                            <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                                <Settings className="w-3 h-3" /> Configuração de Opções
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                                <label className="flex items-center justify-between gap-3 cursor-pointer group">
+                                    <span className="text-[11px] font-bold text-foreground/80 group-hover:text-primary transition-colors">Separar Cores e Qtd</span>
+                                    <button onClick={() => setImportSeparateAttributes(!importSeparateAttributes)} className={`w-8 h-4 rounded-full relative transition-colors ${importSeparateAttributes ? "bg-highlight" : "bg-muted-foreground/20"}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${importSeparateAttributes ? "left-4.5" : "left-0.5"}`} />
+                                    </button>
+                                </label>
+
+                                <label className="flex items-center justify-between gap-3 cursor-pointer group">
+                                    <span className="text-[11px] font-bold text-foreground/80 group-hover:text-primary transition-colors">Exibir Tamanho</span>
+                                    <button onClick={() => setImportShowSize(!importShowSize)} className={`w-8 h-4 rounded-full relative transition-colors ${importShowSize ? "bg-highlight" : "bg-muted-foreground/20"}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${importShowSize ? "left-4.5" : "left-0.5"}`} />
+                                    </button>
+                                </label>
+
+                                <label className="flex items-center justify-between gap-3 cursor-pointer group">
+                                    <span className="text-[11px] font-bold text-foreground/80 group-hover:text-primary transition-colors">Exibir Cores no Nome</span>
+                                    <button onClick={() => setImportShowCores(!importShowCores)} className={`w-8 h-4 rounded-full relative transition-colors ${importShowCores ? "bg-highlight" : "bg-muted-foreground/20"}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${importShowCores ? "left-4.5" : "left-0.5"}`} />
+                                    </button>
+                                </label>
+
+                                <label className="flex items-center justify-between gap-3 cursor-pointer group">
+                                    <span className="text-[11px] font-bold text-foreground/80 group-hover:text-primary transition-colors">Exibir Papel/Peso</span>
+                                    <button onClick={() => setImportShowWeight(!importShowWeight)} className={`w-8 h-4 rounded-full relative transition-colors ${importShowWeight ? "bg-highlight" : "bg-muted-foreground/20"}`}>
+                                        <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${importShowWeight ? "left-4.5" : "left-0.5"}`} />
+                                    </button>
+                                </label>
+                            </div>
+
+                            {importSeparateAttributes && (
+                                <div className="mt-2 p-2 bg-highlight/5 border border-highlight/20 rounded-lg">
+                                    <p className="text-[9px] text-highlight/80 flex items-center gap-1.5 leading-tight italic">
+                                        <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                                        Nota: Atributos separados usam lógica aditiva. O valor da cor será calculado com base na tiragem inicial.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <Button variant="hero" className="w-full h-14 bg-highlight hover:bg-highlight/90 text-white font-black uppercase tracking-widest text-sm shadow-glow-sm" onClick={handleProcessImport} disabled={processingImport || !importPdfText}>
