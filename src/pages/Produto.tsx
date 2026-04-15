@@ -96,6 +96,18 @@ const Produto = () => {
         setAvailableFinishings((pfData ?? []).map((pf: any) => pf.finishings).filter(Boolean));
         setSelectedFinishings([]);
         setFinishingQuantities({});
+
+        const initConfig: Record<string, any> = {};
+        if (Array.isArray(data.configuration_schema)) {
+          data.configuration_schema.forEach((item: any) => {
+             if (item.ui_type === 'checkbox') {
+                 initConfig[item.id] = [];
+             } else if (item.options && item.options.length > 0) {
+                 initConfig[item.id] = item.options[0].name;
+             }
+          });
+        }
+        setConfigValues(initConfig);
       }
       setLoading(false);
     };
@@ -374,6 +386,22 @@ const Produto = () => {
                             </button>
                           );
                         })}
+                      </div>
+                    ) : item.ui_type === 'select' ? (
+                      <div className="relative">
+                        <select 
+                          className="w-full h-12 px-4 rounded-xl border border-border bg-secondary/20 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer hover:border-primary/40 text-foreground"
+                          value={configValues[item.id] || ""}
+                          onChange={e => setConfigValues(v => ({ ...v, [item.id]: e.target.value }))}
+                        >
+                          <option value="" disabled>Selecione uma opção...</option>
+                          {options.map((opt: any) => {
+                            if (!opt || !opt.name) return null;
+                            const costText = opt.price_adj > 0 ? ` (+ R$ ${Number(opt.price_adj).toFixed(2)})` : "";
+                            return <option key={opt.name} value={opt.name}>{opt.name}{costText}</option>;
+                          })}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2.5">

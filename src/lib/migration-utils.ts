@@ -5,6 +5,8 @@ export interface MigrationVariation {
   w: string;
   h: string;
   price: number;
+  cores: string;
+  weight: string;
 }
 
 export interface MigrationProduct {
@@ -65,6 +67,8 @@ export function parsePdfText(text: string): Record<string, MigrationCategory> {
         if (!categories[fullCat].products[subCat]) categories[fullCat].products[subCat] = { name: subCat, variations: [] };
         categories[fullCat].products[subCat].variations.push({
           code: toCaps(code),
+          cores: toCaps(cores),
+          weight: toCaps(weight),
           qty, w, h,
           price: parseFloat(priceStr.replace('.', '').replace(',', '.'))
         });
@@ -77,6 +81,8 @@ export function parsePdfText(text: string): Record<string, MigrationCategory> {
       if (!categories[fullCat].products[subCat]) categories[fullCat].products[subCat] = { name: subCat, variations: [] };
       categories[fullCat].products[subCat].variations.push({
         code: toCaps(code),
+        cores: toCaps(cores),
+        weight: toCaps(weight),
         qty, w, h,
         price: parseFloat(priceStr.replace('.', '').replace(',', '.'))
       });
@@ -111,10 +117,18 @@ export function generateSql(
 
       sql += `  -- PRODUTO: ${prodName}\n`;
       
-      const variations = product.variations.map(v => {
+      // Sort variations by quantity, then price
+      const sortedVariations = [...product.variations].sort((a, b) => {
+        const qtyA = parseInt(a.qty) || 0;
+        const qtyB = parseInt(b.qty) || 0;
+        if (qtyA !== qtyB) return qtyA - qtyB;
+        return a.price - b.price;
+      });
+
+      const variations = sortedVariations.map(v => {
         const costAdj = v.price + SHIPPING_COST;
         const priceAdj = Math.round(costAdj * DEFAULT_MARKUP * 100) / 100;
-        const optName = `${v.w}X${v.h}MM (${v.qty} UN)`.toUpperCase();
+        const optName = `${v.qty} UN - ${v.cores} - VERNIZ/PAPEL ${v.weight} (${v.w}X${v.h}MM)`.toUpperCase();
         return {
           name: optName,
           price_adj: priceAdj,
@@ -125,9 +139,9 @@ export function generateSql(
 
       const schema = JSON.stringify([{
         id: "format",
-        label: "VARIAÇÃO",
+        label: "VARIAÇÃO TÉCNICA E QUANTIDADE",
         type: "select",
-        ui_type: "pills",
+        ui_type: "select",
         options: variations
       }]).replace(/'/g, "''");
 

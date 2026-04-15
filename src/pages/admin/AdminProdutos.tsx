@@ -948,19 +948,6 @@ const AdminProdutos = () => {
                         <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
                         </h3>
-                        <div className="flex items-center gap-2 bg-secondary/30 px-2 py-1 rounded-lg border border-border/50">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Modo JSON</span>
-                            <button 
-                                type="button" 
-                                onClick={() => {
-                                    if (!showJsonEditor) setRawJson(JSON.stringify(configSchema, null, 2));
-                                    setShowJsonEditor(!showJsonEditor);
-                                }}
-                                className={`w-8 h-4 rounded-full relative transition-colors ${showJsonEditor ? "bg-primary" : "bg-muted-foreground/30"}`}
-                            >
-                                <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showJsonEditor ? "left-4.5" : "left-0.5"}`} />
-                            </button>
-                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {configSchema.length > 0 && configSchema.some(it => it.options?.some((o: any) => o.cost_adj > 0)) && (
@@ -1035,65 +1022,7 @@ const AdminProdutos = () => {
                   </div>
                 </div>
 
-                {showJsonEditor ? (
-                    <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex gap-2">
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 bg-secondary/50"
-                                onClick={() => {
-                                    navigator.clipboard.writeText(JSON.stringify(configSchema, null, 2));
-                                    toast({ title: "Copiado!", description: "Código JSON copiado para sua área de transferência." });
-                                }}
-                            >
-                                <Copy className="w-3.5 h-3.5 mr-2" /> Copiar Tudo
-                            </Button>
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1 bg-secondary/50"
-                                onClick={async () => {
-                                    const text = await navigator.clipboard.readText();
-                                    setRawJson(text);
-                                    try {
-                                        const parsed = JSON.parse(text);
-                                        if (Array.isArray(parsed)) {
-                                            setConfigSchema(parsed);
-                                            toast({ title: "Importado!", description: "Dados JSON carregadados com sucesso." });
-                                        }
-                                    } catch (e) {
-                                        toast({ title: "JSON Inválido", variant: "destructive" });
-                                    }
-                                }}
-                            >
-                                <Plus className="w-3.5 h-3.5 mr-2" /> Colar e Importar
-                            </Button>
-                        </div>
-                        <div className="relative">
-                            <Textarea 
-                                value={rawJson}
-                                onChange={e => {
-                                    setRawJson(e.target.value);
-                                    try {
-                                        const parsed = JSON.parse(e.target.value);
-                                        if (Array.isArray(parsed)) setConfigSchema(parsed);
-                                    } catch (e) { /* silent parse during typing */ }
-                                }}
-                                className="font-mono text-[11px] h-96 bg-background border-primary/20"
-                                placeholder='[ { "id": "...", "label": "...", "options": [...] } ]'
-                            />
-                            <div className="absolute top-2 right-4 text-[9px] font-bold text-muted-foreground uppercase opacity-50">JSON RAW Editor</div>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground italic flex items-center gap-1.5">
-                            <HelpCircle className="w-3 h-3" /> 
-                            Este modo é ideal para colar configurações que eu (seu assistente) te passar no chat.
-                        </p>
-                    </div>
-                ) : (
-                  <div className="space-y-4">
+                <div className="space-y-4">
                     {configSchema.length === 0 ? (
                       <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
                         <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
@@ -1314,7 +1243,6 @@ const AdminProdutos = () => {
                       </div>
                     )}
                   </div>
-                )}
               </div>
 
               {savedProductId ? (

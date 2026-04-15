@@ -13,9 +13,9 @@ Se for fornecida uma lista de categorias, sugira a mais adequada (retornando o I
 
 Responda APENAS com um JSON válido (sem markdown, sem backticks) no seguinte formato:
 {
-  "short_description": "Frase curta e atrativa (máx 160 caracteres) para listagem e meta description",
-  "full_description": "Descrição completa em HTML com parágrafos, usando tags <p>, <strong>, <ul>, <li>. Deve ser persuasiva, informativa e otimizada para SEO. 3-4 parágrafos.",
-  "specifications": "Especificações técnicas em HTML com lista usando <ul> e <li>. Inclua material, resolução, cores, acabamento e outros detalhes técnicos relevantes para o tipo de produto.",
+  "short_description": "Frase curta, técnica e direta (máx 160 caracteres) para listagem",
+  "full_description": "APENAS especificações e detalhes técnicos em HTML. Formate como uma <ul> técnica. NÃO inclua textos de marketing, slogans ou descrições comerciais longas. Foco apenas no material, gramatura, acabamento, tamanho, etc.",
+  "specifications": "Idem a full_description, lista estrita de parâmetros técnicos.",
   "keywords": "palavras-chave separadas por vírgula, relevantes para SEO",
   "meta_title": "Título otimizado para SEO (máx 60 caracteres)",
   "category_suggestion": "ID ou Nome da categoria sugerida da lista fornecida"
