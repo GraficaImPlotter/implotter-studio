@@ -163,9 +163,11 @@ const Produto = () => {
   
   const finishingsTotal = useMemo(() => {
     return availableFinishings.filter(f => selectedFinishings.includes(f.id)).reduce((sum, f) => {
-      return sum + Number(f.price);
+      const qty = finishingQuantities[f.id] || 1;
+      const isUnit = f.pricing_mode === "unit";
+      return sum + (Number(f.price) * (isUnit ? qty : 1));
     }, 0);
-  }, [selectedFinishings, availableFinishings]);
+  }, [selectedFinishings, availableFinishings, finishingQuantities]);
 
   const baseUnitPrice = Number(product?.sale_price || product?.price) || 0;
 
@@ -248,7 +250,10 @@ const Produto = () => {
     
     const selectedFinishingNames = availableFinishings
       .filter(f => selectedFinishings.includes(f.id))
-      .map(f => f.name);
+      .map(f => {
+        const qty = finishingQuantities[f.id] || 1;
+        return f.pricing_mode === "unit" ? `${f.name} (${qty}x)` : f.name;
+      });
 
     const configDetails = product.configuration_schema?.map((item: any) => {
       const val = configValues[item.id];
@@ -605,22 +610,61 @@ const Produto = () => {
                 <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
                   <Palette className="w-4 h-4 text-primary" /> Acabamentos Extras
                 </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {availableFinishings.map(f => (
-                    <button 
-                      key={f.id} 
-                      onClick={() => setSelectedFinishings(p => p.includes(f.id) ? p.filter(id => id !== f.id) : [...p, f.id])} 
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all group ${selectedFinishings.includes(f.id) ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
-                    >
-                       <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${selectedFinishings.includes(f.id) ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
-                             {selectedFinishings.includes(f.id) && <Plus className="w-3 h-3 text-white" strokeWidth={4} />}
+                <div className="flex flex-col gap-3">
+                  {availableFinishings.map(f => {
+                    const isSelected = selectedFinishings.includes(f.id);
+                    const isUnit = f.pricing_mode === "unit";
+                    const currentQty = finishingQuantities[f.id] || 1;
+
+                    return (
+                      <div key={f.id} className="space-y-3">
+                        <button 
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedFinishings(p => p.filter(id => id !== f.id));
+                            } else {
+                              setSelectedFinishings(p => [...p, f.id]);
+                              if (isUnit && !finishingQuantities[f.id]) {
+                                setFinishingQuantities(prev => ({ ...prev, [f.id]: 1 }));
+                              }
+                            }
+                          }} 
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all group ${isSelected ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                {isSelected && (isUnit ? <Check className="w-3 h-3 text-white" strokeWidth={4} /> : <Plus className="w-3 h-3 text-white" strokeWidth={4} />)}
+                              </div>
+                              <span className={`text-[13px] transition-colors ${isSelected ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{f.name}</span>
                           </div>
-                          <span className={`text-[13px] transition-colors ${selectedFinishings.includes(f.id) ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{f.name}</span>
-                       </div>
-                       <span className="text-[11px] font-black text-primary">+ R$ {Number(f.price).toFixed(2)}</span>
-                    </button>
-                  ))}
+                          <span className="text-[11px] font-black text-primary">
+                            + R$ {Number(f.price).toFixed(2)}{isUnit && "/un"}
+                          </span>
+                        </button>
+
+                        {isSelected && isUnit && (
+                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-primary/20 ml-8">
+                            <span className="text-xs font-bold text-muted-foreground">Informe a quantidade:</span>
+                            <div className="flex items-center gap-4">
+                              <button 
+                                onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: Math.max(1, (prev[f.id] || 1) - 1) }))}
+                                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                              >
+                                -
+                              </button>
+                              <span className="text-sm font-black w-6 text-center">{currentQty}</span>
+                              <button 
+                                onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: (prev[f.id] || 1) + 1 }))}
+                                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
