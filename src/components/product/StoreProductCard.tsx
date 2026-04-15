@@ -53,7 +53,7 @@ const StoreProductCard = ({ p, index, getImage, onAdd, categoryName }: ProductCa
             {categoryName || "Produto"}
           </p>
           <Link to={`/loja/${p.slug}`}>
-            <h3 className="text-sm md:text-base font-bold text-foreground leading-tight line-clamp-2 hover:text-primary transition-colors">
+            <h3 className="text-[11px] md:text-sm font-bold text-foreground leading-tight hover:text-primary transition-colors">
               {p.name}
             </h3>
           </Link>
