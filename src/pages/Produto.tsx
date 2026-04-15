@@ -338,8 +338,21 @@ const Produto = () => {
             <div className="space-y-8 mb-10">
               {Array.isArray(product.configuration_schema) && product.configuration_schema.map((item: any, itemIdx: number) => {
                 if (!item || !item.label) return null;
-                const isQuantity = item.label?.toLowerCase().includes("quant");
                 const options = Array.isArray(item.options) ? item.options : [];
+                const combinations = (product.configuration_schema as any[]).find(it => it.combinations)?.combinations;
+
+                // filtering logic for separated attributes (qty/cores)
+                let filteredOptions = options;
+                if (combinations) {
+                  const currentQty = configValues['qty'] || (product.configuration_schema.find((it: any) => it.id === 'qty')?.options[0]?._val);
+                  const currentCore = configValues['cores'] || (product.configuration_schema.find((it: any) => it.id === 'cores')?.options[0]?._val);
+
+                  if (item.id === 'qty' && currentCore) {
+                    filteredOptions = options.filter(opt => combinations.some((combo: any) => combo.q === opt._val && combo.c === currentCore));
+                  } else if (item.id === 'cores' && currentQty) {
+                    filteredOptions = options.filter(opt => combinations.some((combo: any) => combo.q === currentQty && combo.c === opt._val));
+                  }
+                }
                 
                 return (
                   <motion.div 
@@ -351,7 +364,7 @@ const Produto = () => {
                   >
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
-                        {isQuantity ? <Package className="w-4 h-4 text-primary" /> : <Layers className="w-4 h-4 text-primary" />}
+                        {item.id === 'qty' ? <Package className="w-4 h-4 text-primary" /> : <Layers className="w-4 h-4 text-primary" />}
                         {item.label}
                       </Label>
                       {configValues[item.id] && (
@@ -363,7 +376,7 @@ const Produto = () => {
 
                     {item.ui_type === 'checkbox' ? (
                       <div className="bg-secondary/20 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-border/50">
-                        {options.map((opt: any) => {
+                        {filteredOptions.map((opt: any) => {
                           if (!opt || !opt.name) return null;
                           const current = (configValues[item.id] as string[] || []);
                           const isSel = current.includes(opt.name);
@@ -395,7 +408,7 @@ const Produto = () => {
                           onChange={e => setConfigValues(v => ({ ...v, [item.id]: e.target.value }))}
                         >
                           <option value="" disabled>Selecione uma opção...</option>
-                          {options.map((opt: any) => {
+                          {filteredOptions.map((opt: any) => {
                             if (!opt || !opt.name) return null;
                             const costText = opt.price_adj > 0 ? ` (+ R$ ${Number(opt.price_adj).toFixed(2)})` : "";
                             return <option key={opt.name} value={opt.name}>{opt.name}{costText}</option>;
@@ -405,7 +418,7 @@ const Produto = () => {
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2.5">
-                        {options.map((opt: any) => {
+                        {filteredOptions.map((opt: any) => {
                           if (!opt || !opt.name) return null;
                           const isSel = configValues[item.id] === opt.name;
                           return (

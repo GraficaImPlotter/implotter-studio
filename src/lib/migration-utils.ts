@@ -53,8 +53,8 @@ export function parsePdfText(text: string): Record<string, MigrationCategory> {
       let finalCat = cat;
       let finalDesc = desc;
 
-      // Validate if potentialCode is actually a word of the category
-      if (potentialCode && potentialCode.length > 10 && !/\d/.test(potentialCode)) {
+      // Logic: If potentialCode is just a word (no digits) and it's long, or if it matches the category context, it's probably NOT a code
+      if (potentialCode && !/\d/.test(potentialCode) && (potentialCode.length > 4 || potentialCode === "C")) {
          code = "";
          finalCat = potentialCode + " " + cat;
       }
@@ -175,9 +175,25 @@ export function generateSql(
           };
         });
 
+        // Add compatibility map
+        const combinations = variations.map(v => ({ q: v._qty, c: v._cores }));
+
         finalSchema = [
-          { id: "qty", label: "QUANTIDADE", type: "select", ui_type: "select", options: qtyOptions },
-          { id: "cores", label: "CORES", type: "select", ui_type: "select", options: colorOptions }
+          { 
+            id: "qty", 
+            label: "QUANTIDADE", 
+            type: "select", 
+            ui_type: "select", 
+            options: qtyOptions,
+            combinations // All valid pairs
+          },
+          { 
+            id: "cores", 
+            label: "CORES", 
+            type: "select", 
+            ui_type: "select", 
+            options: colorOptions 
+          }
         ];
       } else {
         finalSchema = [{
