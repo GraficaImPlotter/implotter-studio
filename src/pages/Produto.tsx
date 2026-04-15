@@ -567,7 +567,9 @@ const Produto = () => {
               </div>
             )}
 
-            {!isSqm && !product.configuration_schema?.some((it: any) => it.label?.toLowerCase().includes("quant")) && (
+            {!isSqm && 
+             !product.name?.toLowerCase().includes("cartão") &&
+             !product.configuration_schema?.some((it: any) => it.label?.toLowerCase().includes("quant") || it.ui_type === 'hierarchy') && (
               <div className="space-y-4 mb-10">
                 <Label className="text-sm font-black uppercase tracking-widest text-foreground/70">Quantidade Unitária</Label>
                 <div className="grid grid-cols-4 gap-2.5">
