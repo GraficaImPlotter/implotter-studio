@@ -90,7 +90,7 @@ export function generateSql(
   categories: Record<string, MigrationCategory>, 
   options: { 
     includeDescriptions?: boolean;
-    descriptions?: Record<string, { short: string; full: string }>;
+    descriptions?: Record<string, { short: string; full: string; metaTitle?: string; metaDesc?: string; keywords?: string }>;
   } = {}
 ): string {
   let sql = "-- SCRIPT DE IMPORTAÇÃO GERADO PELO SISTEMA\nBEGIN;\n\n";
@@ -107,7 +107,7 @@ export function generateSql(
     Object.values(category.products).forEach(product => {
       const prodName = product.name;
       const prodSlug = toSlug(prodName);
-      const descData = options.descriptions?.[prodName] || { short: '', full: '' };
+      const descData = options.descriptions?.[prodName] || { short: '', full: '', metaTitle: '', metaDesc: '', keywords: '' };
 
       sql += `  -- PRODUTO: ${prodName}\n`;
       
@@ -133,10 +133,13 @@ export function generateSql(
 
       const shortDesc = descData.short.replace(/'/g, "''");
       const fullDesc = descData.full.replace(/'/g, "''");
+      const metaTitle = (descData.metaTitle || prodName).replace(/'/g, "''");
+      const metaDesc = (descData.metaDesc || descData.short).replace(/'/g, "''");
+      const keywords = (descData.keywords || '').replace(/'/g, "''");
 
-      sql += `  INSERT INTO public.products (id, name, slug, main_category_id, configuration_schema, is_active, price, pricing_type, short_description, description) \n`;
-      sql += `  VALUES (gen_random_uuid(), '${prodName}', '${prodSlug}-prod', (SELECT id FROM catalog_nodes WHERE slug='${catSlug}'), '${schema}', false, 0, 'fixed', '${shortDesc}', '${fullDesc}') \n`;
-      sql += `  ON CONFLICT (slug) DO UPDATE SET configuration_schema = EXCLUDED.configuration_schema, description = EXCLUDED.description, short_description = EXCLUDED.short_description;\n\n`;
+      sql += `  INSERT INTO public.products (id, name, slug, catalog_node_id, configuration_schema, is_active, price, pricing_type, short_description, full_description, meta_title, meta_description, keywords) \n`;
+      sql += `  VALUES (gen_random_uuid(), '${prodName}', '${prodSlug}-prod', (SELECT id FROM catalog_nodes WHERE slug='${catSlug}'), '${schema}', false, 0, 'fixed', '${shortDesc}', '${fullDesc}', '${metaTitle}', '${metaDesc}', '${keywords}') \n`;
+      sql += `  ON CONFLICT (slug) DO UPDATE SET configuration_schema = EXCLUDED.configuration_schema, full_description = EXCLUDED.full_description, short_description = EXCLUDED.short_description, meta_title = EXCLUDED.meta_title, meta_description = EXCLUDED.meta_description, keywords = EXCLUDED.keywords;\n\n`;
     });
   });
 

@@ -9,12 +9,16 @@ const corsHeaders = {
 const SYSTEM_PROMPT = `Você é um especialista em criação de conteúdo para produtos de gráfica e impressão digital. 
 Dado o nome de um produto, gere conteúdo profissional e otimizado para SEO em português brasileiro.
 
+Se for fornecida uma lista de categorias, sugira a mais adequada (retornando o ID se fornecido, ou o nome).
+
 Responda APENAS com um JSON válido (sem markdown, sem backticks) no seguinte formato:
 {
   "short_description": "Frase curta e atrativa (máx 160 caracteres) para listagem e meta description",
   "full_description": "Descrição completa em HTML com parágrafos, usando tags <p>, <strong>, <ul>, <li>. Deve ser persuasiva, informativa e otimizada para SEO. 3-4 parágrafos.",
   "specifications": "Especificações técnicas em HTML com lista usando <ul> e <li>. Inclua material, resolução, cores, acabamento e outros detalhes técnicos relevantes para o tipo de produto.",
-  "keywords": "palavras-chave separadas por vírgula, relevantes para SEO"
+  "keywords": "palavras-chave separadas por vírgula, relevantes para SEO",
+  "meta_title": "Título otimizado para SEO (máx 60 caracteres)",
+  "category_suggestion": "ID ou Nome da categoria sugerida da lista fornecida"
 }
 
 Contexto: Somos a Gráfica ImPlotter, especializada em impressão digital de alta qualidade. 
@@ -27,11 +31,16 @@ serve(async (req) => {
   }
 
   try {
-    const { productName } = await req.json();
+    const { productName, categories } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!productName?.trim()) throw new Error("Nome do produto é obrigatório");
+
+    let promptSuffix = `Gere conteúdo para o produto: "${productName}"`;
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      promptSuffix += `\n\nCategorias disponíveis (escolha uma): ${JSON.stringify(categories)}`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -43,7 +52,7 @@ serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Gere conteúdo para o produto: "${productName}"` },
+          { role: "user", content: promptSuffix },
         ],
       }),
     });

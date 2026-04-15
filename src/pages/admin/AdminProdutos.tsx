@@ -100,6 +100,10 @@ const AdminProdutos = () => {
   const [generatedSql, setGeneratedSql] = useState("");
   const [processingImport, setProcessingImport] = useState(false);
 
+  // JSON editor toggle for the dynamic configurator
+  const [showJsonEditor, setShowJsonEditor] = useState(false);
+  const [rawJson, setRawJson] = useState("");
+
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
   const profit = price - totalCost;
@@ -157,6 +161,96 @@ const AdminProdutos = () => {
       .sort((a, b) => a.path.localeCompare(b.path, "pt-BR"));
   }, [catalogNodes]);
 
+  const filteredProducts = useMemo(() => {
+    return (products as any[]).filter(p => {
+      const q = adminSearch.toLowerCase();
+      const matchesSearch = !q ||
+        p.name?.toLowerCase().includes(q) ||
+        (p.product_code && p.product_code.toLowerCase().includes(q));
+      const matchesColor = !adminFilterColor || p.color_mode === adminFilterColor;
+      return matchesSearch && matchesColor;
+    });
+  }, [products, adminSearch, adminFilterColor]);
+
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredProducts.forEach(p => {
+      const nodePath = p.catalog_node_id
+        ? (sortedNodePaths.find(n => n.id === p.catalog_node_id)?.path || "Sem Categoria")
+        : (p.categories?.name || "Sem Categoria");
+      if (!groups[nodePath]) groups[nodePath] = [];
+      groups[nodePath].push(p);
+    });
+    return Object.fromEntries(Object.entries(groups).sort(([a], [b]) => a.localeCompare(b, "pt-BR")));
+  }, [filteredProducts, sortedNodePaths]);
+
+  const handleProcessImport = async () => {
+    if (!importPdfText.trim()) return;
+    setProcessingImport(true);
+    try {
+      const parsed = parsePdfText(importPdfText);
+      let categories = parsed;
+      const descriptions: Record<string, any> = {};
+
+      // If AI is enabled, fetch descriptions for each product
+      if (aiEnabledForImport) {
+        const productsToProcess: string[] = [];
+        Object.values(categories).forEach(cat => {
+          Object.keys(cat.products).forEach(prodName => {
+            productsToProcess.push(prodName);
+          });
+        });
+
+        toast({ title: "Iniciando processamento com IA", description: `Isso pode levar alguns instantes para ${productsToProcess.length} produtos...` });
+
+        for (const prodName of productsToProcess) {
+          try {
+            const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-product-content`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({ productName: prodName }),
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+              descriptions[prodName] = {
+                short: data.short_description,
+                full: data.full_description,
+                metaTitle: data.meta_title,
+                metaDesc: data.short_description,
+                keywords: data.keywords
+              };
+            }
+          } catch (err) {
+            console.error(`Erro ao processar ${prodName} com IA`, err);
+          }
+        }
+      }
+
+      // Optionally override category name with importTargetNode
+      if (importTargetNode.trim() && Object.keys(parsed).length > 0) {
+        const renamed: typeof parsed = {};
+        Object.entries(parsed).forEach(([key, val]) => {
+          const newKey = importTargetNode.trim();
+          renamed[newKey] = { ...val, name: newKey };
+        });
+        categories = renamed;
+      }
+
+      const sql = generateSql(categories, { 
+        includeDescriptions: aiEnabledForImport,
+        descriptions 
+      });
+      setGeneratedSql(sql);
+      toast({ title: "Script gerado com sucesso!", description: `${Object.keys(categories).length} categorias processadas.` });
+    } catch (e: any) {
+      toast({ title: "Erro ao processar PDF", description: e.message, variant: "destructive" });
+    }
+    setProcessingImport(false);
+  };
+
   const handleNameChange = (name: string) => {
     setProductName(name);
     if (!editing) {
@@ -173,13 +267,19 @@ const AdminProdutos = () => {
     }
     setGeneratingAI(true);
     try {
+      // Pass category list to AI for suggestion
+      const catList = catalogNodes.map(n => ({ id: n.id, name: n.name, path: getNodePath(catalogNodes, n.id) }));
+      
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-product-content`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ productName: productName.trim() }),
+        body: JSON.stringify({ 
+          productName: productName.trim(),
+          categories: catList
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Erro ao gerar conteúdo");
@@ -204,6 +304,23 @@ const AdminProdutos = () => {
           kwInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
       }
+
+      // Handle SEO and Category fields
+      if (data.meta_title) setMetaTitle(data.meta_title);
+      if (data.short_description) setMetaDesc(data.short_description);
+      
+      if (data.category_suggestion && formRef.current) {
+        const catSelect = formRef.current.querySelector<HTMLSelectElement>('[name="catalog_node_id"]');
+        if (catSelect) {
+          // Try to match by ID or Name
+          const suggested = catList.find(c => c.id === data.category_suggestion || c.name === data.category_suggestion || data.category_suggestion.includes(c.name));
+          if (suggested) {
+            catSelect.value = suggested.id;
+            catSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      }
+
       toast({ title: "Conteúdo gerado com sucesso!", description: "Revise e ajuste conforme necessário." });
     } catch (e: any) {
       toast({ title: "Erro ao gerar conteúdo", description: e.message, variant: "destructive" });
