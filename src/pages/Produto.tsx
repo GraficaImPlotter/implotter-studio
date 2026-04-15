@@ -210,7 +210,7 @@ const Produto = () => {
       // Se houver hierarquia selecionada, ela define o preço base (substituindo o demonstrativo)
       baseTotal = hierarchyPriceTotal;
     } else if (isSqm) {
-      baseTotal = area * pricePerSqm;
+      baseTotal = (area * pricePerSqm) * selectedQuantity;
     } else {
       // Preço demonstrativo/base com descontos de quantidade (se não for hierarquia)
       baseTotal = baseUnitPrice * (selectedQuantity >= 1000 ? 0.8 : selectedQuantity >= 500 ? 0.9 : 1);
@@ -265,7 +265,7 @@ const Produto = () => {
       productId: product.id,
       name: product.name + (!isSqm ? ` (${selectedQuantity} un)` : ""),
       price: calculatedPrice,
-      quantity: 1,
+      quantity: selectedQuantity,
       image: images[0]?.image_url,
       pricingType: product.pricing_type,
       saleUnit: product.sale_unit,
@@ -669,23 +669,44 @@ const Produto = () => {
               </div>
             )}
 
-            {!isSqm && 
-             !product.name?.toLowerCase().includes("cartão") &&
-             !product.configuration_schema?.some((it: any) => it.label?.toLowerCase().includes("quant") || it.ui_type === 'hierarchy') && (
+            {/* Quantity Selector for SQM or standard products */}
+            {(isSqm || (!product.name?.toLowerCase().includes("cartão") &&
+              !product.configuration_schema?.some((it: any) => it.label?.toLowerCase().includes("quant") || it.ui_type === 'hierarchy'))) && (
               <div className="space-y-4 mb-10">
-                <Label className="text-sm font-black uppercase tracking-widest text-foreground/70">Quantidade Unitária</Label>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {[25, 50, 100, 250, 500, 1000, 2500, 5000].map(qty => (
+                <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" /> Quantidade de Itens
+                </Label>
+                
+                {isSqm ? (
+                  <div className="flex items-center gap-4 bg-secondary/30 p-4 rounded-2xl border border-border/50 max-w-[200px]">
                     <button 
-                      key={qty} 
-                      onClick={() => setSelectedQuantity(qty)} 
-                      className={`p-3.5 rounded-xl border text-center transition-all ${selectedQuantity === qty ? "bg-primary border-primary text-white font-bold shadow-glow-sm scale-105" : "bg-secondary/30 border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setSelectedQuantity(prev => Math.max(1, prev - 1))}
+                      className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-primary hover:text-white transition-all font-bold"
                     >
-                       <div className="text-[13px]">{qty}</div>
-                       <div className={`text-[9px] uppercase font-bold tracking-tighter ${selectedQuantity === qty ? "text-white/70" : "opacity-40"}`}>un</div>
+                      -
                     </button>
-                  ))}
-                </div>
+                    <span className="text-lg font-black w-8 text-center">{selectedQuantity}</span>
+                    <button 
+                      onClick={() => setSelectedQuantity(prev => prev + 1)}
+                      className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-primary hover:text-white transition-all font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {[25, 50, 100, 250, 500, 1000, 2500, 5000].map(qty => (
+                      <button 
+                        key={qty} 
+                        onClick={() => setSelectedQuantity(qty)} 
+                        className={`p-3.5 rounded-xl border text-center transition-all ${selectedQuantity === qty ? "bg-primary border-primary text-white font-bold shadow-glow-sm scale-105" : "bg-secondary/30 border-border hover:border-primary/30 text-muted-foreground hover:text-foreground"}`}
+                      >
+                         <div className="text-[13px]">{qty}</div>
+                         <div className={`text-[9px] uppercase font-bold tracking-tighter ${selectedQuantity === qty ? "text-white/70" : "opacity-40"}`}>un</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
