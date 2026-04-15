@@ -164,7 +164,7 @@ const Produto = () => {
   const finishingsTotal = useMemo(() => {
     return availableFinishings.filter(f => selectedFinishings.includes(f.id)).reduce((sum, f) => {
       const qty = finishingQuantities[f.id] || 1;
-      const isUnit = f.pricing_mode === "unit";
+      const isUnit = f.pricing_mode === "per_unit";
       return sum + (Number(f.price) * (isUnit ? qty : 1));
     }, 0);
   }, [selectedFinishings, availableFinishings, finishingQuantities]);
@@ -252,7 +252,7 @@ const Produto = () => {
       .filter(f => selectedFinishings.includes(f.id))
       .map(f => {
         const qty = finishingQuantities[f.id] || 1;
-        return f.pricing_mode === "unit" ? `${f.name} (${qty}x)` : f.name;
+        return f.pricing_mode === "per_unit" ? `${f.name} (${qty}x)` : f.name;
       });
 
     const configDetails = product.configuration_schema?.map((item: any) => {
@@ -613,7 +613,7 @@ const Produto = () => {
                 <div className="flex flex-col gap-3">
                   {availableFinishings.map(f => {
                     const isSelected = selectedFinishings.includes(f.id);
-                    const isUnit = f.pricing_mode === "unit";
+                    const isUnit = f.pricing_mode === "per_unit";
                     const currentQty = finishingQuantities[f.id] || 1;
 
                     return (
