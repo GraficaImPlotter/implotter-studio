@@ -58,6 +58,7 @@ const Produto = () => {
   const [height, setHeight] = useState("");
   const [quantityMultiplier, setQuantityMultiplier] = useState(1);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("custom");
   const [quoteCustomer, setQuoteCustomer] = useState({ name: "", email: "", phone: "", cpfCnpj: "", company: "" });
   const [companySettings, setCompanySettings] = useState({ name: "", cnpj: "", address: "", phone: "", email: "", website: "" });
   const [showSticky, setShowSticky] = useState(false);
@@ -139,6 +140,26 @@ const Produto = () => {
   const wNum = parseFloat(width) || 0;
   const hNum = parseFloat(height) || 0;
   const area = wNum * hNum;
+  
+  const sqmPresets = useMemo(() => {
+    if (!isSqm || !Array.isArray(product?.configuration_schema)) return [];
+    const item = product.configuration_schema.find((it: any) => it.ui_type === 'sqm_presets');
+    return item?.options || [];
+  }, [isSqm, product?.configuration_schema]);
+
+  const handlePresetChange = (presetName: string) => {
+    setSelectedPresetId(presetName);
+    if (presetName === "custom") {
+      setWidth("");
+      setHeight("");
+    } else {
+      const preset = sqmPresets.find((p: any) => p.name === presetName);
+      if (preset) {
+        setWidth(preset.width.toString());
+        setHeight(preset.height.toString());
+      }
+    }
+  };
   
   const finishingsTotal = useMemo(() => {
     return availableFinishings.filter(f => selectedFinishings.includes(f.id)).reduce((sum, f) => {
@@ -328,9 +349,46 @@ const Produto = () => {
                     <p className="text-sm text-muted-foreground">Valor por m²: <span className="text-highlight font-bold">R$ {pricePerSqm.toFixed(2)}</span></p>
                     <Badge variant="outline" className="bg-highlight/10 text-highlight"><Ruler className="w-3 h-3 mr-1" /> M²</Badge>
                   </div>
+
+                  {sqmPresets.length > 0 && (
+                    <div className="space-y-2">
+                       <Label className="text-xs uppercase font-black tracking-widest text-muted-foreground">Tamanho</Label>
+                       <select 
+                        value={selectedPresetId} 
+                        onChange={(e) => handlePresetChange(e.target.value)}
+                        className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                       >
+                         <option value="custom">Medida Personalizada (Sob Medida)</option>
+                         {sqmPresets.map((p: any) => (
+                           <option key={p.name} value={p.name}>{p.name} ({p.width}x{p.height}m)</option>
+                         ))}
+                       </select>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5"><Label className="text-xs">Largura (m)</Label><Input type="number" value={width} onChange={e => setWidth(e.target.value)} placeholder="0.00" /></div>
-                    <div className="space-y-1.5"><Label className="text-xs">Altura (m)</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} placeholder="0.00" /></div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Largura (m)</Label>
+                      <Input 
+                        type="number" 
+                        value={width} 
+                        onChange={e => setWidth(e.target.value)} 
+                        placeholder="0.00" 
+                        disabled={selectedPresetId !== "custom"}
+                        className={selectedPresetId !== "custom" ? "bg-muted font-bold" : ""}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Altura (m)</Label>
+                      <Input 
+                        type="number" 
+                        value={height} 
+                        onChange={e => setHeight(e.target.value)} 
+                        placeholder="0.00" 
+                        disabled={selectedPresetId !== "custom"}
+                        className={selectedPresetId !== "custom" ? "bg-muted font-bold" : ""}
+                      />
+                    </div>
                   </div>
                   {dimensionError && <div className="text-xs text-destructive bg-destructive/10 p-2 rounded-lg border border-destructive/20">{dimensionError}</div>}
                   {wNum > 0 && hNum > 0 && !dimensionError && (

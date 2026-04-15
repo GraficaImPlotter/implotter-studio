@@ -109,6 +109,7 @@ const AdminProdutos = () => {
   const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [rawJson, setRawJson] = useState("");
   const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; price: number }[] }[]>([]);
+  const [sqmPresets, setSqmPresets] = useState<{ id: string; name: string; width: number; height: number }[]>([]);
 
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
@@ -389,6 +390,20 @@ const AdminProdutos = () => {
       }
     }
 
+    // Load sqm presets if they exist
+    setSqmPresets([]);
+    if (Array.isArray(product?.configuration_schema)) {
+      const presetsItem = (product.configuration_schema as any[]).find(it => it.ui_type === 'sqm_presets');
+      if (presetsItem && presetsItem.options) {
+        setSqmPresets(presetsItem.options.map((opt: any) => ({
+          id: generateUUID(),
+          name: opt.name,
+          width: opt.width,
+          height: opt.height
+        })));
+      }
+    }
+
     setOpen(true);
   };
 
@@ -501,7 +516,16 @@ const AdminProdutos = () => {
         type: "select",
         ui_type: "hierarchy",
         groups: groupedVariants
-      }] : configSchema,
+      }] : (isSqm && sqmPresets.length > 0 ? [
+        ...configSchema,
+        {
+          id: "sqm_presets_v1",
+          label: "Tamanhos Comuns",
+          type: "select",
+          ui_type: "sqm_presets",
+          options: sqmPresets.map(p => ({ name: p.name, width: p.width, height: p.height }))
+        }
+      ] : configSchema),
     };
 
     const saveFaqs = async (productId: string) => {
@@ -826,6 +850,33 @@ const AdminProdutos = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div><label className="text-sm font-medium">Área mín. (m²)</label><Input name="min_area" type="number" step="0.01" defaultValue={editing?.min_area} placeholder="Ex: 0.10" /></div>
                       <div><label className="text-sm font-medium">Área máx. (m²)</label><Input name="max_area" type="number" step="0.01" defaultValue={editing?.max_area} placeholder="Ex: 100" /></div>
+                    </div>
+
+                    <div className="p-4 bg-background rounded-xl border border-border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                          <Ruler className="w-3 h-3" /> Tamanhos comuns (Sugestões)
+                        </label>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setSqmPresets(prev => [...prev, { id: generateUUID(), name: "", width: 1, height: 1 }])} className="h-7 text-[10px] font-bold">
+                          <Plus className="w-3 h-3 mr-1" /> Add Tamanho
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {sqmPresets.map((preset, i) => (
+                          <div key={preset.id} className="flex gap-2 items-center group/preset">
+                            <Input value={preset.name} onChange={e => setSqmPresets(prev => prev.map((p, idx) => i === idx ? { ...p, name: e.target.value } : p))} placeholder="Nome (ex: 1x1m)" className="h-8 text-xs flex-1" />
+                            <div className="flex items-center gap-1 w-32">
+                              <Input type="number" step="0.01" value={preset.width} onChange={e => setSqmPresets(prev => prev.map((p, idx) => i === idx ? { ...p, width: parseFloat(e.target.value) || 0 } : p))} className="h-8 text-xs px-2" placeholder="L" title="Largura" />
+                              <span className="text-[10px] text-muted-foreground">x</span>
+                              <Input type="number" step="0.01" value={preset.height} onChange={e => setSqmPresets(prev => prev.map((p, idx) => i === idx ? { ...p, height: parseFloat(e.target.value) || 0 } : p))} className="h-8 text-xs px-2" placeholder="A" title="Altura" />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive opacity-0 group-hover/preset:opacity-100 transition-opacity" onClick={() => setSqmPresets(prev => prev.filter((_, idx) => i !== idx))}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        {sqmPresets.length === 0 && <p className="text-[10px] text-muted-foreground italic text-center py-2">Nenhum tamanho comum cadastrado.</p>}
+                      </div>
                     </div>
                   </>
                 )}
