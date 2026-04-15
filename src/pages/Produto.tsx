@@ -359,7 +359,7 @@ const Produto = () => {
                         <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
                           <Palette className="w-4 h-4 text-primary" /> {item.label} (Escolha a Cor)
                         </Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="space-y-3">
                           {item.groups.map((group: any) => {
                             const isGroupSel = selectedGroupId === group.id || selectedGroupId === group.name;
                             return (
@@ -372,10 +372,12 @@ const Produto = () => {
                                     [item.id]: "" // Reset option when group changes
                                   }));
                                 }}
-                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1.5 ${isGroupSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-secondary/30 border-border hover:border-primary/40 text-muted-foreground"}`}
+                                className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${isGroupSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-card border-border hover:border-primary/40 text-muted-foreground"}`}
                               >
                                 <span className="text-sm font-bold">{group.name}</span>
-                                {isGroupSel && <motion.div layoutId="active-group" className="w-full h-1 bg-white/30 rounded-full mt-1" />}
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isGroupSel ? "bg-white border-white" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                  {isGroupSel && <Check className="w-3.5 h-3.5 text-primary" strokeWidth={4} />}
+                                </div>
                               </button>
                             );
                           })}
@@ -454,7 +456,7 @@ const Produto = () => {
                     </div>
 
                     {item.ui_type === 'checkbox' ? (
-                      <div className="bg-secondary/20 rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border border-border/50">
+                      <div className="bg-secondary/20 rounded-2xl p-4 space-y-3 border border-border/50">
                         {filteredOptions.map((opt: any) => {
                           if (!opt || !opt.name) return null;
                           const current = (configValues[item.id] as string[] || []);
@@ -466,7 +468,7 @@ const Produto = () => {
                                 const next = isSel ? current.filter(x => x !== opt.name) : [...current, opt.name];
                                 setConfigValues(v => ({...v, [item.id]: next}));
                               }} 
-                              className={`flex items-center justify-between p-3.5 rounded-xl border transition-all group ${isSel ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-background/50 border-border/50 hover:border-primary/30"}`}
+                              className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all group ${isSel ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-card border-border hover:border-primary/30"}`}
                             >
                                <div className="flex items-center gap-3">
                                   <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
@@ -496,7 +498,7 @@ const Produto = () => {
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       </div>
                     ) : (
-                      <div className="flex flex-wrap gap-2.5">
+                      <div className="space-y-3">
                         {filteredOptions.map((opt: any) => {
                           if (!opt || !opt.name) return null;
                           const isSel = configValues[item.id] === opt.name;
@@ -504,20 +506,18 @@ const Produto = () => {
                             <button 
                               key={opt.name} 
                               onClick={() => setConfigValues(v => ({ ...v, [item.id]: opt.name }))} 
-                              className={`px-5 py-3 rounded-xl text-xs font-bold border transition-all relative flex flex-col items-center min-w-[100px] overflow-hidden ${isSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-secondary/30 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}
+                              className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between group ${isSel ? "bg-primary border-primary text-white shadow-glow-sm scale-102 z-10" : "bg-card border-border hover:border-primary/40 text-muted-foreground hover:text-foreground"}`}
                             >
-                              <span className="relative z-10">{opt.name}</span>
+                              <div className="flex items-center gap-4">
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? "bg-white border-white" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                  {isSel && <Check className="w-4 h-4 text-primary" strokeWidth={4} />}
+                                </div>
+                                <span className={`text-sm font-bold ${isSel ? "text-white" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
+                              </div>
                               {opt.price_adj > 0 && (
-                                <span className={`text-[9px] mt-1 font-black ${isSel ? "text-white/80" : "text-primary opacity-80"}`}>
+                                <span className={`text-[11px] font-black ${isSel ? "text-white/80" : "text-primary opacity-80"}`}>
                                   + R$ {Number(opt.price_adj).toFixed(2)}
                                 </span>
-                              )}
-                              {isSel && (
-                                <motion.div 
-                                  layoutId={`active-bg-${item.id}`}
-                                  className="absolute inset-0 bg-primary z-0"
-                                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                />
                               )}
                             </button>
                           );
