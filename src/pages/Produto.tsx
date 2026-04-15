@@ -659,10 +659,12 @@ const Produto = () => {
                ))}
             </div>
 
-            {product.full_description && (
+            {product.specifications && (
               <div className="mb-8">
-                <h3 className="font-display font-bold text-lg mb-2">Descrição do Produto</h3>
-                <div className="text-muted-foreground text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.full_description) }} />
+                <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
+                  <FileDown className="w-5 h-5 text-primary" /> Ficha Técnica
+                </h3>
+                <div className="text-muted-foreground text-sm prose prose-sm max-w-none bg-secondary/30 rounded-3xl p-8 border border-border/50" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.specifications) }} />
               </div>
             )}
 
