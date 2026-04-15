@@ -753,15 +753,14 @@ const AdminProdutos = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium flex items-center gap-1.5">
-                      {pricingType === "per_sqm" ? "Preço base (referência)" : "Preço de Venda *"}
+                      {pricingType === "per_sqm" ? "Preço base (referência)" : "Preço Opcional (A partir de)"}
                       {totalCost > 0 && <TrendingUp className="w-3 h-3 text-success" />}
                     </label>
                     <Input
                       type="number"
                       step="0.01"
-                      value={price || ""}
+                      value={price !== undefined ? price : ""}
                       onChange={e => { setPrice(parseFloat(e.target.value) || 0); setPriceManuallyEdited(true); }}
-                      required
                       className={totalCost > 0 && !priceManuallyEdited ? "border-success/50 bg-success/5" : ""}
                     />
                     {totalCost > 0 && !priceManuallyEdited && (
@@ -1407,6 +1406,25 @@ const AdminProdutos = () => {
                                 <AccordionContent className="p-0">
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
+                                            <thead className="bg-muted/10 border-b border-border/50">
+                                                <tr>
+                                                    <th className="p-4 w-10">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={items.length > 0 && items.every(p => selectedProducts.has(p.id))}
+                                                            onChange={e => {
+                                                                const n = new Set(selectedProducts);
+                                                                if (e.target.checked) items.forEach(p => n.add(p.id));
+                                                                else items.forEach(p => n.delete(p.id));
+                                                                setSelectedProducts(n);
+                                                            }} 
+                                                        />
+                                                    </th>
+                                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest" colSpan={5}>
+                                                        Selecionar todos ({items.length}) em {catName}
+                                                    </th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                                 {items.map(p => (
                                                     <tr key={p.id} className="border-t border-border/30 hover:bg-muted/10 transition-colors">
