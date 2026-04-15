@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload, Settings, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Palette, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload, Settings, AlertTriangle } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
@@ -108,6 +108,7 @@ const AdminProdutos = () => {
   // JSON editor toggle for the dynamic configurator
   const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [rawJson, setRawJson] = useState("");
+  const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; price: number }[] }[]>([]);
 
   const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
   const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
@@ -378,6 +379,16 @@ const AdminProdutos = () => {
         setSelectedFinishingIds((data ?? []).map((r: any) => r.finishing_id));
       });
     }
+
+    // Load hierarchical variants if they exist
+    setGroupedVariants([]);
+    if (Array.isArray(product?.configuration_schema)) {
+      const hierarchy = (product.configuration_schema as any[]).find(it => it.ui_type === 'hierarchy');
+      if (hierarchy && hierarchy.groups) {
+        setGroupedVariants(hierarchy.groups);
+      }
+    }
+
     setOpen(true);
   };
 
@@ -483,11 +494,14 @@ const AdminProdutos = () => {
       cost_material: costMaterial,
       cost_art: costArt,
       cost_extra: costExtra,
-      shipping_weight: shippingWeight,
-      shipping_height: shippingHeight,
-      shipping_width: shippingWidth,
       shipping_length: shippingLength,
-      configuration_schema: configSchema,
+      configuration_schema: groupedVariants.length > 0 ? [{
+        id: "hierarchy_v1",
+        label: "Opções do Produto",
+        type: "select",
+        ui_type: "hierarchy",
+        groups: groupedVariants
+      }] : configSchema,
     };
 
     const saveFaqs = async (productId: string) => {
@@ -953,52 +967,79 @@ const AdminProdutos = () => {
 
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
                   <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-4">
-                        <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico
-                        </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {configSchema.length > 0 && configSchema.some(it => it.options?.some((o: any) => o.cost_adj > 0)) && (
-                            <Button 
-                                type="button" 
-                                variant="hero" 
-                                size="sm" 
-                                className="bg-success hover:bg-success/90 h-8 font-bold" 
-                                onClick={autoCalcularTudo}
-                            >
-                                <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Auto-calcular por Margem ({defaultMargin}%)
-                            </Button>
-                        )}
-                    </div>
+                     <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                         <Layers className="w-5 h-5 text-primary" /> Variações Hierárquicas (Cores › Lista de Preços)
+                     </h3>
+                     <Button type="button" variant="outline" size="sm" onClick={() => setGroupedVariants(prev => [...prev, { id: generateUUID(), name: "4x0", options: [{ name: "500 UN", price: 0 }] }])}>
+                        <Plus className="w-3 h-3 mr-1" /> Adicionar Cor/Grupo
+                     </Button>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-[10px] h-7 bg-primary/5 border-primary/20 hover:bg-primary/10"
-                      onClick={() => setConfigSchema([
-                        { id: "qty-01", label: "Quantidade", type: "select", ui_type: "pills", options: [{ name: "500", price_adj: 100 }, { name: "1000", price_adj: 180 }, { name: "2500", price_adj: 350 }] },
-                        { id: "col-01", label: "Cores", type: "select", ui_type: "pills", options: [{ name: "4x0 (Frente)", price_adj: 0 }, { name: "4x1 (Frente/Verso PB)", price_adj: 15 }, { name: "4x4 (Frente/Verso)", price_adj: 30 }] },
-                        { id: "varn-01", label: "Cobertura", type: "select", ui_type: "pills", options: [{ name: "Sem Verniz", price_adj: 0 }, { name: "UV Total Frente", price_adj: 20 }, { name: "Verniz Localizado", price_adj: 45 }] }
-                      ])}
-                    >
-                      <Plus className="w-3 h-3 mr-1" /> Preset: Cartão
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-[10px] h-7 bg-highlight/5 border-highlight/20 hover:bg-highlight/10"
-                      onClick={() => setConfigSchema([
-                        { id: "mat-01", label: "Material", type: "select", ui_type: "pills", options: [{ name: "Lona 440g", price_adj: 0 }, { name: "Lona Fosca 440g", price_adj: 12 }, { name: "Adesivo Vinil", price_adj: 25 }] },
-                        { id: "fin-01", label: "Acabamento", type: "checkbox", options: [{ name: "Ilhós", price_adj: 5 }, { name: "Bainha", price_adj: 10 }, { name: "Bastão e Corda", price_adj: 15 }] }
-                      ])}
-                    >
-                      <Plus className="w-3 h-3 mr-1" /> Preset: Banner
-                    </Button>
+                  {groupedVariants.length > 0 ? (
+                    <div className="space-y-6">
+                       {groupedVariants.map((group, groupIdx) => (
+                         <div key={group.id} className="bg-background rounded-xl p-4 border border-border space-y-4 shadow-sm relative">
+                            <button type="button" className="absolute top-4 right-4 text-destructive hover:scale-110 transition-transform" onClick={() => setGroupedVariants(prev => prev.filter(g => g.id !== group.id))}>
+                               <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="flex items-center gap-3 w-3/4">
+                               <Palette className="w-4 h-4 text-primary" />
+                               <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Nome do Grupo (ex: 4x0, Couche 300g...)" className="font-bold border-primary/20" />
+                            </div>
+                            
+                            <div className="space-y-2 ml-7">
+                               <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Lista de Preços (Quantidades)</p>
+                               {group.options.map((opt, optIdx) => (
+                                 <div key={optIdx} className="flex gap-3 items-center group">
+                                    <Input value={opt.name} onChange={e => {
+                                      const next = [...group.options];
+                                      next[optIdx].name = e.target.value;
+                                      setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                    }} placeholder="500 UN" className="h-9 text-xs" />
+                                    <div className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+                                      <Input type="number" step="0.01" value={opt.price} onChange={e => {
+                                        const next = [...group.options];
+                                        next[optIdx].price = parseFloat(e.target.value) || 0;
+                                        setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                      }} className="h-9 text-xs pl-8 w-28" />
+                                    </div>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => {
+                                      const next = group.options.filter((_, i) => i !== optIdx);
+                                      setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                    }}>
+                                       <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                 </div>
+                               ))}
+                               <Button type="button" variant="ghost" size="sm" className="h-8 text-[11px] text-primary" onClick={() => {
+                                  const next = [...group.options, { name: "", price: 0 }];
+                                  setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                               }}>
+                                  <Plus className="w-3 h-3 mr-1" /> Add Opção de Preço
+                               </Button>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  ) : (
+                    <div className="py-10 text-center border-2 border-dashed border-border rounded-xl">
+                       <Package className="w-10 h-10 mx-auto text-muted-foreground opacity-20 mb-3" />
+                       <p className="text-sm text-muted-foreground">Nenhuma variação hierárquica cadastrada.</p>
+                       <p className="text-[10px] text-muted-foreground/60 max-w-[200px] mx-auto mt-1">Use esta seção para cadastrar preços diferentes por grupo (ex: Cores).</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-4 border-t border-border/50">
+                     <p className="text-[10px] text-muted-foreground italic max-w-sm">Dica: Ao usar variações hierárquicas, o sistema ignora o "Configurador Dinâmico" padrão abaixo.</p>
+                  </div>
+              </div>
+
+              <div className="mt-8 opacity-50 pointer-events-none grayscale">
+                  <div className="flex justify-between items-center mb-4">
+                     <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                         <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico (Desabilitado ao usar Hierarquia)
+                     </h3>
                   </div>
 
                 <div className="flex gap-2 mb-4">

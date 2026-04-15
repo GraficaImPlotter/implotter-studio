@@ -164,7 +164,14 @@ const Produto = () => {
         const val = configValues[item.id];
         if (!val) return;
 
-        if (item.ui_type === 'checkbox' && Array.isArray(val)) {
+        if (item.ui_type === 'hierarchy' && Array.isArray(item.groups)) {
+          const groupId = configValues[item.id + '_group'];
+          const group = item.groups.find((g: any) => g.id === groupId || g.name === groupId);
+          if (group) {
+            const opt = Array.isArray(group.options) ? group.options.find((o: any) => o.name === val) : null;
+            if (opt) total += (Number(opt.price) || 0);
+          }
+        } else if (item.ui_type === 'checkbox' && Array.isArray(val)) {
             val.forEach((v: string) => {
               const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === v) : null;
               if (opt) total += (Number(opt.price_adj) || 0);
@@ -338,6 +345,78 @@ const Produto = () => {
             <div className="space-y-8 mb-10">
               {Array.isArray(product.configuration_schema) && product.configuration_schema.map((item: any, itemIdx: number) => {
                 if (!item || !item.label) return null;
+                
+                // --- CUSTOM HIERARCHICAL RENDERING ---
+                if (item.ui_type === 'hierarchy' && Array.isArray(item.groups)) {
+                  const selectedGroupId = configValues[item.id + '_group'];
+                  const selectedGroup = item.groups.find((g: any) => g.id === selectedGroupId || g.name === selectedGroupId);
+                  const selectedOptionName = configValues[item.id];
+
+                  return (
+                    <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                      {/* Step 1: Group Selection (e.g. Cores) */}
+                      <div className="space-y-4">
+                        <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-primary" /> {item.label} (Escolha a Cor)
+                        </Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {item.groups.map((group: any) => {
+                            const isGroupSel = selectedGroupId === group.id || selectedGroupId === group.name;
+                            return (
+                              <button
+                                key={group.id}
+                                onClick={() => {
+                                  setConfigValues(prev => ({ 
+                                    ...prev, 
+                                    [item.id + '_group']: group.id,
+                                    [item.id]: "" // Reset option when group changes
+                                  }));
+                                }}
+                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1.5 ${isGroupSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-secondary/30 border-border hover:border-primary/40 text-muted-foreground"}`}
+                              >
+                                <span className="text-sm font-bold">{group.name}</span>
+                                {isGroupSel && <motion.div layoutId="active-group" className="w-full h-1 bg-white/30 rounded-full mt-1" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Step 2: Options Selection (e.g. Quantidades) as a LIST */}
+                      {selectedGroup && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 pt-4 border-t border-border/50">
+                          <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
+                            <Package className="w-4 h-4 text-primary" /> Opções Disponíveis para {selectedGroup.name}
+                          </Label>
+                          <div className="space-y-3">
+                            {selectedGroup.options.map((opt: any, optIdx: number) => {
+                              const isSel = selectedOptionName === opt.name;
+                              return (
+                                <button
+                                  key={optIdx}
+                                  onClick={() => setConfigValues(prev => ({ ...prev, [item.id]: opt.name }))}
+                                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between group ${isSel ? "bg-highlight/5 border-highlight shadow-glow-sm" : "bg-card border-border hover:border-highlight/30"}`}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? "bg-highlight border-highlight" : "border-muted-foreground/30 group-hover:border-highlight/50"}`}>
+                                      {isSel && <Check className="w-4 h-4 text-white" strokeWidth={4} />}
+                                    </div>
+                                    <span className={`text-sm font-bold ${isSel ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className={`text-lg font-black ${isSel ? "text-highlight" : "text-foreground opacity-80"}`}>R$ {Number(opt.price).toFixed(2)}</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                }
+
+                // --- ORIGINAL RENDERING FOR STANDARD OPTIONS ---
                 const options = Array.isArray(item.options) ? item.options : [];
                 const combinations = (product.configuration_schema as any[]).find(it => it.combinations)?.combinations;
 
