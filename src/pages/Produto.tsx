@@ -149,15 +149,11 @@ const Produto = () => {
   const baseUnitPrice = Number(product?.sale_price || product?.price) || 0;
 
   const calculatedPrice = useMemo(() => {
-    let total = 0;
-    if (isSqm) {
-      total = area * pricePerSqm;
-    } else {
-      const unitPrice = baseUnitPrice * (selectedQuantity >= 1000 ? 0.8 : selectedQuantity >= 500 ? 0.9 : 1);
-      total = unitPrice;
-    }
-    
-    // Safely iterate through schema
+    let hasHierarchySelected = false;
+    let hierarchyPriceTotal = 0;
+    let otherAdjs = 0;
+
+    // Separamos o que é hierarquia do que são outros ajustes
     if (product?.configuration_schema && Array.isArray(product.configuration_schema)) {
       product.configuration_schema.forEach((item: any) => {
         if (!item || !item.id) return;
@@ -169,26 +165,42 @@ const Produto = () => {
           const group = item.groups.find((g: any) => g.id === groupId || g.name === groupId);
           if (group) {
             const opt = Array.isArray(group.options) ? group.options.find((o: any) => o.name === val) : null;
-            if (opt) total += (Number(opt.price) || 0);
+            if (opt) {
+              hierarchyPriceTotal += (Number(opt.price) || 0);
+              hasHierarchySelected = true;
+            }
           }
         } else if (item.ui_type === 'checkbox' && Array.isArray(val)) {
             val.forEach((v: string) => {
               const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === v) : null;
-              if (opt) total += (Number(opt.price_adj) || 0);
+              if (opt) otherAdjs += (Number(opt.price_adj) || 0);
             });
         } else {
           const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === val) : null;
-          if (opt) total += (Number(opt.price_adj) || 0);
+          if (opt) otherAdjs += (Number(opt.price_adj) || 0);
         }
       });
     }
 
-    // fallback for simple products without additions
-    if (total <= 0 && !isSqm) {
-      total = baseUnitPrice * selectedQuantity;
+    let baseTotal = 0;
+    if (hasHierarchySelected) {
+      // Se houver hierarquia selecionada, ela define o preço base (substituindo o demonstrativo)
+      baseTotal = hierarchyPriceTotal;
+    } else if (isSqm) {
+      baseTotal = area * pricePerSqm;
+    } else {
+      // Preço demonstrativo/base com descontos de quantidade (se não for hierarquia)
+      baseTotal = baseUnitPrice * (selectedQuantity >= 1000 ? 0.8 : selectedQuantity >= 500 ? 0.9 : 1);
     }
 
-    return Number((total + finishingsTotal).toFixed(2));
+    let finalTotal = baseTotal + otherAdjs + finishingsTotal;
+
+    // Fallback para produtos simples sem configurações
+    if (finalTotal <= 0 && !isSqm && !hasHierarchySelected) {
+      finalTotal = baseUnitPrice * selectedQuantity;
+    }
+
+    return Number(finalTotal.toFixed(2));
   }, [isSqm, area, pricePerSqm, baseUnitPrice, selectedQuantity, product?.configuration_schema, configValues, finishingsTotal]);
 
   const dimensionError = useMemo(() => {
