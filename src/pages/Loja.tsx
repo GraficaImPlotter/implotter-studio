@@ -63,7 +63,7 @@ const SidebarFilters = ({
           />
         </div>
         <div className="space-y-1 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-          {categories.filter(c => c.name.toLowerCase().includes(searchCat.toLowerCase())).map(c => (
+          {categories.filter(c => (c.name || "").toLowerCase().includes(searchCat.toLowerCase())).map(c => (
             <button
               key={c.id}
               onClick={() => onSelectCategory(c.id)}
@@ -234,7 +234,7 @@ const Loja = () => {
     return current?.name || "";
   }, [allNodes]);
 
-  const selectedNodeName = useMemo(() => selectedNodeId ? allNodes.find(n => n.id === selectedNodeId)?.name : null, [allNodes, selectedNodeId]);
+  const selectedNodeName = useMemo(() => selectedNodeId ? allNodes.find(n => n.id === selectedNodeId)?.name || "Categoria" : null, [allNodes, selectedNodeId]);
 
   const navigateToBreadcrumb = (nodeId: string | null) => {
     const p = new URLSearchParams(searchParams);
@@ -242,7 +242,9 @@ const Loja = () => {
     setSearchParams(p);
   };
 
-  const roots = useMemo(() => allNodes.filter(n => !n.parent_id).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")), [allNodes]);
+  const roots = useMemo(() => allNodes
+    .filter(n => !n.parent_id)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR")), [allNodes]);
 
   const getProductImage = (p: any) => {
     const imgs = p.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order);
@@ -291,7 +293,7 @@ const Loja = () => {
                    <div className="absolute inset-0 bg-gradient-to-l from-slate-100 to-transparent z-10" />
                    {selectedNodeId && allNodes.find(n => n.id === selectedNodeId)?.image_url && (
                       <img 
-                        src={allNodes.find(n => n.id === selectedNodeId)!.image_url!} 
+                        src={allNodes.find(n => n.id === selectedNodeId)?.image_url || ""} 
                         className="w-full h-full object-contain p-8 rotate-6 scale-110 opacity-80 group-hover:scale-125 transition-transform duration-1000" 
                         alt="" 
                       />
