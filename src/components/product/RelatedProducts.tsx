@@ -31,7 +31,7 @@ const RelatedProducts = ({ productId, catalogNodeId }: RelatedProductsProps) => 
       if (manualIds.length > 0) {
         const { data } = await supabase
           .from("products")
-          .select("id, name, slug, price, sale_price, pricing_type, price_per_sqm, color_mode, configuration_schema, product_images(image_url, sort_order)")
+          .select("id, name, slug, price, sale_price, pricing_type, price_per_sqm, color_mode, product_images(image_url, sort_order)")
           .in("id", manualIds)
           .eq("is_active", true);
         setProducts(data ?? []);
@@ -42,7 +42,7 @@ const RelatedProducts = ({ productId, catalogNodeId }: RelatedProductsProps) => 
       if (catalogNodeId) {
         const { data } = await supabase
           .from("products")
-          .select("id, name, slug, price, sale_price, pricing_type, price_per_sqm, color_mode, configuration_schema, product_images(image_url, sort_order)")
+          .select("id, name, slug, price, sale_price, pricing_type, price_per_sqm, color_mode, product_images(image_url, sort_order)")
           .eq("catalog_node_id", catalogNodeId)
           .eq("is_active", true)
           .neq("id", productId)

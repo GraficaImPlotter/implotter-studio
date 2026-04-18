@@ -25,7 +25,7 @@ const PromoCarouselSection = () => {
       // Usando 'products' diretamente para garantir consistência com a Loja
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, short_description, price, sale_price, pricing_type, price_per_sqm, is_featured, catalog_node_id, default_quantity, configuration_schema, product_images(image_url, sort_order)")
+        .select("id, name, slug, short_description, price, sale_price, pricing_type, price_per_sqm, is_featured, catalog_node_id, default_quantity, product_images(image_url, sort_order)")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 

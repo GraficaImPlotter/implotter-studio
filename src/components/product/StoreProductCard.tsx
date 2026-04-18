@@ -5,6 +5,7 @@ import { Ruler, Clock, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import DynamicBadges from "./DynamicBadges";
 import { getOptimizedUrl } from "@/lib/image-utils";
+import { calculateStartingPrice } from "@/lib/price-utils";
 
 interface ProductCardProps {
   p: any;
