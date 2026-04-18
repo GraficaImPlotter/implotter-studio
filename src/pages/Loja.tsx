@@ -138,7 +138,7 @@ const Loja = () => {
     const nodesList = (nodes ?? []) as CatalogNode[];
     setAllNodes(nodesList);
 
-    const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, product_images(image_url, sort_order)";
+    const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, configuration_schema, product_images(image_url, sort_order)";
     let q = supabase.from("products").select(PUBLIC_PRODUCT_COLS).eq("is_active", true);
     
     const nodeId = new URLSearchParams(window.location.search).get("node");

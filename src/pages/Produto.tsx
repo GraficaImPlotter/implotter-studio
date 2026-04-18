@@ -103,8 +103,32 @@ const Produto = () => {
           data.configuration_schema.forEach((item: any) => {
              if (item.ui_type === 'checkbox') {
                  initConfig[item.id] = [];
+             } else if (item.ui_type === 'hierarchy' && Array.isArray(item.groups)) {
+                // Selecionar o grupo e a opção que resultam no menor preço
+                let minP = Infinity;
+                let bestG = "";
+                let bestO = "";
+                item.groups.forEach((g: any) => {
+                  if (Array.isArray(g.options)) {
+                    g.options.forEach((o: any) => {
+                      const p = Number(o.price);
+                      if (p < minP) { minP = p; bestG = g.id || g.name; bestO = o.name; }
+                    });
+                  }
+                });
+                if (bestG) {
+                  initConfig[item.id + '_group'] = bestG;
+                  initConfig[item.id] = bestO;
+                }
              } else if (item.options && item.options.length > 0) {
-                 initConfig[item.id] = item.options[0].name;
+                 // Para outros tipos, buscar o menor ajuste de preço
+                 let bestO = item.options[0].name;
+                 let minAdj = Number(item.options[0].price_adj) || 0;
+                 item.options.forEach((o: any) => {
+                   const adj = Number(o.price_adj) || 0;
+                   if (adj < minAdj) { minAdj = adj; bestO = o.name; }
+                 });
+                 initConfig[item.id] = bestO;
              }
           });
         }

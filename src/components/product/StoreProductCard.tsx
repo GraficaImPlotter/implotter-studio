@@ -18,7 +18,7 @@ const StoreProductCard = ({ p, index, getImage, onAdd, categoryName }: ProductCa
   if (!p) return null;
 
   const isSqm = p.pricing_type === "per_sqm";
-  const displayPrice = Number(p.sale_price || p.price || 0);
+  const displayPrice = calculateStartingPrice(p);
   
   const [imgError, setImgError] = useState(false);
   const displayImage = imgError || !getImage || !getImage(p) ? "/placeholder.svg" : getImage(p);
