@@ -119,7 +119,7 @@ const AppContent = () => {
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="flex-1 flex flex-col min-h-screen"
         >
-          <Routes location={location} key={location.pathname}>
+          <Routes>
             {/* Public */}
             <Route path="/" element={<Index />} />
             <Route path="/nossa-historia" element={<NossaHistoria />} />

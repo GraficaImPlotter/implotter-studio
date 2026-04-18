@@ -143,10 +143,12 @@ const Loja = () => {
     
     const nodeId = new URLSearchParams(window.location.search).get("node");
     if (nodeId) {
-      const getDescendants = (id: string): string[] => {
+      const getDescendants = (id: string, visited = new Set<string>(), depth = 0): string[] => {
+        if (visited.has(id) || depth > 10) return [];
+        visited.add(id);
         const children = nodesList.filter(n => n.parent_id === id);
         let ids = children.map(c => c.id);
-        children.forEach(c => { ids = [...ids, ...getDescendants(c.id)]; });
+        children.forEach(c => { ids = [...ids, ...getDescendants(c.id, visited, depth + 1)]; });
         return ids;
       };
       const allCategoryIds = [nodeId, ...getDescendants(nodeId)];
