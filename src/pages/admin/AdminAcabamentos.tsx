@@ -15,6 +15,7 @@ const AdminAcabamentos = () => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [pricingMode, setPricingMode] = useState<"fixed" | "per_unit">("fixed");
+  const [groupName, setGroupName] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
@@ -29,6 +30,7 @@ const AdminAcabamentos = () => {
     setName(item?.name || "");
     setPrice(item?.price?.toString() || "0");
     setPricingMode(item?.pricing_mode || "fixed");
+    setGroupName(item?.group_name || "");
     setOpen(true);
   };
 
@@ -36,7 +38,12 @@ const AdminAcabamentos = () => {
     e.preventDefault();
     if (submitting) return;
     setSubmitting(true);
-    const payload = { name, price: parseFloat(price) || 0, pricing_mode: pricingMode };
+    const payload = { 
+      name, 
+      price: parseFloat(price) || 0, 
+      pricing_mode: pricingMode,
+      group_name: groupName || null
+    };
 
     if (editing) {
       await supabase.from("finishings").update(payload).eq("id", editing.id);
@@ -89,6 +96,11 @@ const AdminAcabamentos = () => {
                 <label className="text-sm font-medium">{pricingMode === "per_unit" ? "Preço por unidade (R$)" : "Preço adicional (R$)"}</label>
                 <Input type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" />
               </div>
+              <div>
+                <label className="text-sm font-medium">Grupo (Opcional)</label>
+                <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Ex: Orientação, Cor, etc." />
+                <p className="text-[10px] text-muted-foreground mt-1">Acabamentos no mesmo grupo tornam-se seleção única para o cliente.</p>
+              </div>
               <Button type="submit" variant="hero" className="w-full" disabled={submitting}>
                 {submitting ? "Salvando..." : editing ? "Salvar" : "Criar"}
               </Button>
@@ -102,6 +114,7 @@ const AdminAcabamentos = () => {
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-3 font-medium text-muted-foreground">Nome</th>
+              <th className="text-left p-3 font-medium text-muted-foreground">Grupo</th>
               <th className="text-left p-3 font-medium text-muted-foreground w-[120px]">Modo</th>
               <th className="text-right p-3 font-medium text-muted-foreground w-[120px]">Preço</th>
               <th className="text-center p-3 font-medium text-muted-foreground w-[80px]">Status</th>
@@ -115,6 +128,13 @@ const AdminAcabamentos = () => {
             {items.map(item => (
               <tr key={item.id} className="border-t border-border hover:bg-muted/30">
                 <td className="p-3 font-medium text-foreground">{item.name}</td>
+                <td className="p-3 text-left">
+                  {item.group_name ? (
+                    <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase italic tracking-tighter">{item.group_name}</span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground italic">-</span>
+                  )}
+                </td>
                 <td className="p-3 text-left text-muted-foreground text-xs">{item.pricing_mode === "per_unit" ? "Por unidade" : "Fixo"}</td>
                 <td className="p-3 text-right text-foreground">R$ {Number(item.price).toFixed(2)}{item.pricing_mode === "per_unit" ? "/un" : ""}</td>
                 <td className="p-3 text-center">

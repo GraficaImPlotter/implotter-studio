@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, GripVertical, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { generateUUID } from "@/lib/uuid";
 
 interface ProductImage {
@@ -82,6 +82,27 @@ const ProductImageUploader = ({ productId, onUpdate }: Props) => {
     await load();
     onUpdate?.();
   };
+  
+  const handleMove = async (index: number, direction: "left" | "right") => {
+    const newImages = [...images];
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    
+    if (targetIndex < 0 || targetIndex >= images.length) return;
+    
+    const [moved] = newImages.splice(index, 1);
+    newImages.splice(targetIndex, 0, moved);
+    
+    // Update locally
+    setImages(newImages);
+    
+    // Persist to DB
+    for (let i = 0; i < newImages.length; i++) {
+        await supabase
+            .from("product_images")
+            .update({ sort_order: i })
+            .eq("id", newImages[i].id);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -105,16 +126,42 @@ const ProductImageUploader = ({ productId, onUpdate }: Props) => {
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-3">
-          {images.map(img => (
-            <div key={img.id} className="relative group rounded-xl overflow-hidden border border-border aspect-square">
+          {images.map((img, idx) => (
+            <div key={img.id} className={`relative group rounded-xl overflow-hidden border-2 aspect-square transition-all ${idx === 0 ? "border-primary shadow-glow-sm" : "border-border"}`}>
               <img src={img.image_url} alt={img.alt_text || ""} className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={() => handleDelete(img)}
-                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              
+              {/* Order Badge */}
+              <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">
+                {idx === 0 ? "Capa" : `#${idx + 1}`}
+              </div>
+
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => handleMove(idx, "left")}
+                    disabled={idx === 0}
+                    className="bg-white text-black rounded-full p-1 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary hover:text-white transition-colors"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => handleDelete(img)}
+                    className="bg-destructive text-white rounded-full p-1.5 hover:scale-110 transition-transform"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => handleMove(idx, "right")}
+                    disabled={idx === images.length - 1}
+                    className="bg-white text-black rounded-full p-1 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary hover:text-white transition-colors"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -92,7 +92,7 @@ const Produto = () => {
       if (data?.id) {
         const [{ data: faqData }, { data: pfData }] = await Promise.all([
           supabase.from("faq_items").select("question, answer").eq("product_id", data.id).eq("is_active", true).order("sort_order"),
-          supabase.from("product_finishings").select("finishing_id, finishings(id, name, price, pricing_mode)").eq("product_id", data.id),
+          supabase.from("product_finishings").select("finishing_id, finishings(id, name, price, pricing_mode, group_name)").eq("product_id", data.id),
         ]);
         setFaqs(faqData ?? []);
         setAvailableFinishings((pfData ?? []).map((pf: any) => pf.finishings).filter(Boolean));
@@ -613,61 +613,87 @@ const Produto = () => {
                 <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
                   <Palette className="w-4 h-4 text-primary" /> Acabamentos Extras
                 </Label>
-                <div className="flex flex-col gap-3">
-                  {availableFinishings.map(f => {
-                    const isSelected = selectedFinishings.includes(f.id);
-                    const isUnit = f.pricing_mode === "per_unit";
-                    const currentQty = finishingQuantities[f.id] || 1;
+                <div className="flex flex-col gap-6">
+                  {Object.entries(
+                    availableFinishings.reduce((acc: any, f: any) => {
+                      const group = f.group_name || "Avulsos";
+                      if (!acc[group]) acc[group] = [];
+                      acc[group].push(f);
+                      return acc;
+                    }, {})
+                  ).map(([group, items]: [string, any]) => (
+                    <div key={group} className="space-y-4">
+                      {group !== "Avulsos" && (
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest bg-secondary/50 px-3 py-1 rounded-full w-fit">
+                          {group} (Selecione uma opção)
+                        </p>
+                      )}
+                      <div className="flex flex-col gap-3">
+                        {items.map((f: any) => {
+                          const isSelected = selectedFinishings.includes(f.id);
+                          const isUnit = f.pricing_mode === "per_unit";
+                          const currentQty = finishingQuantities[f.id] || 1;
+                          const hasGroup = group !== "Avulsos";
 
-                    return (
-                      <div key={f.id} className="space-y-3">
-                        <button 
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedFinishings(p => p.filter(id => id !== f.id));
-                            } else {
-                              setSelectedFinishings(p => [...p, f.id]);
-                              if (isUnit && !finishingQuantities[f.id]) {
-                                setFinishingQuantities(prev => ({ ...prev, [f.id]: 1 }));
-                              }
-                            }
-                          }} 
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all group ${isSelected ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
-                        >
-                          <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
-                                {isSelected && (isUnit ? <Check className="w-3 h-3 text-white" strokeWidth={4} /> : <Plus className="w-3 h-3 text-white" strokeWidth={4} />)}
-                              </div>
-                              <span className={`text-[13px] transition-colors ${isSelected ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{f.name}</span>
-                          </div>
-                          <span className="text-[11px] font-black text-primary">
-                            + R$ {Number(f.price).toFixed(2)}{isUnit && "/un"}
-                          </span>
-                        </button>
+                          return (
+                            <div key={f.id} className="space-y-3">
+                              <button 
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedFinishings(p => p.filter(id => id !== f.id));
+                                  } else {
+                                    if (hasGroup) {
+                                      // Deselect all others in the same group
+                                      const groupIds = items.map((i: any) => i.id);
+                                      setSelectedFinishings(p => [...p.filter(id => !groupIds.includes(id)), f.id]);
+                                    } else {
+                                      setSelectedFinishings(p => [...p, f.id]);
+                                    }
+                                    
+                                    if (isUnit && !finishingQuantities[f.id]) {
+                                      setFinishingQuantities(prev => ({ ...prev, [f.id]: 1 }));
+                                    }
+                                  }
+                                }} 
+                                className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all group ${isSelected ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-secondary/30 border-border/50 hover:border-primary/30"}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                      {isSelected && (isUnit ? <Check className="w-3 h-3 text-white" strokeWidth={4} /> : <Plus className="w-3 h-3 text-white" strokeWidth={4} />)}
+                                    </div>
+                                    <span className={`text-[13px] transition-colors ${isSelected ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{f.name}</span>
+                                </div>
+                                <span className="text-[11px] font-black text-primary">
+                                  + R$ {Number(f.price).toFixed(2)}{isUnit && "/un"}
+                                </span>
+                              </button>
 
-                        {isSelected && isUnit && (
-                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-primary/20 ml-8">
-                            <span className="text-xs font-bold text-muted-foreground">Informe a quantidade:</span>
-                            <div className="flex items-center gap-4">
-                              <button 
-                                onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: Math.max(1, (prev[f.id] || 1) - 1) }))}
-                                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
-                              >
-                                -
-                              </button>
-                              <span className="text-sm font-black w-6 text-center">{currentQty}</span>
-                              <button 
-                                onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: (prev[f.id] || 1) + 1 }))}
-                                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
-                              >
-                                +
-                              </button>
+                              {isSelected && isUnit && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-primary/20 ml-8">
+                                  <span className="text-xs font-bold text-muted-foreground">Informe a quantidade:</span>
+                                  <div className="flex items-center gap-4">
+                                    <button 
+                                      onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: Math.max(1, (prev[f.id] || 1) - 1) }))}
+                                      className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="text-sm font-black w-6 text-center">{currentQty}</span>
+                                    <button 
+                                      onClick={() => setFinishingQuantities(prev => ({ ...prev, [f.id]: (prev[f.id] || 1) + 1 }))}
+                                      className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              )}
                             </div>
-                          </motion.div>
-                        )}
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -767,10 +793,7 @@ const Produto = () => {
                  className="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden" 
                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.full_description) }} 
                />
-               <p className="text-[10px] text-muted-foreground mt-8 pt-8 border-t border-border/50 italic">
-                 Este conteúdo é fornecido para fins informativos e de indexação técnica.
-               </p>
-             </section>
+               </section>
            )}
            {(product.name?.toLowerCase().includes("cartão") || product.name?.toLowerCase().includes("logo")) && <ArtEditor productName={product.name} />}
            <SmartRecommendations productId={product.id} />

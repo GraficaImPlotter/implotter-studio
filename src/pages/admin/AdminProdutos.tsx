@@ -739,6 +739,50 @@ const AdminProdutos = () => {
                   ))}
               </div>
 
+              <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-primary" /> Acabamentos Extras Disponíveis
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(
+                    allFinishings.reduce((acc: any, f: any) => {
+                      const group = f.group_name || "Outros";
+                      if (!acc[group]) acc[group] = [];
+                      acc[group].push(f);
+                      return acc;
+                    }, {})
+                  ).map(([group, items]: [string, any]) => (
+                    <div key={group} className="bg-background rounded-xl p-4 border border-border space-y-3">
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest border-b border-border pb-2 mb-2">
+                        {group}
+                      </p>
+                      <div className="space-y-2">
+                        {items.map((f: any) => (
+                          <label key={f.id} className="flex items-center justify-between group cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors">
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="checkbox" 
+                                checked={selectedFinishingIds.includes(f.id)} 
+                                onChange={(e) => {
+                                  if (e.target.checked) setSelectedFinishingIds(prev => [...prev, f.id]);
+                                  else setSelectedFinishingIds(prev => prev.filter(id => id !== f.id));
+                                }}
+                                className="rounded border-border text-primary"
+                              />
+                              <span className="text-sm font-medium">{f.name}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-primary opacity-50 group-hover:opacity-100">+ R$ {f.price.toFixed(2)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {savedProductId ? (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-4">
                   <ProductImageUploader productId={savedProductId} />
