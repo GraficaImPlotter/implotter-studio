@@ -690,52 +690,80 @@ const AdminProdutos = () => {
                   {groupedVariants.map((group) => (
                     <div key={group.id} className="bg-background rounded-xl p-4 border border-border space-y-4 relative shadow-sm">
                        <button type="button" className="absolute top-4 right-4 text-destructive hover:scale-110" onClick={() => setGroupedVariants(prev => prev.filter(g => g.id !== group.id))}><Trash2 className="w-4 h-4" /></button>
-                       <div className="flex items-center gap-3 w-3/4">
-                          <Palette className="w-4 h-4 text-primary" />
-                          <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g..." className="font-bold" />
-                       </div>
+                        <div className="flex items-center gap-3 w-3/4">
+                           <div className="relative w-10 h-10 rounded-lg border border-dashed border-primary/30 flex items-center justify-center bg-background shrink-0 hover:border-primary transition-colors group/groupimg">
+                              {(group as any).image_url ? (
+                                <>
+                                  <img src={(group as any).image_url} className="w-full h-full object-cover rounded-lg" />
+                                  <button type="button" onClick={() => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, image_url: undefined } : g))} className="absolute -top-1 -right-1 bg-destructive text-white rounded-full p-0.5 shadow-sm hover:scale-110 transition-transform"><Trash2 className="w-2.5 h-2.5" /></button>
+                                </>
+                              ) : (
+                                <>
+                                  <ImageIcon className="w-4 h-4 text-primary opacity-50" />
+                                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
+                                    const file = e.target.files?.[0]; if (!file) return;
+                                    const { data, error } = await supabase.storage.from('product-images').upload(`variations/group-${generateUUID()}.${file.name.split('.').pop()}`, file);
+                                    if (error) { toast({ title: "Erro no upload", description: error.message, variant: "destructive" }); return; }
+                                    const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(data.path);
+                                    setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, image_url: publicUrl } : g));
+                                    toast({ title: "Imagem do grupo vinculada!" });
+                                  }} />
+                                </>
+                              )}
+                           </div>
+                           <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g..." className="font-bold flex-1" />
+                        </div>
                        <div className="space-y-3 ml-7">
                           {group.options.map((opt, optIdx) => (
                             <div key={optIdx} className="space-y-2 group p-3 rounded-lg border border-border/30 hover:bg-muted/30 transition-colors">
                               <div className="flex gap-3 items-center">
                                 <div className="relative w-12 h-12 rounded-lg border border-dashed border-border overflow-hidden flex items-center justify-center bg-background shrink-0 group-hover:border-primary/50 transition-colors">
                                    {opt.image_url ? (
-                                     <img src={opt.image_url} className="w-full h-full object-cover" />
-                                   ) : (
-                                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                                   )}
-                                   <input
-                                      type="file"
-                                      accept="image/*"
-                                      className="absolute inset-0 opacity-0 cursor-pointer"
-                                      onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        
-                                        const fileExt = file.name.split('.').pop();
-                                        const fileName = `${generateUUID()}.${fileExt}`;
-                                        const filePath = `variations/${fileName}`;
-
-                                        const { data, error } = await supabase.storage
-                                          .from('product-images')
-                                          .upload(filePath, file);
-
-                                        if (error) {
-                                          toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
-                                          return;
-                                        }
-
-                                        const { data: { publicUrl } } = supabase.storage
-                                          .from('product-images')
-                                          .getPublicUrl(filePath);
-
+                                     <>
+                                      <img src={opt.image_url} className="w-full h-full object-cover" />
+                                      <button type="button" onClick={() => {
                                         const next = [...group.options];
-                                        next[optIdx].image_url = publicUrl;
+                                        delete next[optIdx].image_url;
                                         setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                                        
-                                        toast({ title: "Imagem vinculada!" });
-                                      }}
-                                   />
+                                      }} className="absolute top-0 right-0 bg-destructive text-white rounded-bl-lg p-0.5 hover:bg-destructive/90"><Trash2 className="w-3 h-3" /></button>
+                                     </>
+                                   ) : (
+                                     <>
+                                       <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                                       <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="absolute inset-0 opacity-0 cursor-pointer"
+                                          onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            
+                                            const fileExt = file.name.split('.').pop();
+                                            const fileName = `${generateUUID()}.${fileExt}`;
+                                            const filePath = `variations/${fileName}`;
+
+                                            const { data, error } = await supabase.storage
+                                              .from('product-images')
+                                              .upload(filePath, file);
+
+                                            if (error) {
+                                              toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+                                              return;
+                                            }
+
+                                            const { data: { publicUrl } } = supabase.storage
+                                              .from('product-images')
+                                              .getPublicUrl(filePath);
+
+                                            const next = [...group.options];
+                                            next[optIdx].image_url = publicUrl;
+                                            setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                            
+                                            toast({ title: "Imagem vinculada!" });
+                                          }}
+                                       />
+                                     </>
+                                   )}
                                 </div>
 
                                 <div className="flex-1 space-y-1">
@@ -776,17 +804,6 @@ const AdminProdutos = () => {
                                   setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
                                 }}><Trash2 className="w-3 h-3" /></Button>
                               </div>
-
-                              {opt.image_url && (
-                                <div className="flex items-center gap-2 px-1">
-                                  <span className="text-[9px] text-muted-foreground truncate flex-1">Imagem: {opt.image_url}</span>
-                                  <button type="button" onClick={() => {
-                                    const next = [...group.options];
-                                    delete next[optIdx].image_url;
-                                    setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                                  }} className="text-[9px] text-destructive hover:underline">Remover</button>
-                                </div>
-                              )}
                             </div>
                           ))}
                           <Button type="button" variant="ghost" size="sm" className="h-8 text-[11px]" onClick={() => {

@@ -277,6 +277,7 @@ const Produto = () => {
           if (group) {
             const opt = Array.isArray(group.options) ? group.options.find((o: any) => o.name === val) : null;
             if (opt?.image_url) foundImage = opt.image_url;
+            else if (group.image_url) foundImage = group.image_url;
           }
         } else {
           const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === val) : null;
