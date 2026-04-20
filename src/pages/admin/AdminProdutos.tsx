@@ -692,43 +692,102 @@ const AdminProdutos = () => {
                        <button type="button" className="absolute top-4 right-4 text-destructive hover:scale-110" onClick={() => setGroupedVariants(prev => prev.filter(g => g.id !== group.id))}><Trash2 className="w-4 h-4" /></button>
                        <div className="flex items-center gap-3 w-3/4">
                           <Palette className="w-4 h-4 text-primary" />
-                          <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g..." className="font-bold" />
-                       </div>
-                       <div className="space-y-2 ml-7">
+                          <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g.                       <div className="space-y-3 ml-7">
                           {group.options.map((opt, optIdx) => (
-                            <div key={optIdx} className="flex gap-3 items-center group">
-                               <Input value={opt.name} onChange={e => {
-                                 const next = [...group.options];
-                                 next[optIdx].name = e.target.value;
-                                 setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                               }} placeholder="Ex: 1.000 UN" className="h-9 text-xs" />
-                               <div className="flex-1 min-w-[100px]">
-                                 <div className="flex flex-col gap-1">
-                                   <label className="text-[9px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                                     <DollarSign className="w-2 h-2" /> Custo
-                                   </label>
-                                   <Input type="number" step="0.01" value={opt.cost || 0} onChange={e => {
+                            <div key={optIdx} className="space-y-2 group p-3 rounded-lg border border-border/30 hover:bg-muted/30 transition-colors">
+                              <div className="flex gap-3 items-center">
+                                <div className="relative w-12 h-12 rounded-lg border border-dashed border-border overflow-hidden flex items-center justify-center bg-background shrink-0 group-hover:border-primary/50 transition-colors">
+                                   {opt.image_url ? (
+                                     <img src={opt.image_url} className="w-full h-full object-cover" />
+                                   ) : (
+                                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                                   )}
+                                   <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="absolute inset-0 opacity-0 cursor-pointer"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        
+                                        const fileExt = file.name.split('.').pop();
+                                        const fileName = `${generateUUID()}.${fileExt}`;
+                                        const filePath = `variations/${fileName}`;
+
+                                        const { data, error } = await supabase.storage
+                                          .from('product-images')
+                                          .upload(filePath, file);
+
+                                        if (error) {
+                                          toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+                                          return;
+                                        }
+
+                                        const { data: { publicUrl } } = supabase.storage
+                                          .from('product-images')
+                                          .getPublicUrl(filePath);
+
+                                        const next = [...group.options];
+                                        next[optIdx].image_url = publicUrl;
+                                        setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                        
+                                        toast({ title: "Imagem vinculada!" });
+                                      }}
+                                   />
+                                </div>
+
+                                <div className="flex-1 space-y-1">
+                                   <label className="text-[9px] font-bold text-muted-foreground uppercase flex items-center gap-1">Nome da Opção</label>
+                                   <Input value={opt.name} onChange={e => {
                                      const next = [...group.options];
-                                     next[optIdx].cost = parseFloat(e.target.value) || 0;
+                                     next[optIdx].name = e.target.value;
                                      setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                                   }} className="h-8 text-xs font-mono" />
-                                 </div>
-                               </div>
-                               <div className="flex-1 min-w-[100px]">
-                                 <div className="flex flex-col gap-1">
-                                   <label className="text-[9px] font-bold text-primary uppercase flex items-center gap-1">
-                                     <Tag className="w-2 h-2" /> Venda
-                                   </label>
-                                   <div className="h-8 bg-muted rounded-md flex items-center px-3 text-xs font-mono text-primary font-bold border border-border/50">
-                                     R$ {calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}
-                                   </div>
-                                 </div>
-                               </div>
-                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100" onClick={() => {
-                                 const next = group.options.filter((_, i) => i !== optIdx);
-                                 setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                               }}><Trash2 className="w-3 h-3" /></Button>
+                                   }} placeholder="Ex: 500 UN - Fosco" className="h-9 text-xs" />
+                                </div>
+                                
+                                <div className="w-[100px] shrink-0">
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                      <DollarSign className="w-2 h-2" /> Custo
+                                    </label>
+                                    <Input type="number" step="0.01" value={opt.cost || 0} onChange={e => {
+                                      const next = [...group.options];
+                                      next[optIdx].cost = parseFloat(e.target.value) || 0;
+                                      setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                    }} className="h-8 text-xs font-mono" />
+                                  </div>
+                                </div>
+
+                                <div className="w-[100px] shrink-0">
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] font-bold text-primary uppercase flex items-center gap-1">
+                                      <Tag className="w-2 h-2" /> Venda
+                                    </label>
+                                    <div className="h-8 bg-muted rounded-md flex items-center px-3 text-xs font-mono text-primary font-bold border border-border/50">
+                                      R$ {calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100" onClick={() => {
+                                  const next = group.options.filter((_, i) => i !== optIdx);
+                                  setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                }}><Trash2 className="w-3 h-3" /></Button>
+                              </div>
+
+                              {opt.image_url && (
+                                <div className="flex items-center gap-2 px-1">
+                                  <span className="text-[9px] text-muted-foreground truncate flex-1">Imagem: {opt.image_url}</span>
+                                  <button type="button" onClick={() => {
+                                    const next = [...group.options];
+                                    delete next[optIdx].image_url;
+                                    setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                  }} className="text-[9px] text-destructive hover:underline">Remover</button>
+                                </div>
+                              )}
                             </div>
+                          ))}
+                      </div>
                           ))}
                           <Button type="button" variant="ghost" size="sm" className="h-8 text-[11px]" onClick={() => {
                              const next = [...group.options, { name: "", cost: 0, price: 0 }];

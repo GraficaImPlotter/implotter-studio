@@ -49,6 +49,7 @@ const Produto = () => {
   const [product, setProduct] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedImageOverride, setSelectedImageOverride] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [catalogNodes, setCatalogNodes] = useState<CatalogNode[]>([]);
   const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
@@ -260,6 +261,36 @@ const Produto = () => {
     return Number(finalTotal.toFixed(2));
   }, [isSqm, area, pricePerSqm, baseUnitPrice, selectedQuantity, product?.configuration_schema, configValues, finishingsTotal]);
 
+  useEffect(() => {
+    if (!product?.configuration_schema || !Array.isArray(product.configuration_schema)) return;
+    
+    let foundImage: string | null = null;
+    
+    product.configuration_schema.forEach((item: any) => {
+        if (!item || !item.id) return;
+        const val = configValues[item.id];
+        if (!val) return;
+
+        if (item.ui_type === 'hierarchy' && Array.isArray(item.groups)) {
+          const groupId = configValues[item.id + '_group'];
+          const group = item.groups.find((g: any) => g.id === groupId || g.name === groupId);
+          if (group) {
+            const opt = Array.isArray(group.options) ? group.options.find((o: any) => o.name === val) : null;
+            if (opt?.image_url) foundImage = opt.image_url;
+          }
+        } else {
+          const opt = Array.isArray(item.options) ? item.options.find((o: any) => o.name === val) : null;
+          if (opt?.image_url) foundImage = opt.image_url;
+        }
+    });
+
+    if (foundImage) {
+        setSelectedImageOverride(foundImage);
+    } else {
+        setSelectedImageOverride(null);
+    }
+  }, [configValues, product?.configuration_schema]);
+
   const dimensionError = useMemo(() => {
     if (!isSqm || !wNum || !hNum) return null;
     const minW = Number(product?.min_width) || 0;
@@ -360,16 +391,16 @@ const Produto = () => {
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 lg:sticky lg:top-24 h-fit">
             <div className="aspect-square rounded-3xl overflow-hidden glass-card-premium border-gradient-premium shadow-2xl group">
               <motion.img
-                key={selectedImage}
+                key={selectedImageOverride || selectedImage}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                src={images[selectedImage]?.image_url || "/placeholder.svg"}
+                src={selectedImageOverride || images[selectedImage]?.image_url || "/placeholder.svg"}
                 className="w-full h-full object-cover"
               />
             </div>
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                 {images.map((img: any, i: number) => (
-                  <button key={img.id} onClick={() => setSelectedImage(i)} className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${i === selectedImage ? "border-primary" : "border-transparent opacity-50"}`}>
+                  <button key={img.id} onClick={() => { setSelectedImage(i); setSelectedImageOverride(null); }} className={`w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${i === selectedImage && !selectedImageOverride ? "border-primary" : "border-transparent opacity-50"}`}>
                     <img src={img.image_url} className="w-full h-full object-cover" />
                   </button>
                 ))}
@@ -445,7 +476,6 @@ const Produto = () => {
                 </div>
               )}
               </div>
-            </div>
 
             {/* Interactive Configurator */}
             <div className="space-y-8 mb-10">
