@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, TrendingUp, Image as ImageIcon, Layers, Palette, Copy, Sparkles, Loader2, ChevronUp, ChevronDown, Save, Upload, Settings, AlertTriangle } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
+import { calculateUnitPrice, calculateAreaPrice, calculateStartingPrice, FRETE_DILUIDO } from "@/lib/price-utils";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
 import RelatedProductsManager from "@/components/admin/RelatedProductsManager";
@@ -89,6 +90,9 @@ const AdminProdutos = () => {
   const [shippingLength, setShippingLength] = useState(16);
   const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
   const [defaultMargin, setDefaultMargin] = useState(80);
+  const [unitCost, setUnitCost] = useState(0);
+  const [categoryMarkup, setCategoryMarkup] = useState(2.0);
+  const [calculoTipo, setCalculoTipo] = useState<"unitario" | "area">("unitario");
   const [processingBulk, setProcessingBulk] = useState(false);
   const [activeTab, setActiveTab] = useState("manage");
   const [groupByCategory, setGroupByCategory] = useState(true);
@@ -108,13 +112,16 @@ const AdminProdutos = () => {
   // JSON editor toggle for the dynamic configurator
   const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [rawJson, setRawJson] = useState("");
-  const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; price: number }[] }[]>([]);
+  const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; cost: number; price: number }[] }[]>([]);
   const [sqmPresets, setSqmPresets] = useState<{ id: string; name: string; width: number; height: number }[]>([]);
 
-  const totalCost = costProduction + costSupplier + costMaterial + costArt + costExtra;
-  const suggestedPrice = totalCost > 0 ? totalCost * (1 + defaultMargin / 100) : 0;
-  const profit = price - totalCost;
-  const marginActual = price > 0 ? ((price - totalCost) / price) * 100 : 0;
+  const totalCost = (calculoTipo === "unitario") 
+    ? (unitCost + FRETE_DILUIDO) 
+    : (unitCost * (Number(shippingWidth) * Number(shippingHeight)) + FRETE_DILUIDO);
+  
+  const suggestedPrice = totalCost * categoryMarkup;
+  const profitAmt = price - totalCost;
+  const marginAmt = price > 0 ? ((price - totalCost) / price) * 100 : 0;
 
 
   const { data: products = [], refetch: refetchProducts } = useQuery({
@@ -372,7 +379,18 @@ const AdminProdutos = () => {
     setShippingHeight(Number(product?.shipping_height) || 2);
     setShippingWidth(Number(product?.shipping_width) || 11);
     setShippingLength(Number(product?.shipping_length) || 16);
+    setUnitCost(Number(product?.unit_cost) || 0);
+    setCalculoTipo((product?.tipo_calculo as any) || "unitario");
     setPriceManuallyEdited(!!product);
+
+    // Fetch markup for the product's category if it exists
+    if (product?.catalog_node_id) {
+       supabase.from('categories').select('markup').eq('id', product.catalog_node_id).single().then(({ data }) => {
+          if (data?.markup) setCategoryMarkup(Number(data.markup));
+       });
+    } else {
+       setCategoryMarkup(2.0);
+    }
 
     if (product?.id) {
       loadFaqs(product.id);
@@ -408,8 +426,14 @@ const AdminProdutos = () => {
   };
 
   const handleApplySuggested = () => {
-    setPrice(Math.round(suggestedPrice * 100) / 100);
+    setPrice(calculateCommercialRounding(suggestedPrice));
     setPriceManuallyEdited(false);
+  };
+
+  const calculateCommercialRounding = (val: number) => {
+    const floor = Math.floor(val);
+    const candidate = floor + 0.90;
+    return candidate >= val ? candidate : floor + 1.90;
   };
 
   const calculatePriceFromCost = (cost: number) => {
@@ -509,13 +533,21 @@ const AdminProdutos = () => {
       cost_material: costMaterial,
       cost_art: costArt,
       cost_extra: costExtra,
+      unit_cost: unitCost,
+      tipo_calculo: calculoTipo,
       shipping_length: shippingLength,
       configuration_schema: groupedVariants.length > 0 ? [{
         id: "hierarchy_v1",
         label: "Opções do Produto",
         type: "select",
         ui_type: "hierarchy",
-        groups: groupedVariants
+        groups: groupedVariants.map(g => ({
+           ...g,
+           options: g.options.map(opt => ({
+              ...opt,
+              price: calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup)
+           }))
+        }))
       }] : (isSqm && sqmPresets.length > 0 ? [
         ...configSchema,
         {
@@ -527,6 +559,20 @@ const AdminProdutos = () => {
         }
       ] : configSchema),
     };
+
+    // Calculate preco_minimo
+    let minPrice = price;
+    if (groupedVariants.length > 0) {
+       const prices: number[] = [];
+       groupedVariants.forEach(g => {
+          g.options.forEach(opt => {
+             const p = calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup);
+             prices.push(p);
+          });
+       });
+       if (prices.length > 0) minPrice = Math.min(...prices);
+    }
+    payload.preco_minimo = minPrice;
 
     const saveFaqs = async (productId: string) => {
       await supabase.from("faq_items").delete().eq("product_id", productId);
@@ -669,16 +715,23 @@ const AdminProdutos = () => {
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
                   <FolderTree className="w-4 h-4 text-highlight" /> Caminho no Catálogo
                 </label>
-                <select
-                  name="catalog_node_id"
-                  defaultValue={editing?.catalog_node_id || ""}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Sem vínculo</option>
-                  {sortedNodePaths.map(np => (
-                    <option key={np.id} value={np.id}>{np.path}</option>
-                  ))}
-                </select>
+                 <select
+                   name="catalog_node_id"
+                   defaultValue={editing?.catalog_node_id || ""}
+                   onChange={async (e) => {
+                     const val = e.target.value;
+                     if (val) {
+                       const { data } = await supabase.from('categories').select('markup').eq('id', val).single();
+                       if (data?.markup) setCategoryMarkup(Number(data.markup));
+                     }
+                   }}
+                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                 >
+                   <option value="">Selecione uma categoria...</option>
+                   {sortedNodePaths.map(np => (
+                     <option key={np.id} value={np.id}>{np.path}</option>
+                   ))}
+                 </select>
               </div>
 
               <div className="bg-success/5 rounded-xl p-4 space-y-4 border border-success/20">
@@ -688,7 +741,7 @@ const AdminProdutos = () => {
                 <p className="text-xs text-muted-foreground -mt-2">
                   Informe os custos e o preço de venda será calculado automaticamente com margem de {defaultMargin}%.
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="hidden grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium">Custo Produção</label>
                     <Input type="number" step="0.01" value={costProduction || ""} onChange={e => { setCostProduction(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
@@ -737,27 +790,28 @@ const AdminProdutos = () => {
 
                 {totalCost > 0 && (
                   <div className="bg-card rounded-lg p-4 border border-border space-y-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                      <div className="bg-muted/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Custo Total</p>
-                        <p className="font-display font-bold text-destructive text-lg">R$ {totalCost.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Preço Sugerido</p>
-                        <p className="font-display font-bold text-primary text-lg">R$ {suggestedPrice.toFixed(2)}</p>
-                        <p className="text-[9px] text-muted-foreground">Margem {defaultMargin}%</p>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Preço Venda</p>
-                        <p className="font-display font-bold text-foreground text-lg">R$ {price.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-2.5">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Lucro Estimado</p>
-                        <p className={`font-display font-bold text-lg ${profit >= 0 ? "text-success" : "text-destructive"}`}>
-                          R$ {profit.toFixed(2)}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center mb-4">
+                      <div className="bg-muted/50 rounded-lg p-2.5 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Custo + Frete</p>
+                        <p className="font-display font-bold text-lg text-foreground">
+                          R$ {totalCost.toFixed(2)}
                         </p>
-                        <p className={`text-[9px] ${marginActual >= 0 ? "text-success" : "text-destructive"}`}>
-                          Margem {marginActual.toFixed(1)}%
+                        <p className="text-[9px] text-muted-foreground italic">Inclui R$ {FRETE_DILUIDO.toFixed(2)} frete</p>
+                      </div>
+                      <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20">
+                        <p className="text-[10px] text-primary font-medium uppercase tracking-wider uppercase">Markup da Categoria</p>
+                        <p className="font-display font-bold text-lg text-primary">
+                          {categoryMarkup.toFixed(2)}x
+                        </p>
+                        <p className="text-[9px] text-primary/60 italic">Sugerido: R$ {suggestedPrice.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-2.5 border border-border/50">
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Resultado (Final)</p>
+                        <p className={`font-display font-bold text-lg ${profitAmt >= 0 ? "text-success" : "text-destructive"}`}>
+                          R$ {profitAmt.toFixed(2)}
+                        </p>
+                        <p className={`text-[9px] ${marginAmt >= 0 ? "text-success" : "text-destructive"}`}>
+                          Margem {marginAmt.toFixed(1)}%
                         </p>
                       </div>
                     </div>
@@ -780,28 +834,33 @@ const AdminProdutos = () => {
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Tipo de Venda *</label>
-                    <select
-                      name="pricing_type"
-                      value={pricingType}
-                      onChange={e => setPricingType(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                    >
-                      <option value="fixed">Preço fixo</option>
-                      <option value="per_sqm">Por metro quadrado (m²)</option>
-                    </select>
+                    <label className="text-sm font-medium">Custo do Produto (Unitário ou m²) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={unitCost}
+                        onChange={e => setUnitCost(parseFloat(e.target.value) || 0)}
+                        className="pl-8"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Unidade de Venda</label>
-                    <select name="sale_unit" defaultValue={editing?.sale_unit || "unit"} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                      <option value="unit">Unidade</option>
-                      <option value="pack">Pacote</option>
-                      <option value="sqm">Metro quadrado</option>
+                    <label className="text-sm font-medium">Tipo de Cálculo *</label>
+                    <select
+                      name="tipo_calculo"
+                      value={calculoTipo}
+                      onChange={e => setCalculoTipo(e.target.value as any)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="unitario">Preço Unitário (Fixo)</option>
+                      <option value="area">Por Área (m²)</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium flex items-center gap-1.5">
-                      {pricingType === "per_sqm" ? "Preço base (referência)" : "Preço Opcional (A partir de)"}
+                      {calculoTipo === "area" ? "Preço Final (Referência)" : "Preço de Venda Final"}
                       {totalCost > 0 && <TrendingUp className="w-3 h-3 text-success" />}
                     </label>
                     <Input
@@ -1021,7 +1080,7 @@ const AdminProdutos = () => {
                      <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                          <Layers className="w-5 h-5 text-primary" /> Variações Hierárquicas (Cores › Lista de Preços)
                      </h3>
-                     <Button type="button" variant="outline" size="sm" onClick={() => setGroupedVariants(prev => [...prev, { id: generateUUID(), name: "4x0", options: [{ name: "500 UN", price: 0 }] }])}>
+                     <Button type="button" variant="outline" size="sm" onClick={() => setGroupedVariants(prev => [...prev, { id: generateUUID(), name: "4X0", options: [{ name: "500 UN", cost: 0, price: 0 }] }])}>
                         <Plus className="w-3 h-3 mr-1" /> Adicionar Cor/Grupo
                      </Button>
                   </div>
@@ -1048,12 +1107,18 @@ const AdminProdutos = () => {
                                       setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
                                     }} placeholder="500 UN" className="h-9 text-xs" />
                                     <div className="relative">
-                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
-                                      <Input type="number" step="0.01" value={opt.price} onChange={e => {
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase">Custo</span>
+                                      <Input type="number" step="0.01" value={opt.cost || 0} onChange={e => {
                                         const next = [...group.options];
-                                        next[optIdx].price = parseFloat(e.target.value) || 0;
+                                        next[optIdx].cost = parseFloat(e.target.value) || 0;
                                         setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                                      }} className="h-9 text-xs pl-8 w-28" />
+                                      }} className="h-9 text-xs pl-10 w-28" />
+                                    </div>
+                                    <div className="relative opacity-60">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase">Sugest.</span>
+                                      <div className="h-9 w-28 bg-muted rounded-md flex items-center pl-10 text-xs font-mono">
+                                        R$ {calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}
+                                      </div>
                                     </div>
                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => {
                                       const next = group.options.filter((_, i) => i !== optIdx);
@@ -1064,7 +1129,7 @@ const AdminProdutos = () => {
                                  </div>
                                ))}
                                <Button type="button" variant="ghost" size="sm" className="h-8 text-[11px] text-primary" onClick={() => {
-                                  const next = [...group.options, { name: "", price: 0 }];
+                                  const next = [...group.options, { name: "", cost: 0, price: 0 }];
                                   setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
                                }}>
                                   <Plus className="w-3 h-3 mr-1" /> Add Opção de Preço

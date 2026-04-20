@@ -18,7 +18,7 @@ interface ProductCardProps {
 const StoreProductCard = ({ p, index, getImage, onAdd, categoryName }: ProductCardProps) => {
   if (!p) return null;
 
-  const isSqm = p.pricing_type === "per_sqm";
+  const isSqm = p.pricing_type === "per_sqm" || p.tipo_calculo === "area";
   const displayPrice = calculateStartingPrice(p);
   
   const [imgError, setImgError] = useState(false);
