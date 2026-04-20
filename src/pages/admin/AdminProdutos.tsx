@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+﻿import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,6 @@ import { useSettings } from "@/hooks/use-settings";
 import { generateUUID } from "@/lib/uuid";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface CatalogNode {
   id: string;
@@ -29,8 +28,8 @@ interface CatalogNode {
 }
 
 const PRICING_LABELS: Record<string, string> = {
-  fixed: "Preço fixo",
-  per_sqm: "Por m²",
+  fixed: "PreÃ§o fixo",
+  per_sqm: "Por mÂ²",
 };
 
 const getNodePath = (nodes: CatalogNode[], nodeId: string): string => {
@@ -47,7 +46,7 @@ const getNodePath = (nodes: CatalogNode[], nodeId: string): string => {
     current = parent;
     depth++;
   }
-  return parts.join(" › ");
+  return parts.join(" â€º ");
 };
 const ITEMS_PER_PAGE = 15;
 
@@ -238,7 +237,19 @@ const AdminProdutos = () => {
           const newKey = importTargetNode.trim();
           renamed[newKey] = { ...val, name: newKey };
         });
-        categories = renamed;
+              }
+
+      const sql = generateProductSql(categories, descriptions);
+      setGeneratedSql(sql);
+      toast({ title: "Script SQL gerado com sucesso!" });
+    } catch (error) {
+      console.error("Erro na migração:", error);
+      toast({ title: "Erro no processamento", variant: "destructive" });
+    } finally {
+      setProcessingImport(false);
+    }
+  };
+
   const handleNameChange = (name: string) => {
     setProductName(name);
     if (!editing) {
@@ -270,7 +281,7 @@ const AdminProdutos = () => {
         }),
       });
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || "Erro ao gerar conteúdo");
+      if (!resp.ok) throw new Error(data.error || "Erro ao gerar conteÃºdo");
       
       if (data.short_description && formRef.current) {
         const sdInput = formRef.current.querySelector<HTMLInputElement>('[name="short_description"]');
@@ -309,9 +320,9 @@ const AdminProdutos = () => {
         }
       }
 
-      toast({ title: "Conteúdo gerado com sucesso!", description: "Revise e ajuste conforme necessário." });
+      toast({ title: "ConteÃºdo gerado com sucesso!", description: "Revise e ajuste conforme necessÃ¡rio." });
     } catch (e: any) {
-      toast({ title: "Erro ao gerar conteúdo", description: e.message, variant: "destructive" });
+      toast({ title: "Erro ao gerar conteÃºdo", description: e.message, variant: "destructive" });
     }
     setGeneratingAI(false);
   };
@@ -416,11 +427,11 @@ const AdminProdutos = () => {
   const handlePendingFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const valid = files.filter(f => {
-      if (!ALLOWED_TYPES.includes(f.type)) { toast({ title: `Tipo não permitido: ${f.name}`, variant: "destructive" }); return false; }
+      if (!ALLOWED_TYPES.includes(f.type)) { toast({ title: `Tipo nÃ£o permitido: ${f.name}`, variant: "destructive" }); return false; }
       if (f.size > MAX_FILE_SIZE) { toast({ title: `Arquivo muito grande: ${f.name}`, variant: "destructive" }); return false; }
       return true;
     });
-    if (pendingFiles.length + valid.length > 5) { toast({ title: "Máximo de 5 imagens", variant: "destructive" }); return; }
+    if (pendingFiles.length + valid.length > 5) { toast({ title: "MÃ¡ximo de 5 imagens", variant: "destructive" }); return; }
     setPendingFiles(prev => [...prev, ...valid]);
     setPendingPreviews(prev => [...prev, ...valid.map(f => URL.createObjectURL(f))]);
     e.target.value = "";
@@ -487,7 +498,7 @@ const AdminProdutos = () => {
       shipping_length: shippingLength,
       configuration_schema: groupedVariants.length > 0 ? [{
         id: "hierarchy_v1",
-        label: "Opções do Produto",
+        label: "OpÃ§Ãµes do Produto",
         type: "select",
         ui_type: "hierarchy",
         groups: groupedVariants.map(g => ({
@@ -552,7 +563,7 @@ const AdminProdutos = () => {
         if (updateErr) { toast({ title: "Erro ao atualizar produto", description: updateErr.message, variant: "destructive" }); return; }
         await saveFaqs(editing.id);
         await saveFinishings(editing.id);
-        toast({ title: "Produto atualizado! Você pode continuar editando ou fechar o modal." });
+        toast({ title: "Produto atualizado! VocÃª pode continuar editando ou fechar o modal." });
         queryClient.invalidateQueries({ queryKey: ["admin-products"] });
         return;
       } else {
@@ -569,7 +580,7 @@ const AdminProdutos = () => {
         await saveFaqs(newId);
         await saveFinishings(newId);
         setEditing({ ...payload, id: newId, slug: finalSlug });
-        toast({ title: "Produto criado! Agora você pode adicionar imagens e produtos relacionados." });
+        toast({ title: "Produto criado! Agora vocÃª pode adicionar imagens e produtos relacionados." });
         queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       }
       setPendingFiles([]); setPendingPreviews([]);
@@ -581,13 +592,13 @@ const AdminProdutos = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir produto definitivamente? Se este produto tiver histórico de pedidos, ele não poderá ser excluído, apenas desativado.")) return;
+    if (!confirm("Excluir produto definitivamente? Se este produto tiver histÃ³rico de pedidos, ele nÃ£o poderÃ¡ ser excluÃ­do, apenas desativado.")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       if (error.code === "23503") {
         toast({ 
-          title: "Não é possível excluir", 
-          description: "Este produto possui histórico de pedidos e não pode ser removido do banco. Considere 'Desativar' o produto em vez de excluir.", 
+          title: "NÃ£o Ã© possÃ­vel excluir", 
+          description: "Este produto possui histÃ³rico de pedidos e nÃ£o pode ser removido do banco. Considere 'Desativar' o produto em vez de excluir.", 
           variant: "destructive",
           duration: 6000
         });
@@ -595,7 +606,7 @@ const AdminProdutos = () => {
         toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
       }
     } else {
-      toast({ title: "Produto excluído" });
+      toast({ title: "Produto excluÃ­do" });
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       load();
     }
@@ -605,7 +616,7 @@ const AdminProdutos = () => {
     const { id, created_at, updated_at, order_items, categories, subcategories, product_images, ...rest } = product;
     const payload = { 
       ...rest, 
-      name: `${rest.name} (Cópia)`, 
+      name: `${rest.name} (CÃ³pia)`, 
       slug: `${rest.slug}-copia-${Date.now()}`,
       is_active: false,
       is_featured: false
@@ -639,7 +650,7 @@ const AdminProdutos = () => {
                    <Input value={productName} onChange={e => handleNameChange(e.target.value)} required />
                  </div>
                  <div>
-                   <label className="text-sm font-medium">Código do Produto</label>
+                   <label className="text-sm font-medium">CÃ³digo do Produto</label>
                    <Input name="product_code" defaultValue={editing?.product_code || ""} placeholder="Ex: CV-001" />
                  </div>
                </div>
@@ -655,12 +666,14 @@ const AdminProdutos = () => {
                    </select>
                  </div>
                  <div>
-                   <label className="text-sm font-medium">Quantidade padrão</label>
+                   <label className="text-sm font-medium">Quantidade padrÃ£o</label>
                    <Input name="default_quantity" type="number" defaultValue={editing?.default_quantity || 1} min={1} />
+                  </div>
+                </div>
 
               <div className="bg-secondary/50 rounded-xl p-4 border border-border">
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                  <FolderTree className="w-4 h-4 text-highlight" /> Caminho no Catálogo
+                  <FolderTree className="w-4 h-4 text-highlight" /> Caminho no CatÃ¡logo
                 </label>
                  <select
                    name="catalog_node_id"
@@ -683,15 +696,15 @@ const AdminProdutos = () => {
 
                <div className="bg-primary/5 rounded-xl p-4 space-y-4 border border-primary/20">
                  <h3 className="font-display font-bold text-primary flex items-center gap-2 text-sm uppercase tracking-wider">
-                   <Calculator className="w-4 h-4" /> Precificação Automatizada
+                   <Calculator className="w-4 h-4" /> PrecificaÃ§Ã£o Automatizada
                  </h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5 mb-2">
-                        <DollarSign className="w-3.5 h-3.5" /> Custo Base (Unitário)
+                        <DollarSign className="w-3.5 h-3.5" /> Custo Base (UnitÃ¡rio)
                       </label>
                       <Input type="number" step="0.01" value={unitCost || ""} onChange={e => { setUnitCost(parseFloat(e.target.value) || 0); }} placeholder="0.00" className="h-11 text-lg font-mono" />
-                      <p className="text-[10px] text-muted-foreground mt-1 tracking-tight">Custo de produção por unidade.</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 tracking-tight">Custo de produÃ§Ã£o por unidade.</p>
                     </div>
                     <div className="bg-white/50 rounded-lg p-3 border border-border/50">
                       <div className="flex justify-between items-center mb-1">
@@ -699,12 +712,12 @@ const AdminProdutos = () => {
                         <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{categoryMarkup}x</span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Frete Diluído</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Frete DiluÃ­do</span>
                         <span className="text-xs font-bold text-muted-foreground">R$ {FRETE_DILUIDO.toFixed(2)}</span>
                       </div>
                       <div className="pt-2 border-t border-dashed border-border">
                         <div className="flex justify-between items-end">
-                           <span className="text-[10px] font-black text-foreground uppercase">Preço Sugerido</span>
+                           <span className="text-[10px] font-black text-foreground uppercase">PreÃ§o Sugerido</span>
                            <span className="text-xl font-black text-primary">R$ {calculateCommercialRounding((unitCost + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}</span>
                         </div>
                       </div>
@@ -714,7 +727,7 @@ const AdminProdutos = () => {
 
                 <div className="mt-4 pt-4 border-t border-border">
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
-                    📦 Dimensões para Frete
+                    ðŸ“¦ DimensÃµes para Frete
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
@@ -739,11 +752,11 @@ const AdminProdutos = () => {
                 <div className="bg-background rounded-lg p-3 border border-border space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <input type="checkbox" checked={onSale} onChange={e => setOnSale(e.target.checked)} />
-                    <Tag className="w-4 h-4 text-destructive" /> Produto em promoção
+                    <Tag className="w-4 h-4 text-destructive" /> Produto em promoÃ§Ã£o
                   </label>
                   {onSale && (
                     <div>
-                      <label className="text-sm text-muted-foreground">Preço promocional *</label>
+                      <label className="text-sm text-muted-foreground">PreÃ§o promocional *</label>
                       <Input name="sale_price" type="number" step="0.01" defaultValue={editing?.sale_price || ""} placeholder="Ex: 49.90" />
                     </div>
                   )}
@@ -752,29 +765,29 @@ const AdminProdutos = () => {
                 {pricingType === "per_sqm" && (
                   <>
                     <div>
-                      <label className="text-sm font-medium text-highlight">Valor por m² *</label>
+                      <label className="text-sm font-medium text-highlight">Valor por mÂ² *</label>
                       <Input name="price_per_sqm" type="number" step="0.01" defaultValue={editing?.price_per_sqm} />
                     </div>
                     <h4 className="font-medium text-foreground flex items-center gap-2 text-sm pt-2">
-                      <Ruler className="w-4 h-4 text-highlight" /> Limites de dimensão (em metros)
+                      <Ruler className="w-4 h-4 text-highlight" /> Limites de dimensÃ£o (em metros)
                     </h4>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-sm font-medium">Largura mín.</label><Input name="min_width" type="number" step="0.01" defaultValue={editing?.min_width} placeholder="Ex: 0.20" /></div>
-                      <div><label className="text-sm font-medium">Largura máx.</label><Input name="max_width" type="number" step="0.01" defaultValue={editing?.max_width} placeholder="Ex: 5.00" /></div>
+                      <div><label className="text-sm font-medium">Largura mÃ­n.</label><Input name="min_width" type="number" step="0.01" defaultValue={editing?.min_width} placeholder="Ex: 0.20" /></div>
+                      <div><label className="text-sm font-medium">Largura mÃ¡x.</label><Input name="max_width" type="number" step="0.01" defaultValue={editing?.max_width} placeholder="Ex: 5.00" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-sm font-medium">Altura mín.</label><Input name="min_height" type="number" step="0.01" defaultValue={editing?.min_height} placeholder="Ex: 0.20" /></div>
-                      <div><label className="text-sm font-medium">Altura máx.</label><Input name="max_height" type="number" step="0.01" defaultValue={editing?.max_height} placeholder="Ex: 50.00" /></div>
+                      <div><label className="text-sm font-medium">Altura mÃ­n.</label><Input name="min_height" type="number" step="0.01" defaultValue={editing?.min_height} placeholder="Ex: 0.20" /></div>
+                      <div><label className="text-sm font-medium">Altura mÃ¡x.</label><Input name="max_height" type="number" step="0.01" defaultValue={editing?.max_height} placeholder="Ex: 50.00" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="text-sm font-medium">Área mín. (m²)</label><Input name="min_area" type="number" step="0.01" defaultValue={editing?.min_area} placeholder="Ex: 0.10" /></div>
-                      <div><label className="text-sm font-medium">Área máx. (m²)</label><Input name="max_area" type="number" step="0.01" defaultValue={editing?.max_area} placeholder="Ex: 100" /></div>
+                      <div><label className="text-sm font-medium">Ãrea mÃ­n. (mÂ²)</label><Input name="min_area" type="number" step="0.01" defaultValue={editing?.min_area} placeholder="Ex: 0.10" /></div>
+                      <div><label className="text-sm font-medium">Ãrea mÃ¡x. (mÂ²)</label><Input name="max_area" type="number" step="0.01" defaultValue={editing?.max_area} placeholder="Ex: 100" /></div>
                     </div>
 
                     <div className="p-4 bg-background rounded-xl border border-border space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                          <Ruler className="w-3 h-3" /> Tamanhos comuns (Sugestões)
+                          <Ruler className="w-3 h-3" /> Tamanhos comuns (SugestÃµes)
                         </label>
                         <Button type="button" variant="ghost" size="sm" onClick={() => setSqmPresets(prev => [...prev, { id: generateUUID(), name: "", width: 1, height: 1 }])} className="h-7 text-[10px] font-bold">
                           <Plus className="w-3 h-3 mr-1" /> Add Tamanho
@@ -804,9 +817,9 @@ const AdminProdutos = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-display font-bold text-foreground flex items-center gap-2 text-sm">
-                      <Sparkles className="w-4 h-4 text-highlight" /> Gerar Conteúdo com IA
+                      <Sparkles className="w-4 h-4 text-highlight" /> Gerar ConteÃºdo com IA
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Preenche automaticamente descrições, especificações e palavras-chave a partir do nome do produto.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Preenche automaticamente descriÃ§Ãµes, especificaÃ§Ãµes e palavras-chave a partir do nome do produto.</p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={handleGenerateWithAI} disabled={generatingAI || !productName.trim()} className="border-highlight/30 text-highlight hover:bg-highlight/10">
                     {generatingAI ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Gerar com IA</>}
@@ -814,20 +827,20 @@ const AdminProdutos = () => {
                 </div>
               </div>
 
-              <div><label className="text-sm font-medium">Descrição Curta</label><Input name="short_description" defaultValue={editing?.short_description} placeholder="Frase curta que aparece na listagem e meta description" /></div>
+              <div><label className="text-sm font-medium">DescriÃ§Ã£o Curta</label><Input name="short_description" defaultValue={editing?.short_description} placeholder="Frase curta que aparece na listagem e meta description" /></div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Descrição Completa</label>
-                <RichTextEditor value={fullDescription} onChange={setFullDescription} placeholder="Descrição detalhada do produto..." />
+                <label className="text-sm font-medium mb-2 block">DescriÃ§Ã£o Completa</label>
+                <RichTextEditor value={fullDescription} onChange={setFullDescription} placeholder="DescriÃ§Ã£o detalhada do produto..." />
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Especificações Técnicas</label>
-                <RichTextEditor value={specifications} onChange={setSpecifications} placeholder="Material, gramatura, acabamento, cores, dimensões..." />
+                <label className="text-sm font-medium mb-2 block">EspecificaÃ§Ãµes TÃ©cnicas</label>
+                <RichTextEditor value={specifications} onChange={setSpecifications} placeholder="Material, gramatura, acabamento, cores, dimensÃµes..." />
               </div>
 
               <div>
-                <label className="text-sm font-medium">URL do Vídeo (YouTube, Vimeo, etc)</label>
+                <label className="text-sm font-medium">URL do VÃ­deo (YouTube, Vimeo, etc)</label>
                 <Input name="video_url" defaultValue={editing?.video_url || ""} placeholder="https://youtube.com/watch?v=..." />
               </div>
 
@@ -841,21 +854,21 @@ const AdminProdutos = () => {
 
                  <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
                     <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-6">
-                        <Sparkles className="w-5 h-5 text-primary" /> Conteúdo Especializado & SEO 🚀
+                        <Sparkles className="w-5 h-5 text-primary" /> ConteÃºdo Especializado & SEO ðŸš€
                     </h3>
                     
                     <div className="space-y-6">
                         <div>
                           <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
-                             <Settings className="w-4 h-4 text-highlight" /> Título SEO (Google)
+                             <Settings className="w-4 h-4 text-highlight" /> TÃ­tulo SEO (Google)
                           </label>
-                          <Input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder="Título que aparece no Google" />
+                          <Input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder="TÃ­tulo que aparece no Google" />
                           <p className="text-[10px] text-muted-foreground mt-1">Ideal entre 50-60 caracteres.</p>
                         </div>
 
                         <div>
                           <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
-                             <Search className="w-4 h-4 text-highlight" /> Meta Descrição (Google AdSense)
+                             <Search className="w-4 h-4 text-highlight" /> Meta DescriÃ§Ã£o (Google AdSense)
                           </label>
                           <Textarea 
                             value={metaDesc} 
@@ -863,19 +876,19 @@ const AdminProdutos = () => {
                             placeholder="Resumo do produto para os buscadores..." 
                             className="h-20"
                           />
-                          <p className="text-[10px] text-muted-foreground mt-1">Este conteúdo ajuda a resolver o erro de "Baixo Valor" no AdSense. Ideal entre 150-160 caracteres.</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">Este conteÃºdo ajuda a resolver o erro de "Baixo Valor" no AdSense. Ideal entre 150-160 caracteres.</p>
                         </div>
 
                         <div>
                           <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
-                             <Tag className="w-4 h-4 text-highlight" /> Palavras-Chave (Separadas por vírgula)
+                             <Tag className="w-4 h-4 text-highlight" /> Palavras-Chave (Separadas por vÃ­rgula)
                           </label>
                           <Input name="keywords" defaultValue={editing?.keywords || ""} placeholder="grafica, adesivos, promocao..." />
                         </div>
 
                         <div className="pt-4 border-t border-border/50">
                           <label className="text-sm font-bold text-primary flex items-center gap-2 mb-3">
-                             <Layers className="w-4 h-4" /> Conteúdo SEO (Visível no final da página)
+                             <Layers className="w-4 h-4" /> ConteÃºdo SEO (VisÃ­vel no final da pÃ¡gina)
                           </label>
                           <RichTextEditor value={fullDescription} onChange={setFullDescription} />
                           <p className="text-[10px] text-muted-foreground mt-2 italic">Dica: Um texto rico aqui ajuda o Google a entender o valor do seu produto.</p>
@@ -886,9 +899,9 @@ const AdminProdutos = () => {
               {allFinishings.length > 0 && (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
                   <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-highlight" /> Acabamentos Disponíveis
+                    <Layers className="w-4 h-4 text-highlight" /> Acabamentos DisponÃ­veis
                   </h3>
-                  <p className="text-xs text-muted-foreground">Selecione os acabamentos que este produto aceita. O cliente poderá escolhê-los na loja.</p>
+                  <p className="text-xs text-muted-foreground">Selecione os acabamentos que este produto aceita. O cliente poderÃ¡ escolhÃª-los na loja.</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {allFinishings.filter(f => f.is_active).map(f => (
                       <label key={f.id} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-background border border-border cursor-pointer hover:bg-muted/50">
@@ -912,7 +925,7 @@ const AdminProdutos = () => {
                 <h3 className="font-display font-bold text-foreground flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-highlight" /> Perguntas Frequentes do Produto
                 </h3>
-                <p className="text-xs text-muted-foreground">Perguntas e respostas específicas deste produto (melhora SEO com FAQ Schema)</p>
+                <p className="text-xs text-muted-foreground">Perguntas e respostas especÃ­ficas deste produto (melhora SEO com FAQ Schema)</p>
                 {productFaqs.map((faq, i) => (
                   <div key={i} className="bg-background rounded-lg p-3 border border-border space-y-2">
                     <div className="flex items-center justify-between">
@@ -942,7 +955,7 @@ const AdminProdutos = () => {
               <div className="bg-primary/5 rounded-2xl p-6 border border-primary/20 space-y-6">
                   <div className="flex justify-between items-center mb-4">
                      <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                         <Layers className="w-5 h-5 text-primary" /> Variações Hierárquicas (Cores › Lista de Preços)
+                         <Layers className="w-5 h-5 text-primary" /> VariaÃ§Ãµes HierÃ¡rquicas (Cores â€º Lista de PreÃ§os)
                      </h3>
                      <Button type="button" variant="outline" size="sm" onClick={() => setGroupedVariants(prev => [...prev, { id: generateUUID(), name: "4X0", options: [{ name: "500 UN", cost: 0, price: 0 }] }])}>
                         <Plus className="w-3 h-3 mr-1" /> Adicionar Cor/Grupo
@@ -962,7 +975,7 @@ const AdminProdutos = () => {
                             </div>
                             
                             <div className="space-y-2 ml-7">
-                               <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Lista de Preços (Quantidades)</p>
+                               <p className="text-[10px] font-black tracking-widest text-muted-foreground uppercase mb-2">Lista de PreÃ§os (Quantidades)</p>
                                {group.options.map((opt, optIdx) => (
                                  <div key={optIdx} className="flex gap-3 items-center group">
                                     <Input value={opt.name} onChange={e => {
@@ -996,7 +1009,7 @@ const AdminProdutos = () => {
                                   const next = [...group.options, { name: "", cost: 0, price: 0 }];
                                   setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
                                }}>
-                                  <Plus className="w-3 h-3 mr-1" /> Add Opção de Preço
+                                  <Plus className="w-3 h-3 mr-1" /> Add OpÃ§Ã£o de PreÃ§o
                                </Button>
                             </div>
                          </div>
@@ -1005,13 +1018,13 @@ const AdminProdutos = () => {
                   ) : (
                     <div className="py-10 text-center border-2 border-dashed border-border rounded-xl">
                        <Package className="w-10 h-10 mx-auto text-muted-foreground opacity-20 mb-3" />
-                       <p className="text-sm text-muted-foreground">Nenhuma variação hierárquica cadastrada.</p>
-                       <p className="text-[10px] text-muted-foreground/60 max-w-[200px] mx-auto mt-1">Use esta seção para cadastrar preços diferentes por grupo (ex: Cores).</p>
+                       <p className="text-sm text-muted-foreground">Nenhuma variaÃ§Ã£o hierÃ¡rquica cadastrada.</p>
+                       <p className="text-[10px] text-muted-foreground/60 max-w-[200px] mx-auto mt-1">Use esta seÃ§Ã£o para cadastrar preÃ§os diferentes por grupo (ex: Cores).</p>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center pt-4 border-t border-border/50">
-                     <p className="text-[10px] text-muted-foreground italic max-w-sm">Dica: Ao usar variações hierárquicas, o sistema ignora o "Configurador Dinâmico" padrão abaixo.</p>
+                     <p className="text-[10px] text-muted-foreground italic max-w-sm">Dica: Ao usar variaÃ§Ãµes hierÃ¡rquicas, o sistema ignora o "Configurador DinÃ¢mico" padrÃ£o abaixo.</p>
                   </div>
               </div>
 
@@ -1064,7 +1077,7 @@ const AdminProdutos = () => {
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...</>
                 ) : editing ? (
-                  "Salvar Alterações"
+                  "Salvar AlteraÃ§Ãµes"
                 ) : (
                   "Criar Produto"
                 )}
@@ -1081,7 +1094,7 @@ const AdminProdutos = () => {
                     Gerenciar Produtos
                 </TabsTrigger>
                 <TabsTrigger value="import" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-highlight data-[state=active]:border-b-2 data-[state=active]:border-highlight rounded-none px-0 py-2 text-sm font-bold uppercase tracking-widest">
-                    <Upload className="w-4 h-4 mr-2" /> Migração PDF
+                    <Upload className="w-4 h-4 mr-2" /> MigraÃ§Ã£o PDF
                 </TabsTrigger>
             </TabsList>
 
@@ -1099,7 +1112,7 @@ const AdminProdutos = () => {
             <div className="flex flex-wrap gap-2">
                 <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou código..." value={adminSearch} onChange={e => { setAdminSearch(e.target.value); setCurrentPage(0); }} className="pl-10 h-11" />
+                <Input placeholder="Buscar por nome ou cÃ³digo..." value={adminSearch} onChange={e => { setAdminSearch(e.target.value); setCurrentPage(0); }} className="pl-10 h-11" />
                 </div>
                 <select value={adminFilterColor} onChange={e => { setAdminFilterColor(e.target.value); setCurrentPage(0); }} className="rounded-lg border border-input bg-background px-3 py-2 text-sm h-11">
                     <option value="">Todas as cores</option>
@@ -1114,7 +1127,7 @@ const AdminProdutos = () => {
                     <div className="flex gap-2 ml-auto">
                         <Button size="sm" variant="outline" onClick={() => setSelectedProducts(new Set())}>Cancelar</Button>
                         <Button size="sm" onClick={async () => { setProcessingBulk(true); await supabase.from("products").update({ is_active: true }).in("id", Array.from(selectedProducts)); toast({ title: "Ativados!" }); setSelectedProducts(new Set()); load(); setProcessingBulk(false); }}>Ativar</Button>
-                        <Button size="sm" variant="destructive" onClick={async () => { if (!confirm("Excluir definitivamente?")) return; setProcessingBulk(true); await supabase.from("products").delete().in("id", Array.from(selectedProducts)); toast({ title: "Excluídos!" }); setSelectedProducts(new Set()); load(); setProcessingBulk(false); }}>Excluir</Button>
+                        <Button size="sm" variant="destructive" onClick={async () => { if (!confirm("Excluir definitivamente?")) return; setProcessingBulk(true); await supabase.from("products").delete().in("id", Array.from(selectedProducts)); toast({ title: "ExcluÃ­dos!" }); setSelectedProducts(new Set()); load(); setProcessingBulk(false); }}>Excluir</Button>
                     </div>
                 </div>
             )}
@@ -1126,7 +1139,7 @@ const AdminProdutos = () => {
                             <thead className="bg-muted/30 border-b border-border">
                                 <tr>
                                     <th className="p-4 w-10"><input type="checkbox" onChange={e => setSelectedProducts(e.target.checked ? new Set(filteredProducts.map(p => p.id)) : new Set())} /></th>
-                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Código</th>
+                                    <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">CÃ³digo</th>
                                     <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Produto</th>
                                     <th className="text-left p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Categoria</th>
                                     <th className="text-right p-4 font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Venda</th>
@@ -1138,9 +1151,9 @@ const AdminProdutos = () => {
                                 {filteredProducts.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE).map(p => (
                                     <tr key={p.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                                         <td className="p-4 text-center"><input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => { const n = new Set(selectedProducts); n.has(p.id) ? n.delete(p.id) : n.add(p.id); setSelectedProducts(n); }} /></td>
-                                        <td className="p-4 font-mono text-xs text-muted-foreground">{p.product_code || "—"}</td>
+                                        <td className="p-4 font-mono text-xs text-muted-foreground">{p.product_code || "â€”"}</td>
                                         <td className="p-4 font-bold">{p.name} {p.is_featured && <span className="text-[9px] bg-warning/20 text-warning px-1.5 py-0.5 rounded ml-2">HOT</span>}</td>
-                                        <td className="p-4 text-xs text-muted-foreground">{p.categories?.name || "—"}</td>
+                                        <td className="p-4 text-xs text-muted-foreground">{p.categories?.name || "â€”"}</td>
                                         <td className="p-4 text-right font-black">R$ {Number(p.price).toFixed(2)}</td>
                                         <td className="p-4 text-center">
                                             <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${p.is_active ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
@@ -1200,7 +1213,7 @@ const AdminProdutos = () => {
                                                 {items.map(p => (
                                                     <tr key={p.id} className="border-t border-border/30 hover:bg-muted/10 transition-colors">
                                                         <td className="p-4 w-10"><input type="checkbox" checked={selectedProducts.has(p.id)} onChange={() => { const n = new Set(selectedProducts); n.has(p.id) ? n.delete(p.id) : n.add(p.id); setSelectedProducts(n); }} /></td>
-                                                        <td className="p-4 w-32 font-mono text-[10px] text-muted-foreground">{p.product_code || "—"}</td>
+                                                        <td className="p-4 w-32 font-mono text-[10px] text-muted-foreground">{p.product_code || "â€”"}</td>
                                                         <td className="p-4 font-bold text-foreground">
                                                             {p.name}
                                                             <div className="flex gap-1 mt-1">
@@ -1208,7 +1221,7 @@ const AdminProdutos = () => {
                                                                 {!p.is_active && <span className="text-[8px] bg-destructive/20 text-destructive px-1 py-0.5 rounded font-black uppercase">Inativo</span>}
                                                             </div>
                                                         </td>
-                                                        <td className="p-4 text-xs text-muted-foreground">{p.color_mode || "—"}</td>
+                                                        <td className="p-4 text-xs text-muted-foreground">{p.color_mode || "â€”"}</td>
                                                         <td className="p-4 text-right font-black text-primary">R$ {Number(p.price).toFixed(2)}</td>
                                                         <td className="p-4 text-right">
                                                             <div className="flex justify-end gap-1">
@@ -1230,18 +1243,18 @@ const AdminProdutos = () => {
 
                 {filteredProducts.length > ITEMS_PER_PAGE && !groupByCategory && (
                     <div className="p-4 bg-muted/10 border-t border-border flex justify-between items-center">
-                         <span className="text-xs text-muted-foreground">Mostrando {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length}</span>
+                         <span className="text-xs text-muted-foreground">Mostrando {currentPage * ITEMS_PER_PAGE + 1}â€“{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length}</span>
                          <div className="flex gap-2">
                              <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Anterior</Button>
-                             <Button variant="outline" size="sm" disabled={(currentPage + 1) * ITEMS_PER_PAGE >= filteredProducts.length} onClick={() => setCurrentPage(p => p + 1)}>Próximo</Button>
+                             <Button variant="outline" size="sm" disabled={(currentPage + 1) * ITEMS_PER_PAGE >= filteredProducts.length} onClick={() => setCurrentPage(p => p + 1)}>PrÃ³ximo</Button>
                          </div>
                     </div>
                 )}
             </div>
         </TabsContent>
 
-        <TabsContent value="import" className="m-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <TabsContent value="import" className="m-0 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6">
                 <div className="space-y-6">
                     <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-6">
                         <div className="flex items-center gap-3">
@@ -1261,7 +1274,7 @@ const AdminProdutos = () => {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">2. Conteúdo do PDF (Copiar/Colar)</label>
-                            <Textarea value={importPdfText} onChange={e => setImportPdfText(e.target.value)} placeholder="Cole aqui as linhas da tabela...&#10;Ex: ADCASOV05 ADESIVOS ADESIVO... R$ 34,99" className="h-64 font-mono text-[11px] bg-muted/20 border-border focus:bg-background transition-colors" />
+                            <Textarea value={importPdfText} onChange={e => setImportPdfText(e.target.value)} placeholder="Cole aqui as linhas da tabela..." className="h-64 font-mono text-[11px] bg-muted/20 border-border focus:bg-background transition-colors" />
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-xl border border-border">
@@ -1332,7 +1345,7 @@ const AdminProdutos = () => {
                         <ul className="text-xs text-muted-foreground space-y-3 leading-relaxed">
                             <li className="flex gap-2">
                                 <span className="text-highlight font-black">•</span>
-                                <div><strong>Lógica de Preço:</strong> Aplicamos automaticamente 80% de margem sobre o custo + R$ 8,90 de frete fixo.</div>
+                                <div><strong>Lógica de Preço:</strong> Aplicamos automaticamente o markup da categoria ou padrão sobre o custo.</div>
                             </li>
                             <li className="flex gap-2">
                                 <span className="text-highlight font-black">•</span>
