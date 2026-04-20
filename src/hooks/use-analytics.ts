@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfMonth, format, parseISO, getDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { parseISO, getDay } from "date-fns";
 
 export const useBusinessHealth = () => {
   return useQuery({
@@ -10,11 +9,13 @@ export const useBusinessHealth = () => {
       const [
         { data: orders },
         { data: leads },
-        { data: profiles }
+        { data: site_settings },
+        { data: products }
       ] = await Promise.all([
         supabase.from("orders").select("created_at, total, customer_name, customer_id"),
         supabase.from("leads").select("id, created_at"),
-        supabase.from("profiles").select("id, full_name")
+        supabase.from("site_settings").select("key, value").like("key", "stats_visits_%"),
+        supabase.from("products").select("name, slug, id").eq("is_active", true)
       ]);
 
       const allOrders = orders || [];
@@ -48,13 +49,34 @@ export const useBusinessHealth = () => {
       const totalLeads = allLeads.length;
       const conversionRate = totalLeads > 0 ? (totalOrders / totalLeads) * 100 : 0;
 
+      // 4. Traffic & Popularity (Simulado via localStorage + stats incrementados)
+      const telemetry = JSON.parse(localStorage.getItem("implotter_telemetry_v1") || '{"visits":[], "products": {}}');
+      const productClicks = telemetry.products || {};
+      
+      const hotProducts = (products || [])
+        .map(p => ({
+          name: p.name,
+          slug: p.slug,
+          visits: productClicks[p.slug] || 0
+        }))
+        .filter(p => p.visits > 0)
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 5);
+
+      const trafficStats = (site_settings || []).map(s => ({
+        date: s.key.replace("stats_visits_", ""),
+        visits: parseInt(s.value || "0")
+      })).sort((a, b) => a.date.localeCompare(b.date));
+
       return {
         dayStats,
         topCustomers,
         conversionRate,
         totalLeads,
         totalOrders,
-        totalRevenue: allOrders.reduce((acc, o) => acc + Number(o.total || 0), 0)
+        totalRevenue: allOrders.reduce((acc, o) => acc + Number(o.total || 0), 0),
+        hotProducts,
+        trafficStats
       };
     },
     staleTime: 1000 * 60 * 30, // 30 minutes

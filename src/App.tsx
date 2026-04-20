@@ -12,6 +12,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/hooks/use-auth";
 import { CookieConsentProvider } from "@/hooks/use-cookie-consent";
 import { HelmetProvider } from "react-helmet-async";
+import { TelemetryTracker } from "./hooks/use-telemetry";
 
 // Critical: only Index is eagerly loaded for fastest FCP
 import Index from "./pages/Index";
@@ -200,8 +201,9 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
+          <BrowserRouter>
+            <TelemetryTracker />
+            <ScrollToTop />
           <CartCloudSync />
           <AppContent />
         </BrowserRouter>

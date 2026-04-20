@@ -6,7 +6,8 @@ import {
 } from "recharts";
 import { 
   TrendingUp, Users, Target, DollarSign, 
-  Award, Calendar, ArrowUpRight, Activity 
+  Award, Calendar, ArrowUpRight, Activity,
+  Globe, Flame, MousePointer2 
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -141,6 +142,79 @@ export default function AdminRelatorios() {
                     <p className="text-[10px] font-bold uppercase tracking-widest">Sem dados suficientes</p>
                  </div>
                )}
+            </div>
+          </div>
+        </div>
+
+        {/* Traffic & Popularity Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Traffic Chart */}
+          <div className="glass-card-premium p-8 rounded-[40px] border-white/5 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Visitas ao Site</h3>
+                <p className="text-xs text-muted-foreground font-medium">Fluxo de visitantes únicos por dia</p>
+              </div>
+              <Globe className="w-5 h-5 text-emerald-400 opacity-40" />
+            </div>
+            
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats?.trafficStats}>
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#888888', fontSize: 9, fontWeight: 900 }} 
+                  />
+                  <Tooltip 
+                    cursor={{ fill: '#ffffff05' }}
+                    contentStyle={{ backgroundColor: '#0f0f0f', border: '1px solid #ffffff10', borderRadius: '16px', fontSize: '12px' }}
+                  />
+                  <Bar dataKey="visits" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Popular Products List */}
+          <div className="glass-card-premium p-8 rounded-[40px] border-white/5 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-black text-foreground uppercase tracking-tight">Produtos Mais Vistos</h3>
+                <p className="text-xs text-muted-foreground font-medium">Ranking de interesse por cliques</p>
+              </div>
+              <Flame className="w-5 h-5 text-orange-400 opacity-40" />
+            </div>
+
+            <div className="space-y-4">
+              {stats?.hotProducts.map((product, i) => (
+                <div key={i} className="group relative flex items-center justify-between p-4 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex items-center gap-4 min-w-0 relative">
+                    <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-xs font-black text-orange-400">
+                      #{i + 1}
+                    </div>
+                    <div className="truncate">
+                      <p className="text-sm font-bold text-foreground truncate">{product.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-black uppercase opacity-60">/{product.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 relative">
+                    <MousePointer2 className="w-3 h-3 text-orange-400" />
+                    <span className="text-sm font-black text-foreground">{product.visits}</span>
+                    <span className="text-[10px] font-black uppercase text-muted-foreground opacity-40">Visitas</span>
+                  </div>
+                </div>
+              ))}
+              {(!stats?.hotProducts || stats.hotProducts.length === 0) && (
+                <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-10">
+                  <Activity className="w-12 h-12 mb-3" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground max-w-[150px]">
+                    Navegue pela loja para gerar dados de popularidade
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
