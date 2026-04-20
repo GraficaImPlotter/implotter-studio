@@ -70,6 +70,7 @@ const AdminProdutos = () => {
   const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
   const [selectedFinishingIds, setSelectedFinishingIds] = useState<string[]>([]);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const [unitCost, setUnitCost] = useState(0);
@@ -215,6 +216,57 @@ const AdminProdutos = () => {
       toast({ title: "Erro ao gerar conteúdo", description: e.message, variant: "destructive" });
     }
     setGeneratingAI(false);
+  };
+
+  const handleGenerateWithAIImage = async () => {
+    if (!productName.trim() || !savedProductId) {
+      toast({ title: "Salve o produto e dê um nome a ele primeiro", variant: "destructive" });
+      return;
+    }
+    setGeneratingImage(true);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-product-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ productName: productName.trim() }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Erro ao gerar imagem");
+
+      // Baixar a imagem
+      const imgResp = await fetch(data.imageUrl);
+      const blob = await imgResp.blob();
+      const safeName = `ai-gen-${Date.now()}.png`;
+      const path = `${savedProductId}/${safeName}`;
+      
+      // Upload para Storage
+      const { error: uploadError } = await supabase.storage.from("product-images").upload(path, blob, { 
+        contentType: "image/png",
+        upsert: true
+      });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+      
+      // Salvar no banco vinculando ao produto
+      const { error: dbError } = await supabase.from("product_images").insert({
+        product_id: savedProductId,
+        image_url: urlData.publicUrl,
+        sort_order: 10
+      });
+      if (dbError) throw dbError;
+
+      toast({ title: "Imagem gerada com sucesso!", description: "A foto ja foi adicionada a galeria do produto." });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      // Forçar refresh das imagens se necessário
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Erro ao gerar imagem", description: e.message, variant: "destructive" });
+    }
+    setGeneratingImage(false);
   };
 
   const loadFaqs = async (productId: string) => {
@@ -626,18 +678,26 @@ const AdminProdutos = () => {
                                  next[optIdx].name = e.target.value;
                                  setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
                                }} placeholder="Ex: 1.000 UN" className="h-9 text-xs" />
-                               <div className="relative">
-                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase">Custo</span>
-                                 <Input type="number" step="0.01" value={opt.cost || 0} onChange={e => {
-                                   const next = [...group.options];
-                                   next[optIdx].cost = parseFloat(e.target.value) || 0;
-                                   setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
-                                 }} className="h-9 text-xs pl-10 w-28" />
+                               <div className="flex-1 min-w-[100px]">
+                                 <div className="flex flex-col gap-1">
+                                   <label className="text-[9px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                     <DollarSign className="w-2 h-2" /> Custo
+                                   </label>
+                                   <Input type="number" step="0.01" value={opt.cost || 0} onChange={e => {
+                                     const next = [...group.options];
+                                     next[optIdx].cost = parseFloat(e.target.value) || 0;
+                                     setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, options: next } : g));
+                                   }} className="h-8 text-xs font-mono" />
+                                 </div>
                                </div>
-                               <div className="relative opacity-60">
-                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground uppercase text-primary">Venda</span>
-                                 <div className="h-9 w-28 bg-muted rounded-md flex items-center pl-10 text-xs font-mono text-primary font-bold">
-                                   R$ {calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}
+                               <div className="flex-1 min-w-[100px]">
+                                 <div className="flex flex-col gap-1">
+                                   <label className="text-[9px] font-bold text-primary uppercase flex items-center gap-1">
+                                     <Tag className="w-2 h-2" /> Venda
+                                   </label>
+                                   <div className="h-8 bg-muted rounded-md flex items-center px-3 text-xs font-mono text-primary font-bold border border-border/50">
+                                     R$ {calculateCommercialRounding((Number(opt.cost) + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}
+                                   </div>
                                  </div>
                                </div>
                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100" onClick={() => {
@@ -656,8 +716,27 @@ const AdminProdutos = () => {
               </div>
 
               {savedProductId ? (
-                <div className="bg-secondary/50 rounded-xl p-4 border border-border">
+                <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-4">
                   <ProductImageUploader productId={savedProductId} />
+                  
+                  <div className="pt-2 border-t border-dashed border-border/50">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full border-primary/30 hover:bg-primary/5 text-primary font-bold group"
+                      onClick={handleGenerateWithAIImage}
+                      disabled={generatingImage || !productName.trim()}
+                    >
+                      {generatingImage ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Criando Mockup Profissional...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4 mr-2 group-hover:scale-125 transition-transform" /> Gerar Mockup com IA ✨</>
+                      )}
+                    </Button>
+                    <p className="text-[10px] text-center text-muted-foreground mt-2 italic">
+                      A IA gerará uma foto de estúdio para "{productName}" com a marca ImPlotter.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
