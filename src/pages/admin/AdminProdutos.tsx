@@ -80,6 +80,8 @@ const AdminProdutos = () => {
   
   const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; cost: number; price: number }[] }[]>([]);
   const [sqmPresets, setSqmPresets] = useState<{ id: string; name: string; width: number; height: number }[]>([]);
+  const [pricingType, setPricingType] = useState("fixed");
+  const [estimatedDays, setEstimatedDays] = useState(1);
 
   const totalCost = unitCost + FRETE_DILUIDO;
   const suggestedPrice = totalCost * categoryMarkup;
@@ -291,6 +293,8 @@ const AdminProdutos = () => {
     setSelectedFinishingIds([]);
 
     setUnitCost(Number(product?.unit_cost) || 0);
+    setPricingType(product?.pricing_type || "fixed");
+    setEstimatedDays(product?.estimated_days || 1);
 
     if (product?.catalog_node_id) {
        supabase.from('catalog_nodes').select('markup').eq('id', product.catalog_node_id).single().then(({ data }) => {
@@ -387,6 +391,9 @@ const AdminProdutos = () => {
       full_description: fullDescription,
       price: 0,
       unit_cost: unitCost,
+      pricing_type: pricingType,
+      estimated_days: estimatedDays,
+      price_per_sqm: pricingType === "per_sqm" ? calculateCommercialRounding(suggestedPrice) : null,
       is_featured: fd.get("is_featured") === "on",
       is_active: fd.get("is_active") === "on",
       meta_title: metaTitle,
@@ -551,17 +558,34 @@ const AdminProdutos = () => {
                </div>
 
                <div className="bg-primary/5 rounded-xl p-4 space-y-4 border border-primary/20">
-                 <h3 className="font-display font-bold text-primary flex items-center gap-2 text-sm uppercase tracking-wider">
-                   <Calculator className="w-4 h-4" /> Precificação Automatizada
-                 </h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5 mb-2">
-                        <DollarSign className="w-3.5 h-3.5" /> Custo Base (Unitário)
-                      </label>
-                      <Input type="number" step="0.01" value={unitCost || ""} onChange={e => { setUnitCost(parseFloat(e.target.value) || 0); }} placeholder="0.00" className="h-11 text-lg font-mono" />
-                      <p className="text-[10px] text-muted-foreground mt-1 tracking-tight">Custo de produção por unidade (sem markup).</p>
+                 <div className="flex items-center justify-between">
+                    <h3 className="font-display font-bold text-primary flex items-center gap-2 text-sm uppercase tracking-wider">
+                      <Calculator className="w-4 h-4" /> Precificação Automatizada
+                    </h3>
+                    <div className="flex gap-2 p-1 bg-secondary rounded-lg border border-border">
+                        <button type="button" onClick={() => setPricingType("fixed")} className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${pricingType === 'fixed' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>Unitário</button>
+                        <button type="button" onClick={() => setPricingType("per_sqm")} className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${pricingType === 'per_sqm' ? 'bg-primary text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>Metro² (m²)</button>
                     </div>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5 mb-2">
+                          <DollarSign className="w-3.5 h-3.5" /> {pricingType === 'per_sqm' ? 'Custo m²' : 'Custo Base (Unitário)'}
+                        </label>
+                        <Input type="number" step="0.01" value={unitCost || ""} onChange={e => { setUnitCost(parseFloat(e.target.value) || 0); }} placeholder="0.00" className="h-11 text-lg font-mono" />
+                        <p className="text-[10px] text-muted-foreground mt-1 tracking-tight">Custo de produção {pricingType === 'per_sqm' ? 'por m²' : 'por unidade'} (sem markup).</p>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/30">
+                        <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                            <Clock className="w-4 h-4 text-highlight" /> Prazo de Produção (dias úteis)
+                        </label>
+                        <Input type="number" min="0" value={estimatedDays} onChange={e => setEstimatedDays(parseInt(e.target.value) || 0)} className="h-10 w-24 font-bold" />
+                      </div>
+                    </div>
+
                     <div className="bg-white/50 rounded-lg p-3 border border-border/50">
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Markup da Categoria</span>
@@ -573,7 +597,7 @@ const AdminProdutos = () => {
                       </div>
                       <div className="pt-2 border-t border-dashed border-border">
                         <div className="flex justify-between items-end">
-                           <span className="text-[10px] font-black text-foreground uppercase">Preço Calculado</span>
+                           <span className="text-[10px] font-black text-foreground uppercase">Venda {pricingType === 'per_sqm' ? 'p/ m²' : 'Sugerida'}</span>
                            <span className="text-xl font-black text-primary">R$ {calculateCommercialRounding(suggestedPrice).toFixed(2)}</span>
                         </div>
                       </div>
