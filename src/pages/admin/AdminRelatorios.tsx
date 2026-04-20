@@ -33,10 +33,10 @@ export default function AdminRelatorios() {
   }
 
   const kpiCards = [
-    { label: "Faturamento Total", value: `R$ ${stats?.totalRevenue.toLocaleString("pt-BR")}`, icon: DollarSign, color: "text-emerald-400" },
-    { label: "Taxa de Conversão", value: `${stats?.conversionRate.toFixed(1)}%`, icon: Target, color: "text-highlight" },
-    { label: "Total de Leads", value: stats?.totalLeads, icon: Activity, color: "text-amber-400" },
-    { label: "Pedidos Fechados", value: stats?.totalOrders, icon: Award, color: "text-purple-400" },
+    { label: "Faturamento Total", value: `R$ ${(stats?.totalRevenue || 0).toLocaleString("pt-BR")}`, icon: DollarSign, color: "text-emerald-400" },
+    { label: "Taxa de Conversão", value: `${(stats?.conversionRate || 0).toFixed(1)}%`, icon: Target, color: "text-highlight" },
+    { label: "Total de Leads", value: stats?.totalLeads || 0, icon: Activity, color: "text-amber-400" },
+    { label: "Pedidos Fechados", value: stats?.totalOrders || 0, icon: Award, color: "text-purple-400" },
   ];
 
   return (
@@ -102,7 +102,7 @@ export default function AdminRelatorios() {
                       contentStyle={{ backgroundColor: '#0f0f0f', border: '1px solid #ffffff10', borderRadius: '16px', fontSize: '12px' }}
                     />
                     <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-                      {stats?.dayStats.map((entry, index) => (
+                      {(stats?.dayStats || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#6366f1" : "#8b5cf6"} fillOpacity={0.8} />
                       ))}
                     </Bar>
@@ -122,7 +122,7 @@ export default function AdminRelatorios() {
             </div>
 
             <div className="space-y-5 flex-1">
-               {stats?.topCustomers.map((cust, i) => (
+               {(stats?.topCustomers || []).map((cust, i) => (
                  <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black text-highlight border border-white/5 shrink-0">
@@ -136,7 +136,7 @@ export default function AdminRelatorios() {
                     <p className="text-sm font-black text-foreground shrink-0">R$ {cust.total.toFixed(0)}</p>
                  </div>
                ))}
-               {stats?.topCustomers.length === 0 && (
+               {(!stats?.topCustomers || stats.topCustomers.length === 0) && (
                  <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20">
                     <Award className="w-12 h-12 mb-3" />
                     <p className="text-[10px] font-bold uppercase tracking-widest">Sem dados suficientes</p>
@@ -188,7 +188,7 @@ export default function AdminRelatorios() {
             </div>
 
             <div className="space-y-4">
-              {stats?.hotProducts.map((product, i) => (
+              {(stats?.hotProducts || []).map((product, i) => (
                 <div key={i} className="group relative flex items-center justify-between p-4 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="flex items-center gap-4 min-w-0 relative">
