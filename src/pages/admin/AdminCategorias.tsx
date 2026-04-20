@@ -20,6 +20,7 @@ interface CatalogNode {
   is_active: boolean;
   show_on_home: boolean;
   sort_order: number;
+  markup: number | null;
   children?: CatalogNode[];
 }
 
@@ -100,6 +101,7 @@ const AdminCategorias = () => {
         is_active: fd.get("is_active") === "on",
         show_on_home: fd.get("show_on_home") === "on",
         parent_id: parentId,
+        markup: parseFloat(fd.get("markup") as string) || 2.1,
       };
 
       if (editing) {
@@ -273,6 +275,15 @@ const AdminCategorias = () => {
             <div>
               <label className="text-sm font-medium">Descrição</label>
               <Input name="description" defaultValue={editing?.description ?? ""} />
+            </div>
+            <div>
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Calculator className="w-4 h-4 text-primary" /> Markup (Multiplicador de Preço)
+              </label>
+              <Input name="markup" type="number" step="0.1" defaultValue={editing?.markup ?? 2.1} required />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Fator multiplicador sobre o custo (ex: 2.1 = 110% de margem bruta).
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium flex items-center gap-2">

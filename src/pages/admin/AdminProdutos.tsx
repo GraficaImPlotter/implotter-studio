@@ -18,7 +18,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { generateUUID } from "@/lib/uuid";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { parsePdfText, generateSql } from "@/lib/migration-utils";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 interface CatalogNode {
   id: string;
@@ -78,20 +78,8 @@ const AdminProdutos = () => {
   const [generatingAI, setGeneratingAI] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [costProduction, setCostProduction] = useState(0);
-  const [costSupplier, setCostSupplier] = useState(0);
-  const [costMaterial, setCostMaterial] = useState(0);
-  const [costArt, setCostArt] = useState(0);
-  const [costExtra, setCostExtra] = useState(0);
-  const [price, setPrice] = useState(0);
-  const [shippingWeight, setShippingWeight] = useState(0.3);
-  const [shippingHeight, setShippingHeight] = useState(2);
-  const [shippingWidth, setShippingWidth] = useState(11);
-  const [shippingLength, setShippingLength] = useState(16);
-  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
-  const [defaultMargin, setDefaultMargin] = useState(80);
   const [unitCost, setUnitCost] = useState(0);
-  const [categoryMarkup, setCategoryMarkup] = useState(2.0);
+  const [categoryMarkup, setCategoryMarkup] = useState(2.1);
   const [calculoTipo, setCalculoTipo] = useState<"unitario" | "area">("unitario");
   const [processingBulk, setProcessingBulk] = useState(false);
   const [activeTab, setActiveTab] = useState("manage");
@@ -251,25 +239,6 @@ const AdminProdutos = () => {
           renamed[newKey] = { ...val, name: newKey };
         });
         categories = renamed;
-      }
-
-      const sql = generateSql(categories, { 
-        includeDescriptions: aiEnabledForImport,
-        descriptions,
-        separateAttributes: importSeparateAttributes,
-        showSize: importShowSize,
-        showWeight: importShowWeight,
-        showCores: importShowCores,
-        showQty: importShowQty
-      });
-      setGeneratedSql(sql);
-      toast({ title: "Script gerado com sucesso!", description: `${Object.keys(categories).length} categorias processadas.` });
-    } catch (e: any) {
-      toast({ title: "Erro ao processar PDF", description: e.message, variant: "destructive" });
-    }
-    setProcessingImport(false);
-  };
-
   const handleNameChange = (name: string) => {
     setProductName(name);
     if (!editing) {
@@ -440,20 +409,6 @@ const AdminProdutos = () => {
     return Math.round(cost * (1 + defaultMargin / 100) * 100) / 100;
   };
 
-  const autoCalcularTudo = () => {
-    const next = [...configSchema];
-    next.forEach(item => {
-      if (item.options && Array.isArray(item.options)) {
-        item.options.forEach((opt: any) => {
-          if (opt.cost_adj > 0) {
-            opt.price_adj = calculatePriceFromCost(opt.cost_adj);
-          }
-        });
-      }
-    });
-    setConfigSchema(next);
-    toast({ title: "Preços atualizados!", description: `Todas as opções com custo preenchido foram recalculadas com margem de ${defaultMargin}%.` });
-  };
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -502,17 +457,11 @@ const AdminProdutos = () => {
       name: productName,
       slug,
       catalog_node_id: (fd.get("catalog_node_id") as string) || null,
-      category_id: null,
-      subcategory_id: null,
       product_code: (fd.get("product_code") as string) || null,
-      color_mode: (fd.get("color_mode") as string) || "4x0",
-      default_quantity: parseInt(fd.get("default_quantity") as string) || 1,
-      short_description: fd.get("short_description") as string,
+      short_description: fd.get("meta_description") as string, // Keeping legacy field sync for now
       full_description: fullDescription,
-      price,
-      sale_price: onSale ? (parseFloat(fd.get("sale_price") as string) || null) : null,
+      price: minPrice, // Use calculated min price
       pricing_type: pt,
-      sale_unit: fd.get("sale_unit") as string,
       price_per_sqm: isSqm ? (parseFloat(fd.get("price_per_sqm") as string) || 0) : 0,
       min_width: isSqm ? (parseFloat(fd.get("min_width") as string) || null) : null,
       max_width: isSqm ? (parseFloat(fd.get("max_width") as string) || null) : null,
@@ -708,8 +657,6 @@ const AdminProdutos = () => {
                  <div>
                    <label className="text-sm font-medium">Quantidade padrão</label>
                    <Input name="default_quantity" type="number" defaultValue={editing?.default_quantity || 1} min={1} />
-                 </div>
-               </div>
 
               <div className="bg-secondary/50 rounded-xl p-4 border border-border">
                 <label className="text-sm font-medium flex items-center gap-2 mb-2">
@@ -718,11 +665,11 @@ const AdminProdutos = () => {
                  <select
                    name="catalog_node_id"
                    defaultValue={editing?.catalog_node_id || ""}
-                   onChange={async (e) => {
+                   onChange={(e) => {
                      const val = e.target.value;
                      if (val) {
-                       const { data } = await supabase.from('categories').select('markup').eq('id', val).single();
-                       if (data?.markup) setCategoryMarkup(Number(data.markup));
+                       const node = catalogNodes.find(n => n.id === val);
+                       if (node?.markup) setCategoryMarkup(Number(node.markup));
                      }
                    }}
                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -732,37 +679,38 @@ const AdminProdutos = () => {
                      <option key={np.id} value={np.id}>{np.path}</option>
                    ))}
                  </select>
-              </div>
+               </div>
 
-              <div className="bg-success/5 rounded-xl p-4 space-y-4 border border-success/20">
-                <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <Calculator className="w-4 h-4 text-success" /> Custos & Precificação Automática
-                </h3>
-                <p className="text-xs text-muted-foreground -mt-2">
-                  Informe os custos e o preço de venda será calculado automaticamente com margem de {defaultMargin}%.
-                </p>
-                <div className="hidden grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Custo Produção</label>
-                    <Input type="number" step="0.01" value={costProduction || ""} onChange={e => { setCostProduction(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Custo Fornecedor</label>
-                    <Input type="number" step="0.01" value={costSupplier || ""} onChange={e => { setCostSupplier(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Custo Material</label>
-                    <Input type="number" step="0.01" value={costMaterial || ""} onChange={e => { setCostMaterial(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Custo Arte</label>
-                    <Input type="number" step="0.01" value={costArt || ""} onChange={e => { setCostArt(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Custo Adicional</label>
-                    <Input type="number" step="0.01" value={costExtra || ""} onChange={e => { setCostExtra(parseFloat(e.target.value) || 0); setPriceManuallyEdited(false); }} placeholder="0.00" />
-                  </div>
-                </div>
+               <div className="bg-primary/5 rounded-xl p-4 space-y-4 border border-primary/20">
+                 <h3 className="font-display font-bold text-primary flex items-center gap-2 text-sm uppercase tracking-wider">
+                   <Calculator className="w-4 h-4" /> Precificação Automatizada
+                 </h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5 mb-2">
+                        <DollarSign className="w-3.5 h-3.5" /> Custo Base (Unitário)
+                      </label>
+                      <Input type="number" step="0.01" value={unitCost || ""} onChange={e => { setUnitCost(parseFloat(e.target.value) || 0); }} placeholder="0.00" className="h-11 text-lg font-mono" />
+                      <p className="text-[10px] text-muted-foreground mt-1 tracking-tight">Custo de produção por unidade.</p>
+                    </div>
+                    <div className="bg-white/50 rounded-lg p-3 border border-border/50">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Markup da Categoria</span>
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{categoryMarkup}x</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Frete Diluído</span>
+                        <span className="text-xs font-bold text-muted-foreground">R$ {FRETE_DILUIDO.toFixed(2)}</span>
+                      </div>
+                      <div className="pt-2 border-t border-dashed border-border">
+                        <div className="flex justify-between items-end">
+                           <span className="text-[10px] font-black text-foreground uppercase">Preço Sugerido</span>
+                           <span className="text-xl font-black text-primary">R$ {calculateCommercialRounding((unitCost + FRETE_DILUIDO) * categoryMarkup).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                 </div>
+               </div>
 
                 <div className="mt-4 pt-4 border-t border-border">
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5 mb-3">
@@ -785,94 +733,6 @@ const AdminProdutos = () => {
                       <label className="text-sm font-medium">Comprimento (cm)</label>
                       <Input type="number" step="0.1" value={shippingLength || ""} onChange={e => setShippingLength(parseFloat(e.target.value) || 0)} placeholder="16" />
                     </div>
-                  </div>
-                </div>
-
-                {totalCost > 0 && (
-                  <div className="bg-card rounded-lg p-4 border border-border space-y-3">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center mb-4">
-                      <div className="bg-muted/50 rounded-lg p-2.5 border border-border/50">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Custo + Frete</p>
-                        <p className="font-display font-bold text-lg text-foreground">
-                          R$ {totalCost.toFixed(2)}
-                        </p>
-                        <p className="text-[9px] text-muted-foreground italic">Inclui R$ {FRETE_DILUIDO.toFixed(2)} frete</p>
-                      </div>
-                      <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20">
-                        <p className="text-[10px] text-primary font-medium uppercase tracking-wider uppercase">Markup da Categoria</p>
-                        <p className="font-display font-bold text-lg text-primary">
-                          {categoryMarkup.toFixed(2)}x
-                        </p>
-                        <p className="text-[9px] text-primary/60 italic">Sugerido: R$ {suggestedPrice.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-2.5 border border-border/50">
-                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Resultado (Final)</p>
-                        <p className={`font-display font-bold text-lg ${profitAmt >= 0 ? "text-success" : "text-destructive"}`}>
-                          R$ {profitAmt.toFixed(2)}
-                        </p>
-                        <p className={`text-[9px] ${marginAmt >= 0 ? "text-success" : "text-destructive"}`}>
-                          Margem {marginAmt.toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>
-
-                    {priceManuallyEdited && Math.abs(price - suggestedPrice) > 0.01 && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-muted-foreground">Preço editado manualmente.</span>
-                        <button type="button" onClick={handleApplySuggested} className="text-primary hover:underline font-medium">
-                          Aplicar preço sugerido (R$ {suggestedPrice.toFixed(2)})
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-secondary/50 rounded-xl p-4 space-y-4 border border-border">
-                <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <Package className="w-4 h-4 text-highlight" /> Precificação
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Custo do Produto (Unitário ou m²) *</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={unitCost}
-                        onChange={e => setUnitCost(parseFloat(e.target.value) || 0)}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Tipo de Cálculo *</label>
-                    <select
-                      name="tipo_calculo"
-                      value={calculoTipo}
-                      onChange={e => setCalculoTipo(e.target.value as any)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                    >
-                      <option value="unitario">Preço Unitário (Fixo)</option>
-                      <option value="area">Por Área (m²)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium flex items-center gap-1.5">
-                      {calculoTipo === "area" ? "Preço Final (Referência)" : "Preço de Venda Final"}
-                      {totalCost > 0 && <TrendingUp className="w-3 h-3 text-success" />}
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={price !== undefined ? price : ""}
-                      onChange={e => { setPrice(parseFloat(e.target.value) || 0); setPriceManuallyEdited(true); }}
-                      className={totalCost > 0 && !priceManuallyEdited ? "border-success/50 bg-success/5" : ""}
-                    />
-                    {totalCost > 0 && !priceManuallyEdited && (
-                      <p className="text-[10px] text-success mt-0.5">✓ Calculado automaticamente</p>
-                    )}
                   </div>
                 </div>
 
@@ -939,7 +799,6 @@ const AdminProdutos = () => {
                     </div>
                   </>
                 )}
-              </div>
 
               <div className="bg-gradient-to-r from-highlight/10 to-highlight-glow/10 rounded-xl p-4 border border-highlight/20">
                 <div className="flex items-center justify-between">
@@ -958,9 +817,8 @@ const AdminProdutos = () => {
               <div><label className="text-sm font-medium">Descrição Curta</label><Input name="short_description" defaultValue={editing?.short_description} placeholder="Frase curta que aparece na listagem e meta description" /></div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Descrição Completa (SEO)</label>
-                <RichTextEditor value={fullDescription} onChange={setFullDescription} placeholder="Descrição detalhada do produto para indexação e conversão..." />
-                <p className="text-[10px] text-muted-foreground mt-1">Conteúdo rico e útil melhora o ranqueamento no Google</p>
+                <label className="text-sm font-medium mb-2 block">Descrição Completa</label>
+                <RichTextEditor value={fullDescription} onChange={setFullDescription} placeholder="Descrição detalhada do produto..." />
               </div>
 
               <div>
@@ -981,43 +839,49 @@ const AdminProdutos = () => {
                 </div>
               </div>
 
-              <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-4">
-                <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <Search className="w-4 h-4 text-highlight" /> SEO & Indexação
-                </h3>
-                <div>
-                  <label className="text-sm font-medium">Meta Title</label>
-                  <Input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder="Título que aparece no Google (máx. 60 caracteres)" />
-                  <p className={`text-[10px] mt-0.5 ${metaTitle.length > 60 ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                    {metaTitle.length}/60 caracteres {metaTitle.length > 60 && "⚠️ Muito longo"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Meta Description</label>
-                  <Textarea value={metaDesc} onChange={e => setMetaDesc(e.target.value)} placeholder="Descrição que aparece no Google (máx. 160 caracteres)" rows={2} />
-                  <p className={`text-[10px] mt-0.5 ${metaDesc.length > 160 ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                    {metaDesc.length}/160 caracteres {metaDesc.length > 160 && "⚠️ Muito longo"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Slug (URL)</label>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">/loja/</span>
-                    <Input value={slug} onChange={e => setSlug(e.target.value)} required className="flex-1" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Palavras-chave (SEO)</label>
-                  <Input name="keywords" defaultValue={editing?.keywords || ""} placeholder="cartão de visita, impressão, gráfica..." />
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Separadas por vírgula</p>
-                </div>
-                <div className="bg-background rounded-lg p-3 border border-border">
-                  <p className="text-[10px] text-muted-foreground mb-1 font-semibold uppercase tracking-wider">Prévia do Google</p>
-                  <p className="text-highlight text-sm font-medium truncate">{metaTitle || "Título do Produto | Gráfica ImPlotter"}</p>
-                  <p className="text-success text-xs truncate">graficaimplotter.shop/loja/{slug || "slug-do-produto"}</p>
-                  <p className="text-muted-foreground text-xs line-clamp-2">{metaDesc || "Descrição do produto..."}</p>
-                </div>
-              </div>
+                 <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
+                    <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-6">
+                        <Sparkles className="w-5 h-5 text-primary" /> Conteúdo Especializado & SEO 🚀
+                    </h3>
+                    
+                    <div className="space-y-6">
+                        <div>
+                          <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                             <Settings className="w-4 h-4 text-highlight" /> Título SEO (Google)
+                          </label>
+                          <Input value={metaTitle} onChange={e => setMetaTitle(e.target.value)} placeholder="Título que aparece no Google" />
+                          <p className="text-[10px] text-muted-foreground mt-1">Ideal entre 50-60 caracteres.</p>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                             <Search className="w-4 h-4 text-highlight" /> Meta Descrição (Google AdSense)
+                          </label>
+                          <Textarea 
+                            value={metaDesc} 
+                            onChange={e => setMetaDesc(e.target.value)} 
+                            placeholder="Resumo do produto para os buscadores..." 
+                            className="h-20"
+                          />
+                          <p className="text-[10px] text-muted-foreground mt-1">Este conteúdo ajuda a resolver o erro de "Baixo Valor" no AdSense. Ideal entre 150-160 caracteres.</p>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                             <Tag className="w-4 h-4 text-highlight" /> Palavras-Chave (Separadas por vírgula)
+                          </label>
+                          <Input name="keywords" defaultValue={editing?.keywords || ""} placeholder="grafica, adesivos, promocao..." />
+                        </div>
+
+                        <div className="pt-4 border-t border-border/50">
+                          <label className="text-sm font-bold text-primary flex items-center gap-2 mb-3">
+                             <Layers className="w-4 h-4" /> Conteúdo SEO (Visível no final da página)
+                          </label>
+                          <RichTextEditor value={fullDescription} onChange={setFullDescription} />
+                          <p className="text-[10px] text-muted-foreground mt-2 italic">Dica: Um texto rico aqui ajuda o Google a entender o valor do seu produto.</p>
+                        </div>
+                    </div>
+                 </div>
 
               {allFinishings.length > 0 && (
                 <div className="bg-secondary/50 rounded-xl p-4 border border-border space-y-3">
@@ -1148,266 +1012,6 @@ const AdminProdutos = () => {
 
                   <div className="flex justify-between items-center pt-4 border-t border-border/50">
                      <p className="text-[10px] text-muted-foreground italic max-w-sm">Dica: Ao usar variações hierárquicas, o sistema ignora o "Configurador Dinâmico" padrão abaixo.</p>
-                  </div>
-              </div>
-
-              <div className="mt-8 opacity-50 pointer-events-none grayscale">
-                  <div className="flex justify-between items-center mb-4">
-                     <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-                         <Sparkles className="w-5 h-5 text-primary" /> Configurador Dinâmico (Desabilitado ao usar Hierarquia)
-                     </h3>
-                  </div>
-
-                <div className="flex gap-2 mb-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Novo Atributo", type: "select", ui_type: "pills", options: [{ name: "Opção 1", price_adj: 0 }] }])}
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Atributo (Seleção)
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setConfigSchema(prev => [...prev, { id: generateUUID(), label: "Adicional", type: "counter", unit_price: 1.0 }])}
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Adicional (Contador)
-                  </Button>
-                </div>
-                
-                <p className="text-xs text-muted-foreground -mt-3 mb-4">
-                  Defina os campos que o cliente poderá selecionar.
-                </p>
-
-                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 flex gap-3 items-start">
-                  <Calculator className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-primary/80 leading-relaxed">
-                    <strong className="text-primary font-bold uppercase tracking-wider">Lógica Aditiva:</strong> O preço final será a soma de todos os acréscimos selecionados. Dica: Se quiser que a primeira opção defina o preço base (ex: 500 un), deixe o preço principal do produto como 0.
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                    {configSchema.length === 0 ? (
-                      <div className="text-center py-6 border-2 border-dashed border-primary/10 rounded-xl">
-                        <Package className="w-8 h-8 text-primary/20 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground italic">Nenhum campo personalizado definido.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {(configSchema || []).map((item, idx) => (
-                          <div key={item.id} className="bg-background rounded-xl p-4 border border-border shadow-sm group">
-                            <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
-                              <div className="flex items-center gap-3 flex-1">
-                                <div className="flex flex-col gap-0.5">
-                                  <Button 
-                                    type="button" 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                    disabled={idx === 0}
-                                    onClick={() => {
-                                      const next = [...configSchema];
-                                      [next[idx-1], next[idx]] = [next[idx], next[idx-1]];
-                                      setConfigSchema(next);
-                                    }}
-                                  >
-                                    <ChevronUp className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button 
-                                    type="button" 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-5 w-5 text-muted-foreground hover:text-primary disabled:opacity-30"
-                                    disabled={idx === configSchema.length - 1}
-                                    onClick={() => {
-                                      const next = [...configSchema];
-                                      const temp = next[idx];
-                                      next[idx] = next[idx+1];
-                                      next[idx+1] = temp;
-                                      setConfigSchema(next);
-                                    }}
-                                  >
-                                    <ChevronDown className="w-3.5 h-3.5" />
-                                  </Button>
-                                </div>
-                                <Input 
-                                  value={item.label} 
-                                  onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, label: e.target.value } : it))}
-                                  className="w-48 font-bold text-sm bg-secondary/30 h-8"
-                                  placeholder="Ex: Material"
-                                />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                                  {item.type === "select" ? (
-                                    <select 
-                                      value={item.ui_type || "select"}
-                                      onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, ui_type: e.target.value } : it))}
-                                      className="text-[10px] font-black uppercase tracking-widest text-primary px-2 py-0.5 bg-primary/10 rounded border-none outline-none cursor-pointer"
-                                    >
-                                      <option value="select">Lista</option>
-                                      <option value="pills">Botões</option>
-                                      <option value="checkbox">Multi-Seleção</option>
-                                    </select>
-                                  ) : (
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                                      Contador
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => setConfigSchema(prev => prev.filter((_, i) => i !== idx))}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-
-                            {item.type === "select" ? (
-                              <div className="space-y-2">
-                                {(item.options || []).map((opt: any, optIdx: number) => (
-                                  <div key={optIdx} className="flex gap-2 items-center bg-secondary/10 p-1.5 rounded-lg border border-border/30">
-                                    <div className="flex flex-col">
-                                      <Button 
-                                        type="button" 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-4 w-4 disabled:opacity-20"
-                                        disabled={optIdx === 0}
-                                        onClick={() => {
-                                          const next = [...configSchema];
-                                          const opts = [...next[idx].options];
-                                          [opts[optIdx-1], opts[optIdx]] = [opts[optIdx], opts[optIdx-1]];
-                                          next[idx].options = opts;
-                                          setConfigSchema(next);
-                                        }}
-                                      >
-                                        <ChevronUp className="w-2.5 h-2.5" />
-                                      </Button>
-                                      <Button 
-                                        type="button" 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-4 w-4 disabled:opacity-20"
-                                        disabled={optIdx === item.options.length - 1}
-                                        onClick={() => {
-                                          const next = [...configSchema];
-                                          const opts = [...next[idx].options];
-                                          [opts[optIdx+1], opts[optIdx]] = [opts[optIdx], opts[optIdx+1]];
-                                          next[idx].options = opts;
-                                          setConfigSchema(next);
-                                        }}
-                                      >
-                                        <ChevronDown className="w-2.5 h-2.5" />
-                                      </Button>
-                                    </div>
-                                    <Input 
-                                      value={opt.name} 
-                                      onChange={e => {
-                                        const next = [...configSchema];
-                                        next[idx].options[optIdx].name = e.target.value;
-                                        setConfigSchema(next);
-                                      }}
-                                      placeholder="Nome da opção"
-                                      className="flex-1 h-8 text-xs bg-background"
-                                    />
-                                    <div className="flex items-center gap-2 flex-1">
-                                      <div className="relative flex-1 group/cost">
-                                        <span className="absolute -top-3.5 left-1 text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-0 group-focus-within/cost:opacity-100 group-hover/cost:opacity-100 transition-opacity">Custo (R$)</span>
-                                        <Input 
-                                            type="number" 
-                                            step="0.01"
-                                            value={opt.cost_adj || ""} 
-                                            onChange={e => {
-                                                const next = [...configSchema];
-                                                const cost = parseFloat(e.target.value) || 0;
-                                                next[idx].options[optIdx].cost_adj = cost;
-                                                if (cost > 0) {
-                                                    next[idx].options[optIdx].price_adj = calculatePriceFromCost(cost);
-                                                }
-                                                setConfigSchema(next);
-                                            }}
-                                            placeholder="Custo"
-                                            className="h-8 text-xs bg-destructive/5 border-destructive/20 focus:border-destructive/40"
-                                        />
-                                      </div>
-                                      <div className="relative flex-1 group/price">
-                                        <span className="absolute -top-3.5 left-1 text-[9px] text-primary font-bold uppercase tracking-tighter opacity-0 group-focus-within/price:opacity-100 group-hover/price:opacity-100 transition-opacity">Preço (R$)</span>
-                                        <Input 
-                                            type="number" 
-                                            step="0.01"
-                                            value={opt.price_adj} 
-                                            onChange={e => {
-                                                const next = [...configSchema];
-                                                next[idx].options[optIdx].price_adj = parseFloat(e.target.value) || 0;
-                                                setConfigSchema(next);
-                                            }}
-                                            placeholder="Venda"
-                                            className="h-8 text-xs bg-primary/5 border-primary/20 focus:border-primary/40 font-bold"
-                                        />
-                                      </div>
-                                      {opt.cost_adj > 0 && opt.price_adj > 0 && (
-                                        <div className="text-[9px] font-black text-success min-w-[30px] text-right">
-                                            +{(((opt.price_adj - opt.cost_adj) / opt.cost_adj) * 100).toFixed(0)}%
-                                        </div>
-                                      )}
-                                    </div>
-                                    <Button 
-                                      type="button" 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-6 w-6 text-destructive"
-                                      onClick={() => {
-                                        const next = [...configSchema];
-                                        next[idx].options = next[idx].options.filter((_: any, i: number) => i !== optIdx);
-                                        setConfigSchema(next);
-                                      }}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                ))}
-                                <Button 
-                                  type="button" 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-[10px] h-7 px-2 text-primary"
-                                  onClick={() => {
-                                    const next = [...configSchema];
-                                    if (!next[idx].options) next[idx].options = [];
-                                    next[idx].options.push({ name: "Nova Opção", price_adj: 0 });
-                                    setConfigSchema(next);
-                                  }}
-                                >
-                                  <Plus className="w-3 h-3 mr-1" /> Adicionar Opção
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-4">
-                                <div className="flex-1">
-                                  <label className="text-[10px] text-muted-foreground uppercase font-bold mb-1 block">Valor por Unidade (R$)</label>
-                                  <Input 
-                                    type="number" 
-                                    step="0.01"
-                                    value={item.unit_price} 
-                                    onChange={e => setConfigSchema(prev => prev.map((it, i) => i === idx ? { ...it, unit_price: parseFloat(e.target.value) || 0 } : it))}
-                                    className="h-8 text-xs bg-secondary/30"
-                                  />
-                                </div>
-                                <div className="w-1/2 flex items-center gap-2 pt-4">
-                                   <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                                   <span className="text-[10px] text-muted-foreground italic">Pede a quantidade ao cliente na loja.</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
               </div>
 

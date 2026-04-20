@@ -1,7 +1,7 @@
 
--- Adicionar coluna markup na tabela categorias
-ALTER TABLE public.categories 
-ADD COLUMN IF NOT EXISTS markup numeric DEFAULT 2.0;
+-- Adicionar coluna markup na tabela de nós do catálogo (categorias hierárquicas)
+ALTER TABLE public.catalog_nodes 
+ADD COLUMN IF NOT EXISTS markup numeric DEFAULT 2.1;
 
 -- Adicionar colunas na tabela produtos
 ALTER TABLE public.products 
@@ -20,7 +20,7 @@ SET unit_cost =
 WHERE unit_cost = 0;
 
 -- Comentários para ajudar no futuro
-COMMENT ON COLUMN public.categories.markup IS 'Fator multiplicador para o preço de venda';
+COMMENT ON COLUMN public.catalog_nodes.markup IS 'Fator multiplicador para o preço de venda (Custo + Markup)';
 COMMENT ON COLUMN public.products.unit_cost IS 'Custo unitário base do produto';
 COMMENT ON COLUMN public.products.preco_minimo IS 'Menor preço arredondado considerando todas as variações';
 COMMENT ON COLUMN public.products.tipo_calculo IS 'Pode ser: unitario ou area';

@@ -327,7 +327,7 @@ const Produto = () => {
 
   return (
     <PublicLayout>
-      <SEOHead title={product.name} description={product.short_description} />
+      <SEOHead title={product.meta_title || product.name} description={product.meta_description || product.short_description} />
       
       <article className="py-12 container mx-auto px-4 max-w-6xl mt-6 lg:mt-10">
         <nav className="flex items-center gap-1.5 text-sm mb-10 flex-wrap">
@@ -779,6 +779,20 @@ const Produto = () => {
         </div>
 
         <div className="mt-20 space-y-20">
+           {product.full_description && (
+             <section className="bg-white rounded-[32px] p-8 md:p-12 border border-border/50 shadow-sm overflow-hidden">
+               <h2 className="font-display font-bold text-2xl mb-8 flex items-center gap-3">
+                 <Sparkles className="w-6 h-6 text-primary" /> Informações Complementares
+               </h2>
+               <div 
+                 className="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden" 
+                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.full_description) }} 
+               />
+               <p className="text-[10px] text-muted-foreground mt-8 pt-8 border-t border-border/50 italic">
+                 Este conteúdo é fornecido para fins informativos e de indexação técnica.
+               </p>
+             </section>
+           )}
            {(product.name?.toLowerCase().includes("cartão") || product.name?.toLowerCase().includes("logo")) && <ArtEditor productName={product.name} />}
            <SmartRecommendations productId={product.id} />
            <RelatedProducts productId={product.id} catalogNodeId={product.catalog_node_id} />
