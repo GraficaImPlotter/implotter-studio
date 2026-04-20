@@ -61,30 +61,64 @@ const AdminCRM = () => {
   };
 
   const renderCRMCard = (client: any) => {
+    const stage = stages[client.id] || "novo_contato";
+    const lastUpdate = client.created_at; // Fallback to created_at
+    
     return (
       <div 
         onClick={() => { setSelectedClientId(client.id); setActiveTab("list"); }}
-        className="bg-card border border-white/5 rounded-2xl p-4 shadow-xl hover:border-primary/20 transition-all cursor-pointer group"
+        className="bg-card border border-white/5 rounded-2xl p-4 shadow-xl hover:border-primary/20 transition-all cursor-grab active:cursor-grabbing group overflow-hidden relative"
       >
-        <div className="flex items-center gap-3 mb-3">
-           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-highlight/10 to-transparent border border-highlight/20 flex items-center justify-center font-black text-xs text-highlight">
-              {client.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
-           </div>
-           <div className="overflow-hidden">
-              <h4 className="text-xs font-bold text-foreground truncate">{client.full_name || "Sem nome"}</h4>
-              <p className="text-[10px] text-muted-foreground truncate">{client.email}</p>
-           </div>
-        </div>
+        {/* Glow effect on hover */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-transparent to-highlight/5 opacity-0 group-hover:opacity-100 transition-opacity blur-xl rounded-full" />
         
-        <div className="flex items-center justify-between pt-3 border-t border-white/5">
-           <div className="flex -space-x-2">
-              <div className="w-5 h-5 rounded-full border border-background bg-secondary text-[8px] flex items-center justify-center font-bold">L</div>
-              <div className="w-5 h-5 rounded-full border border-background bg-secondary text-[8px] flex items-center justify-center font-bold text-highlight">P</div>
-           </div>
-           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-[9px] font-black text-primary uppercase tracking-widest">Abrir</span>
-              <ExternalLink className="w-3 h-3 text-primary" />
-           </div>
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-3">
+             <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-highlight/20 to-transparent border border-highlight/20 flex items-center justify-center font-black text-xs text-highlight shadow-glow-sm">
+                   {client.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                </div>
+                <div className="overflow-hidden">
+                   <h4 className="text-xs font-bold text-foreground truncate max-w-[150px]">{client.full_name || "Sem nome"}</h4>
+                   <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{client.email}</p>
+                </div>
+             </div>
+             <div className="flex gap-1">
+                {client.phone && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/55${client.phone.replace(/\D/g, "")}`, "_blank"); }}
+                    className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    <Phone className="w-3 h-3" />
+                  </button>
+                )}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); window.open(`mailto:${client.email}`, "_blank"); }}
+                  className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 hover:bg-blue-500/20 transition-colors"
+                >
+                  <Mail className="w-3 h-3" />
+                </button>
+             </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-1">
+             <div className="flex items-center gap-2">
+                <div className="flex -space-x-1.5">
+                   <div className="w-5 h-5 rounded-full border-2 border-card bg-secondary text-[8px] flex items-center justify-center font-bold" title="Lead">L</div>
+                   {stage === "aprovado" && <div className="w-5 h-5 rounded-full border-2 border-card bg-emerald-500 text-[8px] flex items-center justify-center font-bold text-white" title="Cliente">C</div>}
+                </div>
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
+                  {new Date(lastUpdate).toLocaleDateString("pt-BR", { day: '2-digit', month: 'short' })}
+                </span>
+             </div>
+             
+             <div className="flex items-center gap-1.5 group/btn">
+                <span className="text-[9px] font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">Ver Detalhes</span>
+                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                   <ExternalLink className="w-3 h-3" />
+                </div>
+             </div>
+          </div>
         </div>
       </div>
     );

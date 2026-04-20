@@ -70,14 +70,37 @@ export default function AdminProducao() {
   });
 
   const moveMutation = useMutation({
-    mutationFn: async ({ orderId, newStatus }: { orderId: string; newStatus: OrderStatus }) => {
+    mutationFn: async ({ orderId, newStatus, order }: { orderId: string; newStatus: OrderStatus; order?: OrderWithItems }) => {
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
       if (error) throw error;
       await supabase.from("order_status_history").insert({ order_id: orderId, status: newStatus, notes: "Movido no Kanban de Produção" }).catch(() => {});
+      return { orderId, newStatus, order };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["production-orders"] });
-      toast({ title: "Status atualizado!" });
+      
+      const order = data.order;
+      if (data.newStatus === "pronto_envio" && order && order.customer_phone) {
+        const phone = order.customer_phone.replace(/\D/g, "");
+        const msg = encodeURIComponent(`Olá ${order.customer_name}! 👋 Boas notícias: o seu pedido #${order.order_number} ficou pronto para retirada/envio! 🥳`);
+        
+        toast({ 
+          title: "Status atualizado!", 
+          description: "O pedido está pronto. Deseja avisar o cliente?",
+          action: (
+            <Button 
+              size="sm" 
+              variant="hero" 
+              className="h-8 text-[10px] font-black group"
+              onClick={() => window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank")}
+            >
+              AVISAR WHATSAPP
+            </Button>
+          )
+        });
+      } else {
+        toast({ title: "Status atualizado!" });
+      }
     },
     onError: (err: any) => toast({ title: "Erro ao mover", description: err.message, variant: "destructive" }),
   });
@@ -183,7 +206,10 @@ export default function AdminProducao() {
           columns={PRODUCTION_COLUMNS}
           items={filtered}
           renderCard={renderOrderCard}
-          onMove={async (id, status) => { await moveMutation.mutateAsync({ orderId: id, newStatus: status as OrderStatus }); }}
+          onMove={async (id, status) => { 
+            const order = orders.find(o => o.id === id);
+            await moveMutation.mutateAsync({ orderId: id, newStatus: status as OrderStatus, order }); 
+          }}
           getItemStatus={(o) => o.status}
           getItemId={(o) => o.id}
           isLoading={isLoading}

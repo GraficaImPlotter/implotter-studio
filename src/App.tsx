@@ -70,6 +70,7 @@ const AdminLucro = lazy(() => import("./pages/admin/AdminLucro"));
 const AdminProducao = lazy(() => import("./pages/admin/AdminProducao"));
 const AdminAcabamentos = lazy(() => import("./pages/admin/AdminAcabamentos"));
 const AdminSocialProof = lazy(() => import("./pages/admin/AdminSocialProof"));
+const AdminProducaoMonitor = lazy(() => import("./pages/admin/AdminProducaoMonitor"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -174,6 +175,7 @@ const AppContent = () => {
             <Route path="/admin/producao" element={<AdminRoute><AdminProducao /></AdminRoute>} />
             <Route path="/admin/acabamentos" element={<AdminRoute><AdminAcabamentos /></AdminRoute>} />
             <Route path="/admin/social-proof" element={<AdminRoute><AdminSocialProof /></AdminRoute>} />
+            <Route path="/admin/producao/monitor" element={<AdminRoute><AdminProducaoMonitor /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
