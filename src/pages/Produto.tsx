@@ -21,6 +21,7 @@ import QuantityPriceTable from "@/components/product/QuantityPriceTable";
 import ShippingCalculator, { type ShippingOption } from "@/components/shipping/ShippingCalculator";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CatalogNode {
   id: string;
@@ -459,27 +460,27 @@ const Produto = () => {
                           <Palette className="w-4 h-4 text-primary" /> {item.label} (Escolha a Cor)
                         </Label>
                         <div className="space-y-3">
-                          {item.groups.map((group: any) => {
-                            const isGroupSel = selectedGroupId === group.id || selectedGroupId === group.name;
-                            return (
-                              <button
-                                key={group.id}
-                                onClick={() => {
-                                  setConfigValues(prev => ({ 
-                                    ...prev, 
-                                    [item.id + '_group']: group.id,
-                                    [item.id]: "" // Reset option when group changes
-                                  }));
-                                }}
-                                className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${isGroupSel ? "bg-primary border-primary text-white shadow-glow-sm scale-105 z-10" : "bg-card border-border hover:border-primary/40 text-muted-foreground"}`}
-                              >
-                                <span className="text-sm font-bold">{group.name}</span>
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isGroupSel ? "bg-white border-white" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
-                                  {isGroupSel && <Check className="w-3.5 h-3.5 text-primary" strokeWidth={4} />}
-                                </div>
-                              </button>
-                            );
-                          })}
+                          <Select 
+                            value={selectedGroupId || ""} 
+                            onValueChange={(val) => {
+                              setConfigValues(prev => ({ 
+                                ...prev, 
+                                [item.id + '_group']: val,
+                                [item.id]: "" 
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="w-full h-12 rounded-xl border-2 border-border bg-card font-bold hover:border-primary/40 transition-all text-foreground">
+                              <SelectValue placeholder={`Selecione ${item.label}...`} />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-border bg-popover shadow-xl">
+                              {item.groups.map((group: any) => (
+                                <SelectItem key={group.id} value={group.id || group.name} className="font-medium focus:bg-primary/5 focus:text-primary py-3">
+                                  {group.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 
@@ -490,26 +491,24 @@ const Produto = () => {
                             <Package className="w-4 h-4 text-primary" /> Opções Disponíveis para {selectedGroup.name}
                           </Label>
                           <div className="space-y-3">
-                            {selectedGroup.options.map((opt: any, optIdx: number) => {
-                              const isSel = selectedOptionName === opt.name;
-                              return (
-                                <button
-                                  key={optIdx}
-                                  onClick={() => setConfigValues(prev => ({ ...prev, [item.id]: opt.name }))}
-                                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between group ${isSel ? "bg-highlight/5 border-highlight shadow-glow-sm" : "bg-card border-border hover:border-highlight/30"}`}
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? "bg-highlight border-highlight" : "border-muted-foreground/30 group-hover:border-highlight/50"}`}>
-                                      {isSel && <Check className="w-4 h-4 text-white" strokeWidth={4} />}
+                            <Select 
+                              value={selectedOptionName || ""} 
+                              onValueChange={(val) => setConfigValues(prev => ({ ...prev, [item.id]: val }))}
+                            >
+                              <SelectTrigger className="w-full h-12 rounded-xl border-2 border-highlight/30 bg-card font-bold hover:border-highlight/60 transition-all text-foreground">
+                                <SelectValue placeholder="Selecione a Tiragem/Quantidade..." />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-highlight/20 bg-popover shadow-xl">
+                                {selectedGroup.options.map((opt: any, optIdx: number) => (
+                                  <SelectItem key={optIdx} value={opt.name} className="py-3 focus:bg-highlight/5 focus:text-highlight">
+                                    <div className="flex items-center justify-between w-full gap-8 min-w-[200px]">
+                                      <span className="font-bold">{opt.name}</span>
+                                      <span className="font-black text-highlight">R$ {Number(opt.price).toFixed(2)}</span>
                                     </div>
-                                    <span className={`text-sm font-bold ${isSel ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
-                                  </div>
-                                  <div className="text-right">
-                                    <span className={`text-lg font-black ${isSel ? "text-highlight" : "text-foreground opacity-80"}`}>R$ {Number(opt.price).toFixed(2)}</span>
-                                  </div>
-                                </button>
-                              );
-                            })}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </motion.div>
                       )}
@@ -567,60 +566,40 @@ const Produto = () => {
                                 const next = isSel ? current.filter(x => x !== opt.name) : [...current, opt.name];
                                 setConfigValues(v => ({...v, [item.id]: next}));
                               }} 
-                              className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all group ${isSel ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-card border-border hover:border-primary/30"}`}
+                              className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all group ${isSel ? "bg-primary/5 border-primary shadow-glow-sm" : "bg-card border-border hover:border-primary/30"}`}
                             >
-                               <div className="flex items-center gap-3">
-                                  <div className={`w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
-                                     {isSel && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
+                               <div className="flex items-center gap-2">
+                                  <div className={`w-4 h-4 rounded border-2 transition-all flex items-center justify-center ${isSel ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
+                                     {isSel && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
                                   </div>
-                                  <span className={`text-[13px] transition-colors ${isSel ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
+                                  <span className={`text-[12px] transition-colors ${isSel ? "font-bold text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
                                </div>
-                               {opt.price_adj > 0 && <span className="text-[11px] font-black text-primary">+ R$ {Number(opt.price_adj).toFixed(2)}</span>}
+                               {opt.price_adj > 0 && <span className="text-[10px] font-black text-primary">+ R$ {Number(opt.price_adj).toFixed(2)}</span>}
                             </button>
                           );
                         })}
-                      </div>
-                    ) : item.ui_type === 'select' ? (
-                      <div className="relative">
-                        <select 
-                          className="w-full h-12 px-4 rounded-xl border border-border bg-secondary/20 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none cursor-pointer hover:border-primary/40 text-foreground"
-                          value={configValues[item.id] || ""}
-                          onChange={e => setConfigValues(v => ({ ...v, [item.id]: e.target.value }))}
-                        >
-                          <option value="" disabled>Selecione uma opção...</option>
-                          {filteredOptions.map((opt: any) => {
-                            if (!opt || !opt.name) return null;
-                            const costText = opt.price_adj > 0 ? ` (+ R$ ${Number(opt.price_adj).toFixed(2)})` : "";
-                            return <option key={opt.name} value={opt.name}>{opt.name}{costText}</option>;
-                          })}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {filteredOptions.map((opt: any) => {
-                          if (!opt || !opt.name) return null;
-                          const isSel = configValues[item.id] === opt.name;
-                          return (
-                            <button 
-                              key={opt.name} 
-                              onClick={() => setConfigValues(v => ({ ...v, [item.id]: opt.name }))} 
-                              className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between group ${isSel ? "bg-primary border-primary text-white shadow-glow-sm scale-102 z-10" : "bg-card border-border hover:border-primary/40 text-muted-foreground hover:text-foreground"}`}
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? "bg-white border-white" : "border-muted-foreground/30 group-hover:border-primary/50"}`}>
-                                  {isSel && <Check className="w-4 h-4 text-primary" strokeWidth={4} />}
-                                </div>
-                                <span className={`text-sm font-bold ${isSel ? "text-white" : "text-muted-foreground group-hover:text-foreground"}`}>{opt.name}</span>
-                              </div>
-                              {opt.price_adj > 0 && (
-                                <span className={`text-[11px] font-black ${isSel ? "text-white/80" : "text-primary opacity-80"}`}>
-                                  + R$ {Number(opt.price_adj).toFixed(2)}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
+                        <Select 
+                          value={configValues[item.id] || ""} 
+                          onValueChange={(val) => setConfigValues(v => ({ ...v, [item.id]: val }))}
+                        >
+                          <SelectTrigger className="w-full h-12 rounded-xl border-2 border-border bg-card font-bold hover:border-primary/40 transition-all text-foreground">
+                            <SelectValue placeholder={`Selecione ${item.label}...`} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-border bg-popover shadow-xl">
+                            {filteredOptions.map((opt: any) => {
+                              if (!opt || !opt.name) return null;
+                              const costText = opt.price_adj > 0 ? ` (+ R$ ${Number(opt.price_adj).toFixed(2)})` : "";
+                              return (
+                                <SelectItem key={opt.name} value={opt.name} className="py-3 focus:bg-primary/5 focus:text-primary">
+                                  {opt.name}{costText}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </motion.div>
