@@ -491,13 +491,13 @@ const AdminOrcamentos = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    <div className="flex items-center justify-end gap-0.5 flex-wrap">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openView(q)} title="Visualizar"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(q)} title="Editar"><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePDF(q)} title="Orçamento Simples"><FileText className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-highlight hover:text-highlight" onClick={() => handlePremiumPDF(q)} title="Proposta Premium"><Sparkles className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReceipt(q)} title="Gerar Recibo"><FileText className="w-4 h-4 text-success" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendWhatsApp(q)} title="WhatsApp"><Send className="w-4 h-4" /></Button>
+                    <div className="flex items-center justify-end gap-1 flex-wrap">
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-blue-500 border-blue-100 hover:bg-blue-50" onClick={() => openView(q)} title="Visualizar"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-amber-500 border-amber-100 hover:bg-amber-50" onClick={() => openEdit(q)} title="Editar"><Pencil className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-slate-500 border-slate-100 hover:bg-slate-50" onClick={() => handlePDF(q)} title="Orçamento Simples"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-highlight border-highlight/20 hover:bg-highlight/10 shadow-glow-sm" onClick={() => handlePremiumPDF(q)} title="Proposta Premium"><Sparkles className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-success border-success/20 hover:bg-success/10" onClick={() => handleReceipt(q)} title="Gerar Recibo"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8 text-emerald-600 border-emerald-100 hover:bg-emerald-50" onClick={() => sendWhatsApp(q)} title="WhatsApp"><Send className="w-4 h-4" /></Button>
                       {q.status !== "aceito" && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-success hover:text-success" onClick={() => updateStatus(q, "aceito")} title="Aceitar"><CheckCircle className="w-4 h-4" /></Button>
                       )}
