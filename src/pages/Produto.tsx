@@ -95,7 +95,16 @@ const Produto = () => {
           supabase.from("product_finishings").select("finishing_id, finishings(id, name, price, pricing_mode, group_name)").eq("product_id", data.id),
         ]);
         setFaqs(faqData ?? []);
-        setAvailableFinishings((pfData ?? []).map((pf: any) => pf.finishings).filter(Boolean));
+        // Process pfData to ensure we get an object and not an array for finishings
+        const processedFinishings = (pfData ?? []).map((pf: any) => {
+          // Supabase can return the join as an object or as an array
+          const f = pf.finishings;
+          if (Array.isArray(f)) return f[0];
+          return f;
+        }).filter(f => f && f.id);
+        
+        console.log("Processed Finishings:", processedFinishings); // Keeping for user debug if needed
+        setAvailableFinishings(processedFinishings);
         setSelectedFinishings([]);
         setFinishingQuantities({});
 
@@ -608,12 +617,13 @@ const Produto = () => {
             </div>
 
             {availableFinishings.length > 0 && (
-              <div className="space-y-4 mb-10">
-                <Separator className="opacity-50" />
-                <Label className="text-sm font-black uppercase tracking-widest text-foreground/70 flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-primary" /> Acabamentos Extras
+              <div className="space-y-6 mb-12 bg-primary/5 p-6 rounded-3xl border border-primary/10">
+                <Separator className="opacity-50 mb-2" />
+                <Label className="text-lg font-black uppercase tracking-widest text-foreground flex items-center gap-3">
+                  <Palette className="w-5 h-5 text-primary" /> Personalize seu Acabamento
                 </Label>
-                <div className="flex flex-col gap-6">
+                <p className="text-xs text-muted-foreground -mt-2">Escolha as opções extras para valorizar seu produto.</p>
+                <div className="flex flex-col gap-8 mt-4">
                   {Object.entries(
                     availableFinishings.reduce((acc: any, f: any) => {
                       const group = f.group_name || "Avulsos";
@@ -758,7 +768,7 @@ const Produto = () => {
                 <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
                   <FileDown className="w-5 h-5 text-primary" /> Ficha Técnica
                 </h3>
-                <div className="text-muted-foreground text-sm prose prose-sm max-w-none bg-secondary/30 rounded-3xl p-8 border border-border/50" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.specifications) }} />
+                <div className="text-muted-foreground text-sm prose prose-sm max-w-none bg-secondary/30 rounded-3xl p-8 border border-border/50 break-words whitespace-pre-line overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.specifications) }} />
               </div>
             )}
 
@@ -790,7 +800,7 @@ const Produto = () => {
                  <Sparkles className="w-6 h-6 text-primary" /> Informações Complementares
                </h2>
                <div 
-                 className="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden" 
+                 className="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden whitespace-pre-line" 
                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.full_description) }} 
                />
                </section>

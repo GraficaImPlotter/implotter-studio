@@ -49,7 +49,7 @@ const AdminAcabamentos = () => {
       await supabase.from("finishings").update(payload).eq("id", editing.id);
       toast({ title: "Acabamento atualizado!" });
     } else {
-      await supabase.from("finishings").insert(payload);
+      await supabase.from("finishings").insert({ ...payload, is_active: true, sort_order: items.length });
       toast({ title: "Acabamento criado!" });
     }
     setOpen(false);
