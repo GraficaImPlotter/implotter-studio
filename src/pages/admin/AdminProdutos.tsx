@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, Sparkles, Loader2, Save, Settings, Layers, Palette, Copy, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, Sparkles, Loader2, Save, Settings, Layers, Palette, Copy, Image as ImageIcon, Clock } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import { FRETE_DILUIDO } from "@/lib/price-utils";
 import RichTextEditor from "@/components/admin/RichTextEditor";
