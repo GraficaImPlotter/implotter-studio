@@ -14,6 +14,7 @@ import {
   Search, Eye, ShoppingCart, Share2, Link as LinkIcon,
 } from "lucide-react";
 import { generateQuotePDF } from "@/lib/quote-pdf";
+import { generatePremiumProposalPDF } from "@/lib/premium-proposal-pdf";
 import { generateReceiptPDF } from "@/lib/receipt-pdf";
 import { sanitizeSearchInput } from "@/lib/sanitize-search";
 
@@ -380,6 +381,11 @@ const AdminOrcamentos = () => {
     generateQuotePDF(quote, (items ?? []) as QuoteItem[]);
   };
 
+  const handlePremiumPDF = async (quote: Quote) => {
+    const { data: items } = await supabase.from("quote_items").select("*").eq("quote_id", quote.id).order("sort_order");
+    generatePremiumProposalPDF(quote, (items ?? []) as QuoteItem[]);
+  };
+
   const handleReceipt = async (quote: Quote) => {
     const { data: items } = await supabase.from("quote_items").select("*").eq("quote_id", quote.id).order("sort_order");
     generateReceiptPDF({
@@ -488,7 +494,8 @@ const AdminOrcamentos = () => {
                     <div className="flex items-center justify-end gap-0.5 flex-wrap">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openView(q)} title="Visualizar"><Eye className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(q)} title="Editar"><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePDF(q)} title="Gerar PDF"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePDF(q)} title="Orçamento Simples"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-highlight hover:text-highlight" onClick={() => handlePremiumPDF(q)} title="Proposta Premium"><Sparkles className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReceipt(q)} title="Gerar Recibo"><FileText className="w-4 h-4 text-success" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => sendWhatsApp(q)} title="WhatsApp"><Send className="w-4 h-4" /></Button>
                       {q.status !== "aceito" && (

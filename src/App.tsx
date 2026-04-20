@@ -42,6 +42,7 @@ const AcompanharPedido = lazy(() => import("./pages/AcompanharPedido"));
 const OrcamentoPublico = lazy(() => import("./pages/OrcamentoPublico"));
 const MelhorEnvioCallback = lazy(() => import("./pages/MelhorEnvioCallback"));
 const RastrearPedido = lazy(() => import("./pages/RastrearPedido"));
+const CatalogoDigital = lazy(() => import("./pages/CatalogoDigital"));
 
 // Lazy-loaded admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -71,6 +72,8 @@ const AdminProducao = lazy(() => import("./pages/admin/AdminProducao"));
 const AdminAcabamentos = lazy(() => import("./pages/admin/AdminAcabamentos"));
 const AdminSocialProof = lazy(() => import("./pages/admin/AdminSocialProof"));
 const AdminProducaoMonitor = lazy(() => import("./pages/admin/AdminProducaoMonitor"));
+const AdminAbandonedCarts = lazy(() => import("./pages/admin/AdminAbandonedCarts"));
+const CostEstimator = lazy(() => import("./pages/admin/CostEstimator"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,6 +148,7 @@ const AppContent = () => {
             <Route path="/assistente" element={<AssistentePedido />} />
             <Route path="/acompanhar/:orderId" element={<AcompanharPedido />} />
             <Route path="/rastrear" element={<RastrearPedido />} />
+            <Route path="/catalogo" element={<CatalogoDigital />} />
             <Route path="/orcamento/:quoteId" element={<OrcamentoPublico />} />
             <Route path="/melhor-envio/callback" element={<MelhorEnvioCallback />} />
 
@@ -176,6 +180,8 @@ const AppContent = () => {
             <Route path="/admin/acabamentos" element={<AdminRoute><AdminAcabamentos /></AdminRoute>} />
             <Route path="/admin/social-proof" element={<AdminRoute><AdminSocialProof /></AdminRoute>} />
             <Route path="/admin/producao/monitor" element={<AdminRoute><AdminProducaoMonitor /></AdminRoute>} />
+            <Route path="/admin/carrinhos-abandonados" element={<AdminRoute><AdminAbandonedCarts /></AdminRoute>} />
+            <Route path="/admin/calculadora" element={<AdminRoute><CostEstimator /></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -67,9 +67,30 @@ const AdminPedidos = () => {
       ids: Array.from(selectedOrders), 
       status: bulkStatus 
     }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         setSelectedOrders(new Set());
         setBulkStatus("");
+        
+        // Feature: Google Review Booster
+        if (bulkStatus === "finalizado") {
+          toast({
+            title: "Pedido Finalizado! 🎉",
+            description: "Gostaria de pedir uma avaliação para este cliente no Google?",
+            action: (
+              <Button size="sm" variant="hero" className="h-8 text-[10px] font-black group" onClick={() => {
+                const orderId = Array.isArray(selectedOrders) ? Array.from(selectedOrders)[0] : Array.from(selectedOrders)[0];
+                const order = orders.find(o => o.id === orderId);
+                if (order && order.customer_phone) {
+                  const phone = order.customer_phone.replace(/\D/g, "");
+                  const msg = encodeURIComponent(`Olá ${order.customer_name}! 😊 Esperamos que tenha amado o seu pedido #${order.order_number}! 🎨\n\nPoderia nos ajudar avaliando nosso trabalho no Google? Isso nos ajuda muito! 🙏\n\nLink: https://g.page/r/YOUR_REVIEW_LINK/review`);
+                  window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+                }
+              }}>
+                PEDIR AVALIAÇÃO
+              </Button>
+            )
+          });
+        }
       }
     });
   };

@@ -164,7 +164,15 @@ export function CommandPalette() {
             <span className="font-semibold text-sm">Pedidos</span>
             <CommandShortcut>P</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => navigate("/admin/crm"))} className="rounded-xl px-4 h-11 aria-selected:bg-primary/10">
+          <CommandItem onSelect={() => runCommand(() => navigate("/admin/carrinhos-abandonados"))} className="rounded-xl px-4 h-11 aria-selected:bg-primary/10">
+            <ShoppingCart className="mr-3 h-4 w-4 text-primary" />
+            <span className="font-semibold text-sm">Carrinhos Abandonados</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate("/admin/calculadora"))} className="rounded-xl px-4 h-11 aria-selected:bg-success/10">
+            <Calculator className="mr-3 h-4 w-4 text-success" />
+            <span className="font-semibold text-sm">Calculadora de Preços</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => navigate("/admin/crm"))} className="rounded-xl px-4 h-11 aria-selected:bg-highlight-glow">
             <MessageSquare className="mr-3 h-4 w-4 text-highlight-glow" />
             <span className="font-semibold text-sm">CRM Pipeline</span>
             <CommandShortcut>C</CommandShortcut>
