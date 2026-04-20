@@ -692,7 +692,9 @@ const AdminProdutos = () => {
                        <button type="button" className="absolute top-4 right-4 text-destructive hover:scale-110" onClick={() => setGroupedVariants(prev => prev.filter(g => g.id !== group.id))}><Trash2 className="w-4 h-4" /></button>
                        <div className="flex items-center gap-3 w-3/4">
                           <Palette className="w-4 h-4 text-primary" />
-                          <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g.                       <div className="space-y-3 ml-7">
+                          <Input value={group.name} onChange={e => setGroupedVariants(prev => prev.map(g => g.id === group.id ? { ...g, name: e.target.value } : g))} placeholder="Ex: 4x0, Couche 300g..." className="font-bold" />
+                       </div>
+                       <div className="space-y-3 ml-7">
                           {group.options.map((opt, optIdx) => (
                             <div key={optIdx} className="space-y-2 group p-3 rounded-lg border border-border/30 hover:bg-muted/30 transition-colors">
                               <div className="flex gap-3 items-center">
@@ -786,8 +788,6 @@ const AdminProdutos = () => {
                                 </div>
                               )}
                             </div>
-                          ))}
-                      </div>
                           ))}
                           <Button type="button" variant="ghost" size="sm" className="h-8 text-[11px]" onClick={() => {
                              const next = [...group.options, { name: "", cost: 0, price: 0 }];
