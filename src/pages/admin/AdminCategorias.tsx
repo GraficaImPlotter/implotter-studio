@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree, Upload, Image as ImageIcon, Loader2, Home } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, FolderTree, Upload, Image as ImageIcon, Loader2, Home, Calculator } from "lucide-react";
 import { generateSlug } from "@/lib/slug";
 import { generateUUID } from "@/lib/uuid";
 
