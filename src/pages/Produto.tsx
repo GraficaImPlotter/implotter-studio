@@ -357,7 +357,7 @@ const Produto = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 lg:sticky lg:top-24 h-fit">
             <div className="aspect-square rounded-3xl overflow-hidden glass-card-premium border-gradient-premium shadow-2xl group">
               <motion.img
                 key={selectedImage}
@@ -444,9 +444,6 @@ const Produto = () => {
                    <p className="text-xs text-muted-foreground font-bold">{selectedQuantity.toLocaleString()} unidades</p>
                 </div>
               )}
-              <div className="mt-4 pt-4 border-t border-border/50 flex flex-col gap-2">
-                <p className="text-sm text-success font-semibold">Pagamento via PIX • Sem taxas</p>
-                {product.estimated_days && <p className="text-sm text-muted-foreground flex items-center gap-2"><Clock className="w-4 h-4 text-highlight" /> Prazo: ~{product.estimated_days} dias úteis</p>}
               </div>
             </div>
 
@@ -754,13 +751,24 @@ const Produto = () => {
                <Button onClick={() => { handleAddToCart(); if(canAddToCart) window.location.href="/checkout"; }} disabled={!canAddToCart} variant="hero" className="flex-1 h-14 bg-success hover:bg-success/90 text-white font-black">COMPRAR AGORA</Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-8">
+            <div className="grid grid-cols-2 gap-3 mb-6">
                {trustItems.map((it, i) => (
-                 <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl bg-secondary/50 border border-border/50">
-                   <it.icon className="w-4 h-4 text-highlight" />
-                   <span className="text-xs font-bold">{it.text}</span>
+                 <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-secondary/30 border border-border/30">
+                   <it.icon className="w-3.5 h-3.5 text-highlight" />
+                   <span className="text-[10px] font-bold">{it.text}</span>
                  </div>
                ))}
+            </div>
+            
+            <div className="flex flex-col gap-2 mb-8 bg-success/5 p-4 rounded-2xl border border-success/10">
+                <p className="text-xs text-success font-black uppercase tracking-widest flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Pagamento via PIX • Sem taxas
+                </p>
+                {product.estimated_days && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-highlight" /> Produção estimada: ~{product.estimated_days} dias úteis
+                    </p>
+                )}
             </div>
 
             {product.specifications && (
@@ -793,7 +801,7 @@ const Produto = () => {
           </motion.div>
         </div>
 
-        <div className="mt-20 space-y-20">
+        <div className="mt-12 space-y-16">
            {product.full_description && (
              <section className="bg-white rounded-[32px] p-8 md:p-12 border border-border/50 shadow-sm overflow-hidden">
                <h2 className="font-display font-bold text-2xl mb-8 flex items-center gap-3">
