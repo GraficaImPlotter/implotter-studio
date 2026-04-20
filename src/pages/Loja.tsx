@@ -81,13 +81,13 @@ const SidebarFilters = ({
         </div>
       </div>
 
-      {/* Attribute Filters (Material, Cor, Formato) */}
-      {['Material', 'Cor', 'Formato'].map(attr => (
+      {/* Dynamic Attribute Filters */}
+      {Object.keys(availableOptions).map(attr => (
         <div key={attr} className="space-y-3 pt-6 border-t border-border/50">
           <h3 className="text-sm font-bold text-foreground font-display">{attr}</h3>
           
           <div className="flex flex-wrap gap-2">
-            {(availableOptions[attr] || []).length > 0 ? (
+            {availableOptions[attr].length > 0 ? (
               availableOptions[attr].map(val => {
                 const isSelected = filters[attr]?.includes(val);
                 return (
@@ -122,11 +122,7 @@ const Loja = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({
-    "Material": [],
-    "Cor": [],
-    "Formato": []
-  });
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const selectedNodeId = searchParams.get("node") || null;
@@ -181,31 +177,57 @@ const Loja = () => {
   useEffect(() => { load(); }, [selectedNodeId, sortBy, search, load]);
 
   const availableFilters = useMemo(() => {
-    const opts: Record<string, Set<string>> = { "Material": new Set(), "Cor": new Set(), "Formato": new Set() };
+    const opts: Record<string, Set<string>> = {};
+    const blacklist = ["Opções do Produto", "hierarchy_v1", "Opções"];
+
     products.forEach(p => {
       if (Array.isArray(p.configuration_schema)) {
         p.configuration_schema.forEach((attr: any) => {
-          if (['Material', 'Cor', 'Formato'].includes(attr.label) && Array.isArray(attr.options)) {
+          // Collect from flat attributes
+          if (attr.label && !blacklist.includes(attr.label) && Array.isArray(attr.options)) {
+            if (!opts[attr.label]) opts[attr.label] = new Set();
             attr.options.forEach((opt: any) => opts[attr.label].add(opt.name));
+          }
+          // Collect from hierarchical attributes
+          if (attr.ui_type === 'hierarchy' && Array.isArray(attr.groups)) {
+             attr.groups.forEach((group: any) => {
+                if (group.name && !blacklist.includes(group.name) && Array.isArray(group.options)) {
+                   if (!opts[group.name]) opts[group.name] = new Set();
+                   group.options.forEach((opt: any) => opts[group.name].add(opt.name));
+                }
+             });
           }
         });
       }
     });
-    return {
-      "Material": Array.from(opts["Material"]).sort(),
-      "Cor": Array.from(opts["Cor"]).sort(),
-      "Formato": Array.from(opts["Formato"]).sort(),
-    };
+
+    const result: Record<string, string[]> = {};
+    Object.keys(opts).sort().forEach(key => {
+      result[key] = Array.from(opts[key]).sort();
+    });
+    return result;
   }, [products]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
       for (const [attr, selectedVals] of Object.entries(activeFilters)) {
         if (selectedVals.length === 0) continue;
-        const productHasAttr = p.configuration_schema?.some((schemaAttr: any) => {
-          return schemaAttr.label === attr && schemaAttr.options?.some((opt: any) => selectedVals.includes(opt.name));
+        
+        const hasAttr = p.configuration_schema?.some((schemaAttr: any) => {
+          // Check top-level (flat)
+          if (schemaAttr.label === attr && schemaAttr.options?.some((opt: any) => selectedVals.includes(opt.name))) {
+            return true;
+          }
+          // Check nested (hierarchy)
+          if (schemaAttr.ui_type === 'hierarchy' && Array.isArray(schemaAttr.groups)) {
+            return schemaAttr.groups.some((group: any) => 
+               group.name === attr && group.options?.some((opt: any) => selectedVals.includes(opt.name))
+            );
+          }
+          return false;
         });
-        if (!productHasAttr) return false;
+
+        if (!hasAttr) return false;
       }
       return true;
     });

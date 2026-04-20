@@ -1,0 +1,1 @@
+import { supabase } from "./integrations/supabase/client"; async function dump() { const { data } = await supabase.from("products").select("name, configuration_schema").limit(10); console.log(JSON.stringify(data, null, 2)); } dump();
