@@ -59,7 +59,7 @@ const AdminAvaliacoes = lazy(() => import("./pages/admin/AdminAvaliacoes"));
 const AdminCupons = lazy(() => import("./pages/admin/AdminCupons"));
 const AdminAfiliados = lazy(() => import("./pages/admin/AdminAfiliados"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
-const AdminRelatorios = lazy(() => import("./pages/admin/AdminRelatoriosV2"));
+const AdminRelatorios = lazy(() => import("./pages/admin/AdminRelatorios"));
 const AdminDashboardFinanceiro = lazy(() => import("./pages/admin/AdminDashboardFinanceiro"));
 const AdminConfiguracoes = lazy(() => import("./pages/admin/AdminConfiguracoes"));
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
