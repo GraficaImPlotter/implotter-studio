@@ -14,7 +14,7 @@ import {
   Users, ShoppingCart, Settings, Package, 
   MessageSquare, UserPlus, Factory, BarChart3,
   Search, Plus, LayoutDashboard, Database, Loader2,
-  Calendar, Hash, Tag
+  Calendar, Hash, Tag, Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
