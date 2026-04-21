@@ -63,12 +63,12 @@ class ErrorBoundary extends React.Component<
                 Limpar Cache e Início
               </button>
             </div>
-            {process.env.NODE_ENV === "development" && this.state.error && (
+            {this.state.error && (
               <details className="mt-6 text-left">
                 <summary className="text-sm text-muted-foreground cursor-pointer">
-                  Detalhes do erro (dev)
+                  Detalhes do erro
                 </summary>
-                <pre className="mt-2 p-3 bg-muted rounded-lg text-xs overflow-auto max-h-48 text-destructive">
+                <pre className="mt-2 p-3 bg-muted rounded-lg text-xs overflow-auto max-h-48 text-destructive whitespace-pre-wrap">
                   {this.state.error.message}
                   {"\n"}
                   {this.state.error.stack}
