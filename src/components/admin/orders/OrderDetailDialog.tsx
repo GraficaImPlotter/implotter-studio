@@ -271,8 +271,8 @@ const OrderDetailDialog = ({
                   <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Logística & Envio</h3>
                   
                   <Button
-                    variant="hero"
-                    className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter text-xs shadow-glow bg-gradient-to-r from-highlight to-highlight/80"
+                    variant="outline"
+                    className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter text-xs border-2 border-yellow-400 bg-yellow-400/10 text-yellow-600 hover:bg-yellow-400/20"
                     onClick={() => generateDeliveryLabelPDF({
                       orderNumber: order.order_number,
                       date: order.created_at,

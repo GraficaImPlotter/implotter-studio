@@ -49,7 +49,8 @@ export function generateDeliveryLabelPDF(data: DeliveryLabelData) {
   const dateStr = new Date(data.date).toLocaleDateString("pt-BR");
   const nowStr = new Date().toLocaleString("pt-BR");
   const companyName = data.company.name || "Gráfica ImPlotter";
-  const qrImg = makeQR(`${window.location.origin}/admin/pedidos?q=${data.orderNumber}`);
+  const storeUrl = `${window.location.origin}/loja?utm_source=delivery_label&utm_campaign=recompra`;
+  const qrImg = makeQR(storeUrl);
 
   const itemsHtml = data.items
     .map(it => `• ${it.quantity}x ${esc(it.description)}`)
@@ -146,7 +147,7 @@ export function generateDeliveryLabelPDF(data: DeliveryLabelData) {
 
       <div class="qr-side">
         <img src="${qrImg}" alt="QR Code">
-        <p>Acompanhe seu pedido</p>
+        <p>Escaneie para comprar mais!</p>
       </div>
     </div>
 
