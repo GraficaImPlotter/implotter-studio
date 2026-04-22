@@ -113,6 +113,30 @@ const AdminConfiguracoes = () => {
           <p className="text-xs text-muted-foreground">
             Configure os valores padrão para cálculo de frete. O CEP de origem é obrigatório.
           </p>
+          
+          <div className="pt-4 border-t border-border/50">
+            <h3 className="text-sm font-bold text-foreground mb-2">Autenticação Melhor Envio</h3>
+            <p className="text-[10px] text-muted-foreground mb-4">
+              Necessário para calcular frete e gerar etiquetas automaticamente.
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full border-highlight/30 text-highlight hover:bg-highlight/10 gap-2 h-11 rounded-xl"
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.functions.invoke("melhor-envio-oauth", {
+                    body: { action: "get_auth_url", redirect_uri: `${window.location.origin}/melhor-envio/callback` }
+                  });
+                  if (error || !data?.url) throw new Error(error?.message || "Não foi possível gerar a URL de autenticação.");
+                  window.location.href = data.url;
+                } catch (err: any) {
+                  toast({ title: "Erro na conexão", description: err.message, variant: "destructive" });
+                }
+              }}
+            >
+              <Truck className="w-4 h-4" /> Conectar conta Melhor Envio
+            </Button>
+          </div>
         </div>
       </div>
 

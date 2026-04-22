@@ -78,8 +78,8 @@ serve(async (req) => {
   try {
     const token = await getToken();
     if (!token) {
-      return new Response(JSON.stringify({ error: "Token Melhor Envio não configurado. Configure OAuth nas configurações." }), {
-        status: 500,
+      return new Response(JSON.stringify({ error: "Token Melhor Envio não configurado. Por favor, conecte sua conta nas configurações do Admin." }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -158,8 +158,8 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("Shipping calc error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno ao calcular frete" }), {
-      status: 500,
+    return new Response(JSON.stringify({ error: "Erro interno ao calcular frete", details: err instanceof Error ? err.message : String(err) }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

@@ -191,7 +191,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="h-8 w-px bg-white/5 mx-2" />
               <NotificationHub />
               <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-highlight/20 to-transparent border border-highlight/30 flex items-center justify-center text-highlight font-black text-xs hover:scale-105 transition-transform cursor-pointer">
-                 {user?.email?.split('@')[0].slice(0, 2).toUpperCase()}
+                 {user?.email ? user.email.split('@')[0].slice(0, 2).toUpperCase() : "AD"}
               </div>
             </div>
           </header>

@@ -238,7 +238,8 @@ const AdminDashboard = () => {
                 </div>
               ) : (
                 abandonedOrders.map(order => {
-                  const whatsappMsg = `Olá ${order.customer_name.split(' ')[0]}! Notamos que você iniciou um pedido na ImPlotter (#${order.order_number}) e parou na etapa de pagamento. Posso te ajudar com alguma dúvida técnica ou cupom?`;
+                  const firstName = order.customer_name ? order.customer_name.split(' ')[0] : 'Cliente';
+                  const whatsappMsg = `Olá ${firstName}! Notamos que você iniciou um pedido na ImPlotter (#${order.order_number}) e parou na etapa de pagamento. Posso te ajudar com alguma dúvida técnica ou cupom?`;
                   const phone = order.customer_phone?.replace(/\D/g, "");
                   const hasPhone = !!phone && phone.length >= 8;
                   

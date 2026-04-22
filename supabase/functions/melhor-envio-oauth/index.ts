@@ -28,6 +28,15 @@ serve(async (req) => {
     }
 
     const { code, redirect_uri, action } = await req.json();
+    
+    // Action: get_auth_url - returns the URL to start OAuth
+    if (action === "get_auth_url") {
+      const scope = "read-all write-all";
+      const authUrl = `https://melhorenvio.com.br/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+      return new Response(JSON.stringify({ url: authUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Action: refresh - refresh existing token
     if (action === "refresh") {
