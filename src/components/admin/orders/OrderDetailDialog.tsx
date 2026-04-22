@@ -213,7 +213,6 @@ const OrderDetailDialog = ({
                 </div>
               </div>
             </TabsContent>
-
             <TabsContent value="envio" className="m-0 space-y-8 animate-in fade-in slide-in-from-bottom-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
@@ -269,45 +268,44 @@ const OrderDetailDialog = ({
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Logística & Envio</h3>
-                    
-                    <Button
-                      variant="hero"
-                      className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter text-xs shadow-glow bg-gradient-to-r from-highlight to-highlight/80"
-                      onClick={() => generateDeliveryLabelPDF({
-                        orderNumber: order.order_number,
-                        date: order.created_at,
-                        customer: {
-                          name: order.customer_name,
-                          phone: order.customer_phone,
-                          address: {
-                            street: order.address_street,
-                            number: order.address_number,
-                            complement: order.address_complement,
-                            neighborhood: order.address_neighborhood,
-                            city: order.address_city,
-                            state: order.address_state,
-                            zip: order.address_zip,
-                          }
-                        },
-                        items: details?.items.map(it => ({
-                          description: it.product_name,
-                          quantity: it.quantity,
-                        })) || [],
-                        company: {
-                          name: companySettings.company_name || "Gráfica ImPlotter",
-                          phone: companySettings.phone || "",
-                          address: companySettings.address || "",
+                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Logística & Envio</h3>
+                  
+                  <Button
+                    variant="hero"
+                    className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter text-xs shadow-glow bg-gradient-to-r from-highlight to-highlight/80"
+                    onClick={() => generateDeliveryLabelPDF({
+                      orderNumber: order.order_number,
+                      date: order.created_at,
+                      customer: {
+                        name: order.customer_name,
+                        phone: order.customer_phone,
+                        address: {
+                          street: order.address_street,
+                          number: order.address_number,
+                          complement: order.address_complement,
+                          neighborhood: order.address_neighborhood,
+                          city: order.address_city,
+                          state: order.address_state,
+                          zip: order.address_zip,
                         }
-                      })}
-                    >
-                      <MapPin className="w-4 h-4 mr-2" /> Ficha de Entrega Local (Canhoto)
-                    </Button>
+                      },
+                      items: details?.items.map(it => ({
+                        description: it.product_name,
+                        quantity: it.quantity,
+                      })) || [],
+                      company: {
+                        name: companySettings.company_name || "Gráfica ImPlotter",
+                        phone: companySettings.phone || "",
+                        address: companySettings.address || "",
+                      }
+                    })}
+                  >
+                    <MapPin className="w-4 h-4 mr-2" /> Ficha de Entrega Local (Canhoto)
+                  </Button>
 
-                    <div className="h-px bg-border/50 my-2" />
+                  <div className="h-px bg-border/50 my-2" />
 
-                    {order.tracking_code ? (
+                  {order.tracking_code ? (
                     <div className="bg-muted/30 p-4 rounded-xl border border-border/50 space-y-3">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Código de Rastreio</span>
@@ -346,7 +344,7 @@ const OrderDetailDialog = ({
                         documentNumber: order.order_number,
                         date: order.created_at,
                         customer: { name: order.customer_name, email: order.customer_email, phone: order.customer_phone, cpf_cnpj: order.customer_cpf_cnpj },
-                        items: details?.items.map(it => ({ description: it.product_name, quantity: it.quantity, unitPrice: Number(it.unit_price), subtotal: Number(it.subtotal) })) || [],
+                        items: details?.items.map(it => ({ description: it.product_name, quantity: it.quantity, unitPrice: Number(it.unitPrice), subtotal: Number(it.subtotal) })) || [],
                         subtotal: Number(order.subtotal),
                         discount: Number(order.discount),
                         total: Number(order.total),
@@ -380,7 +378,7 @@ const OrderDetailDialog = ({
                           city: order.address_city, state: order.address_state, zip: order.address_zip,
                         } : null,
                       },
-                      items: details?.items.map(it => ({ description: it.product_name, quantity: it.quantity, unitPrice: Number(it.unit_price), subtotal: Number(it.subtotal) })) || [],
+                      items: details?.items.map(it => ({ description: it.product_name, quantity: it.quantity, unitPrice: Number(it.unitPrice), subtotal: Number(it.subtotal) })) || [],
                       subtotal: Number(order.subtotal),
                       discount: Number(order.discount),
                       total: Number(order.total),
