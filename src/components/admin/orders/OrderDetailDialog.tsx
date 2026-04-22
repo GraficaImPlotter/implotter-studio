@@ -8,6 +8,7 @@ import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { generateReceiptPDF } from "@/lib/receipt-pdf";
 import { generateOrderDocument } from "@/lib/order-document-pdf";
 import { generateOrderLabel, generateAllItemLabels } from "@/lib/production-label";
+import { generateDeliveryLabelPDF } from "@/lib/delivery-label-pdf";
 import { useOrderDetails, useUpdateOrderStatus } from "@/hooks/use-orders";
 
 interface OrderDetailDialogProps {
@@ -268,8 +269,45 @@ const OrderDetailDialog = ({
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Logística & Envio</h3>
-                  {order.tracking_code ? (
+                  <div className="space-y-4">
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Logística & Envio</h3>
+                    
+                    <Button
+                      variant="hero"
+                      className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter text-xs shadow-glow bg-gradient-to-r from-highlight to-highlight/80"
+                      onClick={() => generateDeliveryLabelPDF({
+                        orderNumber: order.order_number,
+                        date: order.created_at,
+                        customer: {
+                          name: order.customer_name,
+                          phone: order.customer_phone,
+                          address: {
+                            street: order.address_street,
+                            number: order.address_number,
+                            complement: order.address_complement,
+                            neighborhood: order.address_neighborhood,
+                            city: order.address_city,
+                            state: order.address_state,
+                            zip: order.address_zip,
+                          }
+                        },
+                        items: details?.items.map(it => ({
+                          description: it.product_name,
+                          quantity: it.quantity,
+                        })) || [],
+                        company: {
+                          name: companySettings.company_name || "Gráfica ImPlotter",
+                          phone: companySettings.phone || "",
+                          address: companySettings.address || "",
+                        }
+                      })}
+                    >
+                      <MapPin className="w-4 h-4 mr-2" /> Ficha de Entrega Local (Canhoto)
+                    </Button>
+
+                    <div className="h-px bg-border/50 my-2" />
+
+                    {order.tracking_code ? (
                     <div className="bg-muted/30 p-4 rounded-xl border border-border/50 space-y-3">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Código de Rastreio</span>
