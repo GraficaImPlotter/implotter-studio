@@ -99,6 +99,11 @@ serve(async (req) => {
       });
     }
 
+    console.log("Iniciando troca de código OAuth...");
+    console.log("Client ID carregado:", clientId ? `Sim (tamanho: ${clientId.length})` : "Não");
+    console.log("Client Secret carregado:", clientSecret ? `Sim (tamanho: ${clientSecret.length})` : "Não");
+    console.log("Redirect URI:", redirect_uri);
+
     const resp = await fetch(MELHOR_ENVIO_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
