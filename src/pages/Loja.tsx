@@ -62,7 +62,7 @@ const SidebarFilters = ({
             className="pl-9 h-9 text-xs bg-secondary/30 border-border rounded-lg"
           />
         </div>
-        <div className="space-y-1 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
           {categories.filter(c => (c.name || "").toLowerCase().includes(searchCat.toLowerCase())).map(c => (
             <button
               key={c.id}
@@ -134,8 +134,8 @@ const Loja = () => {
     const nodesList = (nodes ?? []) as CatalogNode[];
     setAllNodes(nodesList);
 
-    const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, product_images(image_url, sort_order)";
-    let q = supabase.from("products").select(PUBLIC_PRODUCT_COLS).eq("is_active", true);
+    const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, show_on_store, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, product_images(image_url, sort_order)";
+    let q = supabase.from("products").select(PUBLIC_PRODUCT_COLS).eq("is_active", true).eq("show_on_store", true);
     
     const nodeId = new URLSearchParams(window.location.search).get("node");
     if (nodeId) {

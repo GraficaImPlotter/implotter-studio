@@ -406,6 +406,7 @@ const AdminProdutos = () => {
       price_per_sqm: pricingType === "per_sqm" ? calculateCommercialRounding(suggestedPrice) : null,
       is_featured: fd.get("is_featured") === "on",
       is_active: fd.get("is_active") === "on",
+      show_on_store: fd.get("show_on_store") === "on",
       meta_title: metaTitle,
       meta_description: metaDesc,
       keywords: (fd.get("keywords") as string) || null,
@@ -519,7 +520,8 @@ const AdminProdutos = () => {
       name: `${rest.name} (Cópia)`, 
       slug: `${rest.slug}-copia-${Date.now()}`,
       is_active: false,
-      is_featured: false
+      is_featured: false,
+      show_on_store: false
     };
     const { data, error } = await supabase.from("products").insert(payload).select("id").single();
     if (error) { toast({ title: "Erro ao duplicar", description: error.message, variant: "destructive" }); return; }
@@ -528,8 +530,8 @@ const AdminProdutos = () => {
     const newId = data.id;
     
     const [{ data: faqs }, { data: pfs }] = await Promise.all([
-      supabase.from("faq_items").select("question, answer, category, sort_order, is_active").eq("product_id", p.id),
-      supabase.from("product_finishings").select("finishing_id").eq("product_id", p.id)
+      supabase.from("faq_items").select("question, answer, category, sort_order, is_active").eq("product_id", product.id),
+      supabase.from("product_finishings").select("finishing_id").eq("product_id", product.id)
     ]);
 
     if (faqs && faqs.length > 0) {
@@ -675,12 +677,20 @@ const AdminProdutos = () => {
                 <RichTextEditor value={specifications} onChange={setSpecifications} placeholder="Especificações técnicas para a aba do produto..." />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 pt-6">
-                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_featured" defaultChecked={editing?.is_featured} /> Destaque</label>
-                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={editing?.is_active ?? true} /> Ativo</label>
+                <div className="flex flex-wrap items-center gap-6 pt-6">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors">
+                    <input type="checkbox" name="is_featured" defaultChecked={editing?.is_featured} className="rounded border-border text-primary" /> 
+                    Destaque (Pág. Inicial)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors">
+                    <input type="checkbox" name="show_on_store" defaultChecked={editing?.show_on_store ?? true} className="rounded border-border text-primary" /> 
+                    Exibir na Loja
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer hover:text-primary transition-colors">
+                    <input type="checkbox" name="is_active" defaultChecked={editing?.is_active ?? true} className="rounded border-border text-primary" /> 
+                    Ativo (Visível no Link)
+                  </label>
                 </div>
-              </div>
 
                  <div className="bg-primary/5 rounded-xl p-6 border border-primary/10">
                     <h3 className="font-display font-bold text-foreground flex items-center gap-2 mb-6">

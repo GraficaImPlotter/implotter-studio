@@ -155,6 +155,26 @@ const Produto = () => {
   }, [slug]);
 
   useEffect(() => {
+    // Look for 'qty' or other quantity-related fields in configValues
+    // This ensures that 'selectedQuantity' updates when the user picks a different quantity from dropdowns
+    const qtyVal = configValues['qty'];
+    if (qtyVal) {
+      const match = qtyVal.toString().match(/(\d+)/);
+      if (match) {
+        setSelectedQuantity(parseInt(match[1]));
+      }
+    } else {
+      // Check for hierarchy selections or other fields that might contain quantity (e.g. "2000 UN")
+      Object.entries(configValues).forEach(([key, val]) => {
+        if (typeof val === 'string' && (val.includes(' UN') || val.includes('unidade'))) {
+          const match = val.match(/(\d+)/);
+          if (match) setSelectedQuantity(parseInt(match[1]));
+        }
+      });
+    }
+  }, [configValues]);
+
+  useEffect(() => {
     supabase.from("site_settings").select("key, value")
       .in("key", ["company_name", "cnpj", "address", "address_number", "neighborhood", "city", "state", "phone", "email", "whatsapp"])
       .then(({ data }) => {
