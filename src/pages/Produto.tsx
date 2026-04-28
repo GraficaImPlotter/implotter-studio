@@ -91,25 +91,32 @@ const Produto = () => {
       setImages(data?.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order) || []);
       setCatalogNodes((nodes ?? []) as CatalogNode[]);
       if (data?.id) {
-        const [{ data: faqData, error: faqErr }, { data: pfData, error: pfErr }] = await Promise.all([
+        const [{ data: faqData, error: faqErr }, { data: pfLinks, error: pfErr }] = await Promise.all([
           supabase.from("faq_items").select("question, answer").eq("product_id", data.id).eq("is_active", true).order("sort_order"),
-          supabase.from("product_finishings").select("finishing_id, finishings(id, name, price, pricing_mode, group_name)").eq("product_id", data.id),
+          supabase.from("product_finishings").select("finishing_id").eq("product_id", data.id),
         ]);
 
         if (faqErr) console.error("FAQ Error:", faqErr);
-        if (pfErr) console.error("Product Finishings Error:", pfErr);
+        if (pfErr) console.error("Product Finishings Link Error:", pfErr);
 
         setFaqs(faqData ?? []);
-        // Process pfData to ensure we get an object and not an array for finishings
-        // We also check for 'finishing' singular as a fallback for Postgrest naming
-        const processedFinishings = (pfData ?? []).map((pf: any) => {
-          const f = pf.finishings || pf.finishing;
-          if (Array.isArray(f)) return f[0];
-          return f;
-        }).filter(f => f && f.id);
         
-        console.log("Processed Finishings:", processedFinishings);
-        setAvailableFinishings(processedFinishings);
+        if (pfLinks && pfLinks.length > 0) {
+          const finishingIds = pfLinks.map(l => l.finishing_id);
+          const { data: finData, error: finErr } = await supabase
+            .from("finishings")
+            .select("id, name, price, pricing_mode, group_name")
+            .in("id", finishingIds)
+            .eq("is_active", true);
+          
+          if (finErr) console.error("Finishings Data Error:", finErr);
+          
+          console.log("Loaded Finishings:", finData);
+          setAvailableFinishings(finData ?? []);
+        } else {
+          setAvailableFinishings([]);
+        }
+        
         setSelectedFinishings([]);
         setFinishingQuantities({});
 
