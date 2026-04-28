@@ -69,6 +69,7 @@ const AdminProdutos = () => {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
   const [selectedFinishingIds, setSelectedFinishingIds] = useState<string[]>([]);
+  const [isLoadingFinishings, setIsLoadingFinishings] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -304,11 +305,20 @@ const AdminProdutos = () => {
        setCategoryMarkup(2.1);
     }
 
-    if (product?.id) {
+    setSelectedFinishingIds([]);
+    setIsLoadingFinishings(true);
+
+    if (product) {
+      setSavedProductId(product.id);
       loadFaqs(product.id);
+      // Load current finishings for this product
       supabase.from("product_finishings").select("finishing_id").eq("product_id", product.id).then(({ data }) => {
         setSelectedFinishingIds((data ?? []).map((r: any) => r.finishing_id));
+        setIsLoadingFinishings(false);
       });
+    } else {
+      setSavedProductId(null);
+      setIsLoadingFinishings(false);
     }
 
     setGroupedVariants([]);
@@ -444,11 +454,17 @@ const AdminProdutos = () => {
     };
 
     const saveFinishings = async (productId: string) => {
-      await supabase.from("product_finishings").delete().eq("product_id", productId);
+      const { error: delError } = await supabase.from("product_finishings").delete().eq("product_id", productId);
+      if (delError) console.error("Error deleting finishings:", delError);
+
       if (selectedFinishingIds.length > 0) {
-        await supabase.from("product_finishings").insert(
+        const { error: insError } = await supabase.from("product_finishings").insert(
           selectedFinishingIds.map(fid => ({ product_id: productId, finishing_id: fid }))
         );
+        if (insError) {
+          console.error("Error inserting finishings:", insError);
+          toast({ title: "Erro ao salvar acabamentos", description: insError.message, variant: "destructive" });
+        }
       }
     };
 
@@ -506,9 +522,24 @@ const AdminProdutos = () => {
       is_featured: false
     };
     const { data, error } = await supabase.from("products").insert(payload).select("id").single();
-    if (error) { toast({ title: "Erro ao duplicar", variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro ao duplicar", description: error.message, variant: "destructive" }); return; }
     
-    toast({ title: "Produto duplicado com sucesso!" });
+    // Duplicate FAQs and Finishings
+    const newId = data.id;
+    
+    const [{ data: faqs }, { data: pfs }] = await Promise.all([
+      supabase.from("faq_items").select("question, answer, category, sort_order, is_active").eq("product_id", p.id),
+      supabase.from("product_finishings").select("finishing_id").eq("product_id", p.id)
+    ]);
+
+    if (faqs && faqs.length > 0) {
+      await supabase.from("faq_items").insert(faqs.map(f => ({ ...f, product_id: newId })));
+    }
+    if (pfs && pfs.length > 0) {
+      await supabase.from("product_finishings").insert(pfs.map(pf => ({ ...pf, product_id: newId })));
+    }
+
+    toast({ title: "Produto duplicado!", description: "Dados, acabamentos e FAQs foram copiados." });
     queryClient.invalidateQueries({ queryKey: ["admin-products"] });
   };
 
@@ -822,40 +853,44 @@ const AdminProdutos = () => {
                   </h3>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(
-                    allFinishings.reduce((acc: any, f: any) => {
-                      const group = f.group_name || "Outros";
-                      if (!acc[group]) acc[group] = [];
-                      acc[group].push(f);
-                      return acc;
-                    }, {})
-                  ).map(([group, items]: [string, any]) => (
-                    <div key={group} className="bg-background rounded-xl p-4 border border-border space-y-3">
-                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest border-b border-border pb-2 mb-2">
-                        {group}
-                      </p>
-                      <div className="space-y-2">
-                        {items.map((f: any) => (
-                          <label key={f.id} className="flex items-center justify-between group cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors">
-                            <div className="flex items-center gap-3">
-                              <input 
-                                type="checkbox" 
-                                checked={selectedFinishingIds.includes(f.id)} 
-                                onChange={(e) => {
-                                  if (e.target.checked) setSelectedFinishingIds(prev => [...prev, f.id]);
-                                  else setSelectedFinishingIds(prev => prev.filter(id => id !== f.id));
-                                }}
-                                className="rounded border-border text-primary"
-                              />
-                              <span className="text-sm font-medium">{f.name}</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-primary opacity-50 group-hover:opacity-100">+ R$ {f.price.toFixed(2)}</span>
-                          </label>
-                        ))}
-                      </div>
+                <div className="bg-secondary/20 rounded-2xl p-6 space-y-6 border border-border/50">
+                  {isLoadingFinishings ? (
+                    <div className="text-center py-4 text-muted-foreground text-xs animate-pulse italic">Carregando opções salvas...</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+                      {Object.entries(
+                        allFinishings.reduce((acc: any, f: any) => {
+                          const group = f.group_name || "Outros";
+                          if (!acc[group]) acc[group] = [];
+                          acc[group].push(f);
+                          return acc;
+                        }, {})
+                      ).map(([group, groupItems]: [string, any[]]) => (
+                        <div key={group} className="space-y-3">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/60 border-b border-primary/10 pb-1">{group}</h4>
+                          <div className="space-y-1">
+                            {groupItems.map((f: any) => (
+                              <label key={f.id} className="flex items-center justify-between group cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors">
+                                <div className="flex items-center gap-3">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={selectedFinishingIds.includes(f.id)} 
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedFinishingIds(prev => [...prev, f.id]);
+                                      else setSelectedFinishingIds(prev => prev.filter(id => id !== f.id));
+                                    }}
+                                    className="rounded border-border text-primary"
+                                  />
+                                  <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">{f.name}</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-primary opacity-50 group-hover:opacity-100">+ R$ {f.price.toFixed(2)}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 

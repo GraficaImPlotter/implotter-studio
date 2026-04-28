@@ -91,20 +91,24 @@ const Produto = () => {
       setImages(data?.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order) || []);
       setCatalogNodes((nodes ?? []) as CatalogNode[]);
       if (data?.id) {
-        const [{ data: faqData }, { data: pfData }] = await Promise.all([
+        const [{ data: faqData, error: faqErr }, { data: pfData, error: pfErr }] = await Promise.all([
           supabase.from("faq_items").select("question, answer").eq("product_id", data.id).eq("is_active", true).order("sort_order"),
           supabase.from("product_finishings").select("finishing_id, finishings(id, name, price, pricing_mode, group_name)").eq("product_id", data.id),
         ]);
+
+        if (faqErr) console.error("FAQ Error:", faqErr);
+        if (pfErr) console.error("Product Finishings Error:", pfErr);
+
         setFaqs(faqData ?? []);
         // Process pfData to ensure we get an object and not an array for finishings
+        // We also check for 'finishing' singular as a fallback for Postgrest naming
         const processedFinishings = (pfData ?? []).map((pf: any) => {
-          // Supabase can return the join as an object or as an array
-          const f = pf.finishings;
+          const f = pf.finishings || pf.finishing;
           if (Array.isArray(f)) return f[0];
           return f;
         }).filter(f => f && f.id);
         
-        console.log("Processed Finishings:", processedFinishings); // Keeping for user debug if needed
+        console.log("Processed Finishings:", processedFinishings);
         setAvailableFinishings(processedFinishings);
         setSelectedFinishings([]);
         setFinishingQuantities({});
