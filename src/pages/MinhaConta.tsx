@@ -18,6 +18,7 @@ import LoyaltyWidget from "@/components/LoyaltyWidget";
 import { formatCpfCnpj, formatPhone } from "@/lib/utils";
 import { validateDocumentFile } from "@/lib/file-validation";
 import { cn } from "@/lib/utils";
+import ProductionTimeline from "@/components/order/ProductionTimeline";
 
 const STATUS_LABELS: Record<string, string> = {
   pedido_recebido: "Recebido", aguardando_pagamento: "Aguardando Pagamento",
@@ -323,6 +324,10 @@ const MinhaConta = () => {
                             </Button>
                          </Link>
                       </div>
+                   </div>
+
+                   <div className="bg-slate-50/50 rounded-[2rem] border border-slate-100/50">
+                      <ProductionTimeline currentStatus={selectedOrder.status} />
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

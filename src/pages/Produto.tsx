@@ -14,6 +14,7 @@ import { ShoppingCart, ArrowLeft, Shield, Clock, Award, Truck, Ruler, AlertTrian
 import { motion } from "framer-motion";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import SmartRecommendations from "@/components/product/SmartRecommendations";
+import BundleOffer from "@/components/product/BundleOffer";
 import ArtEditor from "@/components/product/ArtEditor";
 import { generateClientQuotePDF } from "@/lib/quote-client-pdf";
 import SEOHead from "@/components/SEOHead";
@@ -105,15 +106,15 @@ const Produto = () => {
           const finishingIds = pfLinks.map(l => l.finishing_id);
           const { data: finData, error: finErr } = await supabase
             .from("finishings")
-            .select("id, name, price, pricing_mode, group_name")
-            .in("id", finishingIds)
-            .eq("is_active", true);
+            .select("*")
+            .in("id", finishingIds);
           
           if (finErr) console.error("Finishings Data Error:", finErr);
           
-          console.log("Loaded Finishings:", finData);
+          console.log("Acabamentos encontrados para este produto:", finData);
           setAvailableFinishings(finData ?? []);
         } else {
+          console.log("Nenhum link de acabamento encontrado para este ID de produto:", data.id);
           setAvailableFinishings([]);
         }
         
@@ -716,7 +717,22 @@ const Produto = () => {
                                       const groupIds = items.map((i: any) => i.id);
                                       setSelectedFinishings(p => [...p.filter(id => !groupIds.includes(id)), f.id]);
                                     } else {
-                                      setSelectedFinishings(p => [...p, f.id]);
+                                      // Smart check for common conflicting keywords (Bastão, Ilhós, etc)
+                                      const keywords = ["bastão", "ilhós", "verniz", "furo"];
+                                      const foundKeyword = keywords.find(k => f.name.toLowerCase().includes(k));
+                                      
+                                      if (foundKeyword) {
+                                        // Deselect any other item that shares this keyword
+                                        setSelectedFinishings(p => [
+                                          ...p.filter(id => {
+                                            const other = availableFinishings.find(af => af.id === id);
+                                            return !other?.name.toLowerCase().includes(foundKeyword);
+                                          }), 
+                                          f.id
+                                        ]);
+                                      } else {
+                                        setSelectedFinishings(p => [...p, f.id]);
+                                      }
                                     }
                                     
                                     if (isUnit && !finishingQuantities[f.id]) {
@@ -813,7 +829,15 @@ const Produto = () => {
                <Button onClick={() => { handleAddToCart(); if(canAddToCart) window.location.href="/checkout"; }} disabled={!canAddToCart} variant="hero" className="flex-1 h-14 bg-success hover:bg-success/90 text-white font-black">COMPRAR AGORA</Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <BundleOffer currentProduct={{ 
+              id: product.id, 
+              name: product.name, 
+              price: product.price, 
+              calculatedPrice: calculatedPrice, 
+              mainImage: images.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.image_url 
+            }} />
+
+            <div className="grid grid-cols-2 gap-3 mb-6 mt-8">
                {trustItems.map((it, i) => (
                  <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-secondary/30 border border-border/30">
                    <it.icon className="w-3.5 h-3.5 text-highlight" />

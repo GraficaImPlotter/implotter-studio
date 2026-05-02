@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, Sparkles, Loader2, Save, Settings, Layers, Palette, Copy, Image as ImageIcon, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Ruler, Package, FolderTree, Tag, Search, HelpCircle, DollarSign, Calculator, Sparkles, Loader2, Save, Settings, Layers, Palette, Copy, Image as ImageIcon, Clock, CreditCard, Eye } from "lucide-react";
 import { generateSlug, generateMetaTitle, generateMetaDescription } from "@/lib/slug";
 import { FRETE_DILUIDO } from "@/lib/price-utils";
 import RichTextEditor from "@/components/admin/RichTextEditor";
@@ -18,6 +18,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { generateUUID } from "@/lib/uuid";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 interface CatalogNode {
   id: string;
@@ -77,6 +78,11 @@ const AdminProdutos = () => {
   const [unitCost, setUnitCost] = useState(0);
   const [categoryMarkup, setCategoryMarkup] = useState(2.1);
   const [activeTab, setActiveTab] = useState("manage");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<"price" | "status" | "category" | null>(null);
+  const [bulkValue, setBulkValue] = useState("");
+  const [bulkProcessing, setBulkProcessing] = useState(false);
   const [groupByCategory, setGroupByCategory] = useState(true);
   
   const [groupedVariants, setGroupedVariants] = useState<{ id: string; name: string; options: { name: string; cost: number; price: number }[] }[]>([]);
@@ -134,6 +140,56 @@ const AdminProdutos = () => {
       return matchesSearch && matchesColor;
     });
   }, [products, adminSearch, adminFilterColor]);
+
+  const handleBulkUpdate = async () => {
+    if (!bulkAction || !bulkValue || selectedIds.length === 0) return;
+    setBulkProcessing(true);
+    try {
+      let updates: any = {};
+      if (bulkAction === "status") {
+        updates.is_active = bulkValue === "active";
+      } else if (bulkAction === "category") {
+        updates.catalog_node_id = bulkValue;
+      } else if (bulkAction === "price") {
+        const factor = 1 + (Number(bulkValue) / 100);
+      }
+
+      if (bulkAction !== "price") {
+        const { error } = await supabase.from("products").update(updates).in("id", selectedIds);
+        if (error) throw error;
+      } else {
+        const { data: currentProds } = await supabase.from("products").select("id, price").in("id", selectedIds);
+        if (currentProds) {
+          const factor = 1 + (Number(bulkValue) / 100);
+          for (const p of currentProds) {
+            await supabase.from("products").update({ price: Math.round(Number(p.price) * factor * 100) / 100 }).eq("id", p.id);
+          }
+        }
+      }
+
+      toast({ title: `${selectedIds.length} produtos atualizados!` });
+      setSelectedIds([]);
+      setBulkDialogOpen(false);
+      load();
+    } catch (e: any) {
+      toast({ title: "Erro na atualização em massa", description: e.message, variant: "destructive" });
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const selectAllInGroup = (ids: string[]) => {
+    const allSelected = ids.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+    } else {
+      setSelectedIds(prev => Array.from(new Set([...prev, ...ids])));
+    }
+  };
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -957,7 +1013,38 @@ const AdminProdutos = () => {
             </label>
         </div>
 
-        <TabsContent value="manage" className="space-y-6 m-0">
+        <TabsContent value="manage" className="space-y-6 m-0 relative">
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-8 border border-white/10 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-black text-xs">
+                            {selectedIds.length}
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Selecionados</p>
+                    </div>
+                    
+                    <div className="h-8 w-px bg-white/10" />
+
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="text-xs font-bold hover:bg-white/5" onClick={() => { setBulkAction("price"); setBulkDialogOpen(true); }}>
+                           <CreditCard className="w-4 h-4 mr-2 text-primary" /> Ajustar Preço %
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs font-bold hover:bg-white/5" onClick={() => { setBulkAction("status"); setBulkDialogOpen(true); }}>
+                           <Eye className="w-4 h-4 mr-2 text-primary" /> Status
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs font-bold hover:bg-white/5" onClick={() => { setBulkAction("category"); setBulkDialogOpen(true); }}>
+                           <FolderTree className="w-4 h-4 mr-2 text-primary" /> Categoria
+                        </Button>
+                    </div>
+
+                    <div className="h-8 w-px bg-white/10" />
+
+                    <Button variant="ghost" size="sm" className="text-xs font-bold text-destructive hover:bg-destructive/10" onClick={() => setSelectedIds([])}>
+                        Cancelar
+                    </Button>
+                </div>
+            )}
+
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Buscar por nome ou código..." value={adminSearch} onChange={e => setAdminSearch(e.target.value)} className="pl-10 h-11" />
@@ -968,19 +1055,40 @@ const AdminProdutos = () => {
                     {Object.entries(groupedProducts || {}).map(([catName, items]) => (
                         <AccordionItem key={catName} value={catName} className="border-b border-border last:border-0">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 bg-muted/20 group">
-                                <div className="flex items-center gap-3">
-                                    <FolderTree className="w-4 h-4 text-primary" />
-                                    <div className="text-left">
-                                        <p className="font-display font-black text-sm uppercase">{catName}</p>
-                                        <p className="text-[10px] text-muted-foreground">{items.length} PRODUTOS</p>
+                                <div className="flex items-center justify-between w-full pr-4">
+                                    <div className="flex items-center gap-3">
+                                        <FolderTree className="w-4 h-4 text-primary" />
+                                        <div className="text-left">
+                                            <p className="font-display font-black text-sm uppercase">{catName}</p>
+                                            <p className="text-[10px] text-muted-foreground">{items.length} PRODUTOS</p>
+                                        </div>
                                     </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-[9px] font-black uppercase opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => { e.stopPropagation(); selectAllInGroup(items.map(it => it.id)); }}
+                                    >
+                                        Selecionar Tudo
+                                    </Button>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-0">
                                 <table className="w-full text-sm">
                                     <tbody>
                                         {items.map(p => (
-                                            <tr key={p.id} className="border-t border-border/30 hover:bg-muted/10 transition-colors">
+                                            <tr key={p.id} className={cn(
+                                                "border-t border-border/30 hover:bg-muted/10 transition-colors",
+                                                selectedIds.includes(p.id) && "bg-primary/5"
+                                            )}>
+                                                <td className="p-4 w-10">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedIds.includes(p.id)} 
+                                                        onChange={() => toggleSelect(p.id)}
+                                                        className="rounded border-border text-primary"
+                                                    />
+                                                </td>
                                                 <td className="p-4 font-bold">{p.name}</td>
                                                 <td className="p-4 text-right font-black text-primary">A partir de R$ {Number(p.price || p.preco_minimo).toFixed(2)}</td>
                                                 <td className="p-4 text-center">
@@ -1006,6 +1114,62 @@ const AdminProdutos = () => {
             </div>
         </TabsContent>
       </Tabs>
+
+      {/* Bulk Update Dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                <DialogTitle className="font-display font-black text-xl uppercase tracking-tight">Atualizar {selectedIds.length} Produtos</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 pt-4">
+                {bulkAction === "price" && (
+                    <div className="space-y-3">
+                        <label className="text-xs font-black uppercase text-muted-foreground">Reajuste Percentual (%)</label>
+                        <Input 
+                            type="number" 
+                            placeholder="Ex: 10 para aumento ou -10 para desconto" 
+                            value={bulkValue}
+                            onChange={e => setBulkValue(e.target.value)}
+                        />
+                        <p className="text-[10px] text-muted-foreground italic">Isso aplicará o cálculo sobre o preço base de cada produto selecionado.</p>
+                    </div>
+                )}
+                {bulkAction === "status" && (
+                    <div className="space-y-3">
+                        <label className="text-xs font-black uppercase text-muted-foreground">Novo Status</label>
+                        <select 
+                            className="w-full h-11 rounded-xl bg-muted/50 border border-border px-4 font-bold text-sm"
+                            value={bulkValue}
+                            onChange={e => setBulkValue(e.target.value)}
+                        >
+                            <option value="">Selecione...</option>
+                            <option value="active">Ativo (Visível na loja)</option>
+                            <option value="inactive">Inativo (Oculto)</option>
+                        </select>
+                    </div>
+                )}
+                {bulkAction === "category" && (
+                    <div className="space-y-3">
+                        <label className="text-xs font-black uppercase text-muted-foreground">Nova Categoria</label>
+                        <select 
+                            className="w-full h-11 rounded-xl bg-muted/50 border border-border px-4 font-bold text-sm"
+                            value={bulkValue}
+                            onChange={e => setBulkValue(e.target.value)}
+                        >
+                            <option value="">Selecione...</option>
+                            {catalogNodes.map(node => (
+                                <option key={node.id} value={node.id}>{getNodePath(catalogNodes, node.id)}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                <Button variant="hero" className="w-full h-12" onClick={handleBulkUpdate} disabled={bulkProcessing || !bulkValue}>
+                    {bulkProcessing ? "Processando..." : "Confirmar Alterações em Massa"}
+                </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

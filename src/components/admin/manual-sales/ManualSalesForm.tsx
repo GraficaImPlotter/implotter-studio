@@ -10,6 +10,14 @@ import CustomerAutocomplete from "./CustomerAutocomplete";
 import CustomerPurchaseHistory from "./CustomerPurchaseHistory";
 import { formatCep, formatPhone, formatCpfCnpj } from "@/lib/utils";
 import { useCallback } from "react";
+import ProductAutocomplete from "./ProductAutocomplete";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 interface SaleItem {
   productId: string | null;
@@ -17,6 +25,11 @@ interface SaleItem {
   quantity: number;
   unitPrice: number;
   discount: number;
+  width?: number;
+  height?: number;
+  area?: number;
+  pricingType?: 'fixed' | 'per_sqm';
+  instructions?: string;
 }
 
 interface ManualSalesFormProps {
@@ -24,7 +37,18 @@ interface ManualSalesFormProps {
   onSuccess: () => void;
 }
 
-const emptyItem = (): SaleItem => ({ productId: null, name: "", quantity: 1, unitPrice: 0, discount: 0 });
+const emptyItem = (): SaleItem => ({ 
+  productId: null, 
+  name: "", 
+  quantity: 1, 
+  unitPrice: 0, 
+  discount: 0,
+  width: 0,
+  height: 0,
+  area: 0,
+  pricingType: 'fixed',
+  instructions: ""
+});
 
 const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   const { toast } = useToast();
@@ -47,6 +71,7 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   const [items, setItems] = useState<SaleItem[]>([emptyItem()]);
   const [globalDiscount, setGlobalDiscount] = useState(0);
   
+  const [allFinishings, setAllFinishings] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [searchTerms, setSearchTerms] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -58,15 +83,17 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   // Load products on mount
   useEffect(() => {
     const loadProducts = async () => {
-      const [{ data: prods }, { data: kts }] = await Promise.all([
-        supabase.from("products").select("id, name, price, sale_price").eq("is_active", true),
-        supabase.from("kits").select("id, name, normal_price, promo_price").eq("is_active", true)
+      const [{ data: prods }, { data: kts }, { data: fins }] = await Promise.all([
+        supabase.from("products").select("id, name, price, sale_price, pricing_type").eq("is_active", true),
+        supabase.from("kits").select("id, name, normal_price, promo_price").eq("is_active", true),
+        supabase.from("finishings").select("*").eq("is_active", true).order("sort_order")
       ]);
       const combined = [
         ...(prods || []).map(p => ({ ...p, type: 'product' })),
-        ...(kts || []).map(k => ({ id: k.id, name: `[KIT] ${k.name}`, price: k.normal_price, sale_price: k.promo_price, type: 'kit' }))
+        ...(kts || []).map(k => ({ id: k.id, name: `[KIT] ${k.name}`, price: k.normal_price, sale_price: k.promo_price, type: 'kit', pricing_type: 'fixed' }))
       ].sort((a, b) => a.name.localeCompare(b.name));
       setProducts(combined);
+      setAllFinishings(fins || []);
     };
     loadProducts();
 
@@ -96,6 +123,11 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
             quantity: oi.quantity,
             unitPrice: Number(oi.unit_price),
             discount: 0,
+            width: oi.item_width || 0,
+            height: oi.item_height || 0,
+            area: oi.item_area || 0,
+            pricingType: (oi.pricing_type as any) || 'fixed',
+            instructions: oi.instructions || "",
           })));
         }
       });
@@ -103,7 +135,11 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   }, [editingOrder]);
 
   const subtotal = items.reduce((sum, it) => {
-    const lineTotal = it.unitPrice * it.quantity;
+    let itemPrice = it.unitPrice;
+    if (it.pricingType === 'per_sqm' && it.width && it.height) {
+      itemPrice = it.unitPrice * (it.width * it.height);
+    }
+    const lineTotal = itemPrice * it.quantity;
     const lineDiscount = lineTotal * (it.discount / 100);
     return sum + lineTotal - lineDiscount;
   }, 0);
@@ -170,7 +206,17 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   };
 
   const updateItem = (idx: number, patch: Partial<SaleItem>) => {
-    setItems(prev => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
+    setItems(prev => prev.map((it, i) => {
+      if (i !== idx) return it;
+      const updated = { ...it, ...patch };
+      
+      // Calculate area if width/height changed
+      if (updated.pricingType === 'per_sqm' && (patch.width !== undefined || patch.height !== undefined)) {
+        updated.area = (updated.width || 0) * (updated.height || 0);
+      }
+      
+      return updated;
+    }));
   };
 
   const removeItem = (idx: number) => {
@@ -229,14 +275,26 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
         }]);
       }
 
-      const orderItems = validItems.map(it => ({
-        order_id: orderId,
-        product_id: it.productId || null,
-        product_name: it.name,
-        quantity: it.quantity,
-        unit_price: it.unitPrice,
-        subtotal: Math.round(it.unitPrice * it.quantity * (1 - it.discount / 100) * 100) / 100,
-      }));
+      const orderItems = validItems.map(it => {
+        const itemArea = it.pricingType === 'per_sqm' ? (it.width || 0) * (it.height || 0) : null;
+        const itemSubtotal = it.pricingType === 'per_sqm' 
+          ? (it.unitPrice * (itemArea || 0) * it.quantity) 
+          : (it.unitPrice * it.quantity);
+
+        return {
+          order_id: orderId,
+          product_id: it.productId || null,
+          product_name: it.name,
+          quantity: it.quantity,
+          unit_price: it.unitPrice,
+          pricing_type: it.pricingType || 'fixed',
+          item_width: it.width || null,
+          item_height: it.height || null,
+          item_area: itemArea,
+          instructions: it.instructions || null,
+          subtotal: Math.round(itemSubtotal * (1 - it.discount / 100) * 100) / 100,
+        };
+      });
       await supabase.from("order_items").insert(orderItems);
 
       toast({ title: editingOrder ? "Venda atualizada!" : "Venda registrada!" });
@@ -366,19 +424,60 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
 
         <div className="space-y-3">
           {items.map((item, idx) => (
-            <div key={idx} className="glass-card p-4 rounded-xl space-y-3 relative overflow-hidden group">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                <div className="md:col-span-12 lg:col-span-6 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground">Produto / Serviço</Label>
+            <div key={idx} className="glass-card p-4 rounded-xl space-y-4 relative overflow-hidden group border-glow/30">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                <div className="md:col-span-12 lg:col-span-5 space-y-1.5">
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">Produto / Serviço</Label>
+                  <ProductAutocomplete 
+                    onSelect={(prod) => updateItem(idx, { 
+                      productId: prod.id, 
+                      name: prod.name, 
+                      unitPrice: prod.sale_price || prod.price,
+                      pricingType: prod.pricing_type as any
+                    })} 
+                    placeholder="Buscar no sistema ou digitar nome..."
+                  />
                   <Input 
                     value={item.name} 
                     onChange={e => updateItem(idx, { name: e.target.value, productId: null })} 
-                    placeholder="Digite o nome do produto..." 
-                    className="bg-background/50"
+                    placeholder="Nome customizado..." 
+                    className="mt-1.5 bg-background/30 h-8 text-xs"
                   />
                 </div>
-                <div className="md:col-span-3 lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground">Qtd</Label>
+
+                {item.pricingType === 'per_sqm' && (
+                  <>
+                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Larg (m)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        value={item.width} 
+                        onChange={e => updateItem(idx, { width: parseFloat(e.target.value) || 0 })} 
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Alt (m)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        value={item.height} 
+                        onChange={e => updateItem(idx, { height: parseFloat(e.target.value) || 0 })} 
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5 hidden lg:block">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Área (m²)</Label>
+                      <div className="h-10 flex items-center px-3 rounded-md bg-muted/30 text-xs font-mono">
+                        {((item.width || 0) * (item.height || 0)).toFixed(2)}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="md:col-span-2 lg:col-span-1 space-y-1.5">
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">Qtd</Label>
                   <Input 
                     type="number" 
                     min={1} 
@@ -388,7 +487,9 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                   />
                 </div>
                 <div className="md:col-span-4 lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground">Vlr Unitário</Label>
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">
+                    {item.pricingType === 'per_sqm' ? 'Vlr m² (R$)' : 'Vlr Unit (R$)'}
+                  </Label>
                   <Input 
                     type="number" 
                     step="0.01" 
@@ -397,10 +498,15 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                     className="bg-background/50"
                   />
                 </div>
-                <div className="md:col-span-5 lg:col-span-2 flex items-center justify-between gap-2 h-10">
+                <div className="md:col-span-4 lg:col-span-2 flex items-center justify-between gap-2 h-full pt-6">
                   <div className="text-right flex-1">
-                    <p className="text-[10px] uppercase text-muted-foreground">Subtotal</p>
-                    <p className="font-bold text-primary">R$ {(item.unitPrice * item.quantity).toFixed(2)}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground">Total Item</p>
+                    <p className="font-bold text-primary">
+                      R$ {(item.pricingType === 'per_sqm' 
+                        ? (item.unitPrice * (item.width || 0) * (item.height || 0) * item.quantity)
+                        : (item.unitPrice * item.quantity)
+                      ).toFixed(2)}
+                    </p>
                   </div>
                   <Button 
                     type="button" 
@@ -411,6 +517,37 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
+                </div>
+              </div>
+
+              {/* Acabamentos e Instruções */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/30">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold italic">Acabamento Sugerido</Label>
+                  <Select 
+                    onValueChange={(val) => {
+                      const current = item.instructions || "";
+                      updateItem(idx, { instructions: current ? `${current}, ${val}` : val });
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs bg-background/30">
+                      <SelectValue placeholder="Selecionar acabamento..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allFinishings.map(f => (
+                        <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">Instruções Extras / Acabamentos</Label>
+                  <Input 
+                    value={item.instructions} 
+                    onChange={e => updateItem(idx, { instructions: e.target.value })} 
+                    placeholder="Ex: Ilhós a cada 20cm, Refile, Bainha..." 
+                    className="h-8 text-xs bg-background/30"
+                  />
                 </div>
               </div>
             </div>

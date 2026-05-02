@@ -7,11 +7,11 @@
     <!-- Content Security Policy: restricts what the browser can load -->
      <meta http-equiv="Content-Security-Policy" content="
        default-src 'self';
-       script-src 'self' 'unsafe-inline' 'unsafe-eval';
-       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-       font-src 'self' https://fonts.gstatic.com;
-       img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://*.melhorenvio.com.br https://cdn.weatherapi.com https://www.transparenttextures.com;
-       connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br https://brasilapi.com.br https://*.asaas.com https://api.resend.com https://*.melhorenvio.com.br;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://*.melhorenvio.com.br https://cdn.weatherapi.com https://www.transparenttextures.com https://pagead2.googlesyndication.com;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br https://brasilapi.com.br https://*.asaas.com https://api.resend.com https://*.melhorenvio.com.br https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net;
        media-src 'self' https://*.supabase.co blob:;
        frame-src 'none';
        object-src 'none';
@@ -40,6 +40,8 @@
     <!-- Optimized font loading with display=swap -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4720093921936674" crossorigin="anonymous"></script>
     <meta name="author" content="Gráfica ImPlotter" />
     <link rel="canonical" href="https://graficaimplotter.shop" />
     <link rel="manifest" href="/manifest.json" />
