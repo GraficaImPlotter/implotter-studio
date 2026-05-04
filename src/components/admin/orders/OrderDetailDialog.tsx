@@ -14,7 +14,7 @@ import { useOrderDetails, useUpdateOrderStatus } from "@/hooks/use-orders";
 interface OrderDetailDialogProps {
   order: any | null;
   onOpenChange: (open: boolean) => void;
-  onUploadDocument: (field: "pix_receipt_url" | "invoice_url", file: File) => void;
+  onUploadDocument: (orderId: string, field: "pix_receipt_url" | "invoice_url", file: File) => void;
   uploadingDoc: string | null;
   generateShippingLabel: (order: any) => void;
   generatingLabel: boolean;
@@ -223,12 +223,12 @@ const OrderDetailDialog = ({
                   <div className="space-y-3">
                     <input type="file" ref={pixInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) onUploadDocument("pix_receipt_url", file);
+                      if (file) onUploadDocument(order.id, "pix_receipt_url", file);
                       e.target.value = "";
                     }} />
                     <input type="file" ref={nfInputRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xml" onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) onUploadDocument("invoice_url", file);
+                      if (file) onUploadDocument(order.id, "invoice_url", file);
                       e.target.value = "";
                     }} />
                     
