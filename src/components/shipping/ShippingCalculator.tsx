@@ -16,6 +16,15 @@ export interface ShippingOption {
   delivery_time: number;
 }
 
+export const LOCAL_PICKUP_OPTION: ShippingOption = {
+  id: 0,
+  name: "Retirada no Local",
+  company: "Nossa Loja",
+  price: 0,
+  discount: 0,
+  delivery_time: 1,
+};
+
 interface Props {
   cartTotal: number;
   items: CartItem[];
@@ -78,7 +87,10 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
     setLoading(true);
     setError("");
     setOptions([]);
-    onSelect(null);
+    // Do not clear selected option here if it's local pickup, but maybe better to clear it
+    if (selected?.id !== 0) {
+      onSelect(null);
+    }
 
     const originCep = companySettings?.zip_code || companySettings?.address?.match(/\d{5}-?\d{3}/)?.[0] || "01001000";
 
@@ -147,41 +159,65 @@ const ShippingCalculator = ({ cartTotal, items, onSelect, selected }: Props) => 
 
       {error && <p className="text-xs text-destructive">{error}</p>}
 
-      {options.length > 0 && (
-        <div className="space-y-2">
-          {options.map((opt) => {
-            const isSelected = selected?.id === opt.id;
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => onSelect(isSelected ? null : opt)}
-                className={`w-full text-left rounded-xl border p-3 transition-all ${
-                  isSelected
-                    ? "border-highlight bg-highlight/10"
-                    : "border-border bg-secondary/50 hover:border-muted-foreground"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">
-                      {opt.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Package className="w-3 h-3" /> {opt.company}
-                      <span className="mx-1">•</span>
-                      <Clock className="w-3 h-3" /> {opt.delivery_time} dias úteis
-                    </p>
-                  </div>
-                  <span className="font-display font-bold text-foreground whitespace-nowrap">
-                    R$ {opt.price.toFixed(2)}
-                  </span>
+      <div className="space-y-2">
+        {/* Always show Local Pickup */}
+        <button
+          type="button"
+          onClick={() => onSelect(selected?.id === 0 ? null : LOCAL_PICKUP_OPTION)}
+          className={`w-full text-left rounded-xl border p-3 transition-all ${
+            selected?.id === 0
+              ? "border-highlight bg-highlight/10"
+              : "border-border bg-secondary/50 hover:border-muted-foreground"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground truncate">
+                {LOCAL_PICKUP_OPTION.name}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Package className="w-3 h-3" /> {LOCAL_PICKUP_OPTION.company}
+              </p>
+            </div>
+            <span className="font-display font-bold text-success whitespace-nowrap">
+              Grátis
+            </span>
+          </div>
+        </button>
+
+        {/* Display calculated options */}
+        {options.map((opt) => {
+          const isSelected = selected?.id === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onSelect(isSelected ? null : opt)}
+              className={`w-full text-left rounded-xl border p-3 transition-all ${
+                isSelected
+                  ? "border-highlight bg-highlight/10"
+                  : "border-border bg-secondary/50 hover:border-muted-foreground"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">
+                    {opt.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Package className="w-3 h-3" /> {opt.company}
+                    <span className="mx-1">•</span>
+                    <Clock className="w-3 h-3" /> {opt.delivery_time} dias úteis
+                  </p>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                <span className="font-display font-bold text-foreground whitespace-nowrap">
+                  R$ {opt.price.toFixed(2)}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

@@ -30,10 +30,11 @@ const Carrinho = () => {
     freeShipping,
     setCoupon,
     clearCoupon,
+    shippingOption,
+    setShippingOption,
   } = useCart();
 
   const [couponInput, setCouponInput] = useState("");
-  const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
   const subtotal = useMemo(() => getSubtotal(), [getSubtotal, items]);
   const shippingCost = shippingOption?.price ?? 0;
   const totalWithShipping = getTotal() + shippingCost;

@@ -56,6 +56,9 @@ interface CartState {
 
   setAffiliateCode: (code: string | null) => void;
 
+  shippingOption: any | null;
+  setShippingOption: (opt: any | null) => void;
+
   getSubtotal: () => number;
   getTotal: () => number;
 
@@ -85,6 +88,7 @@ export const useCart = create<CartState>()(
       progressiveRuleName: null,
 
       affiliateCode: null,
+      shippingOption: null,
 
       addItem: (item) => {
         const items = get().items;
@@ -130,6 +134,7 @@ export const useCart = create<CartState>()(
           discount: 0,
           discountSource: null,
           progressiveRuleName: null,
+          shippingOption: null,
         });
         debouncedSync(() => get().syncToCloud());
       },
@@ -161,6 +166,7 @@ export const useCart = create<CartState>()(
       },
 
       setAffiliateCode: (code) => set({ affiliateCode: code }),
+      setShippingOption: (opt) => set({ shippingOption: opt }),
 
       getSubtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
       getTotal: () => {

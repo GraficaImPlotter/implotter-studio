@@ -46,6 +46,8 @@ const Checkout = () => {
     setCoupon,
     clearCoupon,
     clearCart,
+    shippingOption,
+    setShippingOption,
   } = useCart();
 
   const [loading, setLoading] = useState(false);
@@ -54,10 +56,9 @@ const Checkout = () => {
   const [cepLoading, setCepLoading] = useState(false);
   const [address, setAddress] = useState({ street: "", neighborhood: "", city: "", state: "" });
   const [profileData, setProfileData] = useState<any>(null);
-  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "credit_card">("pix");
 
-  const shippingCost = freeShipping ? 0 : (selectedShipping?.price || 0);
+  const shippingCost = freeShipping ? 0 : (shippingOption?.price || 0);
   const finalTotal = getTotal() + shippingCost;
 
   // Pre-fill from profile
@@ -227,8 +228,8 @@ const Checkout = () => {
           subtotal: verifiedSubtotal,
           discount: discount,
           total: verifiedTotal,
-          shipping_service: selectedShipping?.name || null,
-          shipping_service_id: selectedShipping?.id || null,
+          shipping_service: shippingOption?.name || null,
+          shipping_service_id: shippingOption?.id || null,
           coupon_id: discountSource === "coupon" ? couponId : null,
           affiliate_id: null,
           payment_method: paymentMethod,
@@ -489,10 +490,19 @@ const Checkout = () => {
                       </div>
                     )}
 
-                    {selectedShipping && !freeShipping && (
+                    <div className="py-3 border-y border-white/5 my-2">
+                      <ShippingCalculator
+                        cartTotal={getSubtotal()}
+                        items={items}
+                        onSelect={setShippingOption}
+                        selected={shippingOption}
+                      />
+                    </div>
+
+                    {shippingOption && !freeShipping && (
                       <div className="flex justify-between text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                        <span>Frete ({selectedShipping.name})</span>
-                        <span className="text-foreground">R$ {selectedShipping.price.toFixed(2)}</span>
+                        <span>Frete ({shippingOption.name})</span>
+                        <span className="text-foreground">R$ {shippingOption.price.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
