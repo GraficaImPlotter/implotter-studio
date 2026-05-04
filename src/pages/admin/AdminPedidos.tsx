@@ -228,6 +228,7 @@ const AdminPedidos = () => {
       }
       toast({ title: field === "pix_receipt_url" ? "Recibo PIX anexado!" : "Nota Fiscal anexada!" });
     } catch (err: any) {
+      console.error("Erro no upload de documento:", err);
       toast({ title: "Erro ao enviar arquivo", description: err.message, variant: "destructive" });
     } finally {
       setUploadingDoc(null);
