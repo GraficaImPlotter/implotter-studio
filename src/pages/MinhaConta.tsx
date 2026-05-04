@@ -34,7 +34,7 @@ const MinhaConta = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addItem } = useCart();
-  const [tab, setTab] = useState("pedidos");
+  const [tab, setTab] = useState("dashboard");
   const [profile, setProfile] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -151,17 +151,23 @@ const MinhaConta = () => {
 
         <div className="container mx-auto px-4 max-w-5xl -mt-6">
            {/* Tab Navigation */}
-           <div className="bg-white p-1 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 flex gap-1 mb-10 w-fit mx-auto md:mx-0">
-              {["pedidos", "fidelidade", "perfil"].map((t) => (
+            <div className="bg-white p-1 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 flex gap-1 mb-10 w-fit mx-auto md:mx-0 overflow-x-auto max-w-full">
+              {[
+                { id: "dashboard", label: "Dashboard", icon: Package },
+                { id: "pedidos", label: "Pedidos", icon: ShoppingCart },
+                { id: "fidelidade", label: "Fidelidade", icon: Star },
+                { id: "perfil", label: "Perfil", icon: User }
+              ].map((t) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
                   className={cn(
-                    "px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                    tab === t ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                    "px-6 md:px-8 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap",
+                    tab === t.id ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  {t}
+                  <t.icon className="w-3.5 h-3.5" />
+                  {t.label}
                 </button>
               ))}
            </div>
@@ -175,6 +181,91 @@ const MinhaConta = () => {
                exit={{ opacity: 0, y: -10 }}
                transition={{ duration: 0.2 }}
              >
+                {tab === "dashboard" && (
+                  <div className="space-y-10">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-md">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                          <Package className="w-5 h-5" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Pedidos</p>
+                        <h3 className="text-3xl font-display font-black text-slate-900">{orders.length}</h3>
+                      </div>
+                      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-md">
+                        <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center text-success mb-4">
+                          <CheckCircle className="w-5 h-5" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Entregues</p>
+                        <h3 className="text-3xl font-display font-black text-slate-900">
+                          {orders.filter(o => o.status === 'finalizado').length}
+                        </h3>
+                      </div>
+                      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-md">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-4">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Em Produção</p>
+                        <h3 className="text-3xl font-display font-black text-slate-900">
+                          {orders.filter(o => !['finalizado', 'cancelado'].includes(o.status)).length}
+                        </h3>
+                      </div>
+                      <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-md">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-4">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Investimento</p>
+                        <h3 className="text-3xl font-display font-black text-slate-900">
+                          R$ {orders.reduce((acc, o) => acc + Number(o.total), 0).toFixed(0)}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions & Recent */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                      <div className="lg:col-span-7 space-y-6">
+                        <h3 className="text-xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                           <Clock className="w-5 h-5 text-primary" /> Últimas Atividades
+                        </h3>
+                        <div className="space-y-4">
+                          {orders.slice(0, 3).map(o => (
+                            <div key={o.id} onClick={() => openOrder(o)} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                                  <Package className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-slate-900">Pedido #{o.order_number}</p>
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase">{STATUS_LABELS[o.status] || o.status}</p>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-primary transition-all" />
+                            </div>
+                          ))}
+                        </div>
+                        <Button variant="ghost" className="w-full text-xs font-black uppercase tracking-widest text-slate-400 hover:text-primary" onClick={() => setTab("pedidos")}>Ver todos os pedidos</Button>
+                      </div>
+
+                      <div className="lg:col-span-5 space-y-6">
+                        <h3 className="text-xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                           <RefreshCw className="w-5 h-5 text-primary" /> Acesso Rápido
+                        </h3>
+                        <div className="grid grid-cols-1 gap-3">
+                          <Button variant="outline" className="h-14 rounded-2xl justify-start px-6 border-slate-100 bg-white shadow-sm" onClick={() => navigate("/loja")}>
+                            <ShoppingCart className="w-4 h-4 mr-3 text-primary" /> Novo Pedido
+                          </Button>
+                          <Button variant="outline" className="h-14 rounded-2xl justify-start px-6 border-slate-100 bg-white shadow-sm" onClick={() => navigate("/fale-conosco")}>
+                            <ShieldCheck className="w-4 h-4 mr-3 text-primary" /> Suporte Técnico
+                          </Button>
+                          <Button variant="outline" className="h-14 rounded-2xl justify-start px-6 border-slate-100 bg-white shadow-sm" onClick={() => setTab("perfil")}>
+                            <User className="w-4 h-4 mr-3 text-primary" /> Meus Dados
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {tab === "pedidos" && (
                   <div className="space-y-4">
                      {orders.length === 0 ? (
