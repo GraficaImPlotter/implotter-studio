@@ -13,6 +13,7 @@ interface ProductData {
   sale_price: number | null;
   pricing_type: 'fixed' | 'per_sqm';
   type: 'product' | 'kit';
+  unit_cost: number;
 }
 
 interface ProductAutocompleteProps {
@@ -38,7 +39,7 @@ const ProductAutocomplete = ({ onSelect, placeholder = "Buscar produto ou kit...
       // 1. Search in Products
       const { data: prods } = await supabase
         .from("products")
-        .select("id, name, price, sale_price, pricing_type")
+        .select("id, name, price, sale_price, pricing_type, unit_cost")
         .ilike("name", `%${term}%`)
         .eq("is_active", true)
         .limit(10);
@@ -58,7 +59,8 @@ const ProductAutocomplete = ({ onSelect, placeholder = "Buscar produto ou kit...
           price: p.price,
           sale_price: p.sale_price,
           pricing_type: p.pricing_type as any,
-          type: 'product' as const
+          type: 'product' as const,
+          unit_cost: Number(p.unit_cost || 0)
         })),
         ...(kits || []).map(k => ({
           id: k.id,
@@ -66,7 +68,8 @@ const ProductAutocomplete = ({ onSelect, placeholder = "Buscar produto ou kit...
           price: k.normal_price,
           sale_price: k.promo_price,
           pricing_type: 'fixed' as const,
-          type: 'kit' as const
+          type: 'kit' as const,
+          unit_cost: 0 // Kits cost could be calculated but keeping simple for now
         }))
       ].sort((a, b) => a.name.localeCompare(b.name));
 

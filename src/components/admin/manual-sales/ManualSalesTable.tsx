@@ -100,7 +100,7 @@ const ManualSalesTable = ({
                       {format(new Date(o.created_at), "dd/MM/yyyy", { locale: ptBR })}
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1 transition-opacity">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-highlight/10 hover:text-highlight" onClick={() => onEdit(o)}>
@@ -150,7 +150,7 @@ const ManualSalesTable = ({
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onView(o)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onEdit(o)}>
                               <ChevronRight className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>

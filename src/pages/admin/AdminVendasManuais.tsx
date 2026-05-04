@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Clock, Calendar } from "lucide-react";
 import { generatePixCode } from "@/lib/pix";
 import { generateReceiptPDF } from "@/lib/receipt-pdf";
 import { useSettings } from "@/hooks/use-settings";
@@ -13,10 +13,34 @@ import { useSettings } from "@/hooks/use-settings";
 import ManualSalesStats from "@/components/admin/manual-sales/ManualSalesStats";
 import ManualSalesTable from "@/components/admin/manual-sales/ManualSalesTable";
 import ManualSalesForm from "@/components/admin/manual-sales/ManualSalesForm";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+
+const statusColors: Record<string, string> = {
+  pedido_recebido: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  aguardando_pagamento: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  pagamento_confirmado: "bg-green-500/10 text-green-500 border-green-500/20",
+  em_producao: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  finalizado: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  cancelado: "bg-red-500/10 text-red-500 border-red-500/20",
+};
+
+const statusLabels: Record<string, string> = {
+  pedido_recebido: "Recebido",
+  aguardando_pagamento: "Aguardando Pag.",
+  pagamento_confirmado: "Pago",
+  em_producao: "Em Produção",
+  finalizado: "Finalizado",
+  cancelado: "Cancelado",
+};
 
 const AdminVendasManuais = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const { data: companySettings = {} } = useSettings();
@@ -125,15 +149,80 @@ const AdminVendasManuais = () => {
 
       <ManualSalesStats orders={orders} />
 
-      <ManualSalesTable 
-        orders={orders} 
-        onEdit={(o) => { setEditing(o); setOpen(true); }}
-        onDuplicate={(o) => { setEditing({ ...o, id: undefined, order_number: undefined }); setOpen(true); }}
-        onView={() => {}} // Could link to order detail page
-        onWhatsApp={openWhatsApp}
-        onReceipt={handleReceipt}
-        onPix={handlePixCode}
-      />
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+        <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
+          {[
+            { id: "todos", label: "Todos" },
+            { id: "aguardando_pagamento", label: "Pendentes" },
+            { id: "pagamento_confirmado", label: "Pagos" },
+            { id: "em_producao", label: "Produção" },
+            { id: "finalizado", label: "Finalizados" },
+            { id: "agenda", label: "📅 Agenda" }
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setStatusFilter(t.id)}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+                statusFilter === t.id ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar por cliente ou #..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-background/50 focus:bg-background transition-colors"
+          />
+        </div>
+      </div>
+
+      {statusFilter === "agenda" ? (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+             {/* Simple Weekly View or Sorted List */}
+             {orders
+               .filter(o => o.due_date)
+               .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+               .map(o => (
+                 <div key={o.id} className="bg-white p-4 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={() => { setEditing(o); setOpen(true); }}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-black text-primary uppercase">{new Date(o.due_date).toLocaleDateString("pt-BR", { day: '2-digit', month: 'short' })}</span>
+                      <Badge className={`text-[8px] h-4 ${statusColors[o.status] || ""}`}>{statusLabels[o.status] || o.status}</Badge>
+                    </div>
+                    <h4 className="text-xs font-bold text-foreground line-clamp-1">{o.customer_name}</h4>
+                    <p className="text-[10px] text-muted-foreground">#{o.order_number} • R$ {Number(o.total).toFixed(2)}</p>
+                 </div>
+               ))}
+             {orders.filter(o => o.due_date).length === 0 && (
+               <div className="col-span-full p-12 text-center bg-muted/20 rounded-3xl border border-dashed border-border">
+                  <p className="text-muted-foreground font-medium">Nenhum pedido com data de entrega definida.</p>
+               </div>
+             )}
+          </div>
+        </div>
+      ) : (
+        <ManualSalesTable 
+          orders={orders.filter(o => {
+            const matchStatus = statusFilter === "todos" || o.status === statusFilter;
+            const matchSearch = !searchTerm || 
+              o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              o.order_number?.toString().includes(searchTerm);
+            return matchStatus && matchSearch;
+          })} 
+          onEdit={(o) => { setEditing(o); setOpen(true); }}
+          onDuplicate={(o) => { setEditing({ ...o, id: undefined, order_number: undefined }); setOpen(true); }}
+          onView={() => {}} 
+          onWhatsApp={openWhatsApp}
+          onReceipt={handleReceipt}
+          onPix={handlePixCode}
+        />
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-glow shadow-elevated">

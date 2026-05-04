@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Search, Upload, Receipt, FileText, ExternalLink, Calculator, UserCheck } from "lucide-react";
+import { Plus, Trash2, Search, Upload, Receipt, FileText, ExternalLink, Calculator, UserCheck, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import CustomerAutocomplete from "./CustomerAutocomplete";
 import CustomerPurchaseHistory from "./CustomerPurchaseHistory";
@@ -30,6 +30,7 @@ interface SaleItem {
   area?: number;
   pricingType?: 'fixed' | 'per_sqm';
   instructions?: string;
+  unitCost?: number;
 }
 
 interface ManualSalesFormProps {
@@ -47,7 +48,8 @@ const emptyItem = (): SaleItem => ({
   height: 0,
   area: 0,
   pricingType: 'fixed',
-  instructions: ""
+  instructions: "",
+  unitCost: 0
 });
 
 const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
@@ -70,6 +72,7 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItem[]>([emptyItem()]);
   const [globalDiscount, setGlobalDiscount] = useState(0);
+  const [dueDate, setDueDate] = useState<string>("");
   
   const [allFinishings, setAllFinishings] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -113,6 +116,7 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
       setStatus(editingOrder.status || "aguardando_pagamento");
       setNotes(editingOrder.notes || "");
       setGlobalDiscount(Number(editingOrder.discount) || 0);
+      setDueDate(editingOrder.due_date || "");
       
       // Load items
       supabase.from("order_items").select("*").eq("order_id", editingOrder.id).then(({ data }) => {
@@ -128,6 +132,7 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
             area: oi.item_area || 0,
             pricingType: (oi.pricing_type as any) || 'fixed',
             instructions: oi.instructions || "",
+            unitCost: Number(oi.unit_cost) || 0,
           })));
         }
       });
@@ -145,6 +150,17 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
   }, 0);
 
   const total = Math.max(0, subtotal - globalDiscount);
+
+  const totalCost = items.reduce((sum, it) => {
+    let itemCost = it.unitCost || 0;
+    if (it.pricingType === 'per_sqm' && it.width && it.height) {
+      itemCost = (it.unitCost || 0) * (it.width * it.height);
+    }
+    return sum + (itemCost * it.quantity);
+  }, 0);
+
+  const profit = total - totalCost;
+  const margin = total > 0 ? (profit / total) * 100 : 0;
 
   const lookupCep = useCallback(async (cep: string) => {
     const digits = cep.replace(/\D/g, "");
@@ -252,6 +268,8 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
         payment_method: paymentMethod,
         status: status as any,
         notes: notes || null,
+        due_date: dueDate || null,
+        total_cost: totalCost,
       };
 
       let orderId: string;
@@ -292,12 +310,31 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
           item_height: it.height || null,
           item_area: itemArea,
           instructions: it.instructions || null,
+          unit_cost: it.unitCost || 0,
           subtotal: Math.round(itemSubtotal * (1 - it.discount / 100) * 100) / 100,
         };
       });
       await supabase.from("order_items").insert(orderItems);
-
-      toast({ title: editingOrder ? "Venda atualizada!" : "Venda registrada!" });
+      
+      const savedOrderNumber = editingOrder?.order_number;
+      
+      toast({ 
+        title: editingOrder ? "Venda atualizada!" : "Venda registrada!",
+        action: (
+          <Button 
+            size="sm" 
+            variant="hero" 
+            className="h-8 text-[10px] font-black"
+            onClick={() => {
+              const phone = customerPhone.replace(/\D/g, "");
+              const msg = encodeURIComponent(`Olá ${customerName}! 👋 Seu pedido #${savedOrderNumber || 'Novo'} foi registrado no valor de R$ ${total.toFixed(2)}. Obrigado pela preferência!`);
+              window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+            }}
+          >
+            ENVIAR WHATSAPP
+          </Button>
+        )
+      });
       onSuccess();
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
@@ -433,7 +470,8 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                       productId: prod.id, 
                       name: prod.name, 
                       unitPrice: prod.sale_price || prod.price,
-                      pricingType: prod.pricing_type as any
+                      pricingType: prod.pricing_type as any,
+                      unitCost: prod.unit_cost
                     })} 
                     placeholder="Buscar no sistema ou digitar nome..."
                   />
@@ -485,6 +523,18 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                     onChange={e => updateItem(idx, { quantity: parseInt(e.target.value) || 1 })} 
                     className="bg-background/50"
                   />
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {[10, 50, 100, 500, 1000].map(q => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => updateItem(idx, { quantity: q })}
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-muted hover:bg-primary/20 hover:text-primary transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="md:col-span-4 lg:col-span-2 space-y-1.5">
                   <Label className="text-[10px] uppercase text-muted-foreground font-bold">
@@ -497,6 +547,26 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                     onChange={e => updateItem(idx, { unitPrice: parseFloat(e.target.value) || 0 })} 
                     className="bg-background/50"
                   />
+                </div>
+                <div className="md:col-span-4 lg:col-span-2 space-y-1.5">
+                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">
+                    Custo Unit. (R$)
+                  </Label>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    value={item.unitCost} 
+                    onChange={e => updateItem(idx, { unitCost: parseFloat(e.target.value) || 0 })} 
+                    className="bg-background/50 border-destructive/20"
+                  />
+                  {item.unitPrice > 0 && (
+                    <p className={cn(
+                      "text-[9px] font-bold uppercase",
+                      (item.unitPrice - (item.unitCost || 0)) > 0 ? "text-success" : "text-destructive"
+                    )}>
+                      Margem: {(((item.unitPrice - (item.unitCost || 0)) / item.unitPrice) * 100).toFixed(1)}%
+                    </p>
+                  )}
                 </div>
                 <div className="md:col-span-4 lg:col-span-2 flex items-center justify-between gap-2 h-full pt-6">
                   <div className="text-right flex-1">
@@ -587,8 +657,19 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
             </select>
           </div>
           <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Previsão de Entrega
+            </Label>
+            <Input 
+              type="date" 
+              value={dueDate} 
+              onChange={e => setDueDate(e.target.value)}
+              className="bg-background/50"
+            />
+          </div>
+          <div className="space-y-2">
             <Label>Observações Internas</Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Instruções de produção, frete, etc..." className="bg-background/50" />
+            <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Instruções de produção, frete, etc..." className="bg-background/50" />
           </div>
         </div>
 
@@ -611,6 +692,12 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
           </div>
           
           <div className="pt-4 border-t border-border mt-4">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm font-bold text-muted-foreground">Lucro Estimado</span>
+              <span className={cn("text-lg font-black", profit > 0 ? "text-success" : "text-destructive")}>
+                R$ {profit.toFixed(2)} ({margin.toFixed(1)}%)
+              </span>
+            </div>
             <div className="flex justify-between items-center">
               <span className="text-lg font-bold text-foreground">Valor Total</span>
               <span className="text-2xl font-black text-primary">R$ {total.toFixed(2)}</span>
