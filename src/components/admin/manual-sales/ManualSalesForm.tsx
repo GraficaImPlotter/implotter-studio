@@ -8,7 +8,7 @@ import { Plus, Trash2, Search, Upload, Receipt, FileText, ExternalLink, Calculat
 import { useToast } from "@/hooks/use-toast";
 import CustomerAutocomplete from "./CustomerAutocomplete";
 import CustomerPurchaseHistory from "./CustomerPurchaseHistory";
-import { formatCep, formatPhone, formatCpfCnpj } from "@/lib/utils";
+import { formatCep, formatPhone, formatCpfCnpj, cn } from "@/lib/utils";
 import { useCallback } from "react";
 import ProductAutocomplete from "./ProductAutocomplete";
 import { 
@@ -462,133 +462,136 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
         <div className="space-y-3">
           {items.map((item, idx) => (
             <div key={idx} className="glass-card p-4 rounded-xl space-y-4 relative overflow-hidden group border-glow/30">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                <div className="md:col-span-12 lg:col-span-5 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">Produto / Serviço</Label>
-                  <ProductAutocomplete 
-                    onSelect={(prod) => updateItem(idx, { 
-                      productId: prod.id, 
-                      name: prod.name, 
-                      unitPrice: prod.sale_price || prod.price,
-                      pricingType: prod.pricing_type as any,
-                      unitCost: prod.unit_cost
-                    })} 
-                    placeholder="Buscar no sistema ou digitar nome..."
-                  />
-                  <Input 
-                    value={item.name} 
-                    onChange={e => updateItem(idx, { name: e.target.value, productId: null })} 
-                    placeholder="Nome customizado..." 
-                    className="mt-1.5 bg-background/30 h-8 text-xs"
-                  />
-                </div>
+              <div className="flex flex-col gap-4">
+                {/* Linha 1: Produto Principal, Dimensões e Valores */}
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[240px] space-y-1.5">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Produto / Serviço</Label>
+                    <ProductAutocomplete 
+                      onSelect={(prod) => updateItem(idx, { 
+                        productId: prod.id, 
+                        name: prod.name, 
+                        unitPrice: prod.sale_price || prod.price || 0,
+                        pricingType: prod.pricing_type as any,
+                        unitCost: prod.unit_cost || 0
+                      })} 
+                      placeholder="Buscar no sistema ou digitar nome..."
+                    />
+                    <Input 
+                      value={item.name} 
+                      onChange={e => updateItem(idx, { name: e.target.value, productId: null })} 
+                      placeholder="Nome customizado..." 
+                      className="mt-1.5 bg-background/30 h-8 text-xs"
+                    />
+                  </div>
 
-                {item.pricingType === 'per_sqm' && (
-                  <>
-                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5">
-                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Larg (m)</Label>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        value={item.width} 
-                        onChange={e => updateItem(idx, { width: parseFloat(e.target.value) || 0 })} 
-                        className="bg-background/50"
-                      />
-                    </div>
-                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5">
-                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Alt (m)</Label>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        value={item.height} 
-                        onChange={e => updateItem(idx, { height: parseFloat(e.target.value) || 0 })} 
-                        className="bg-background/50"
-                      />
-                    </div>
-                    <div className="md:col-span-3 lg:col-span-1 space-y-1.5 hidden lg:block">
-                      <Label className="text-[10px] uppercase text-muted-foreground font-bold">Área (m²)</Label>
-                      <div className="h-10 flex items-center px-3 rounded-md bg-muted/30 text-xs font-mono">
-                        {((item.width || 0) * (item.height || 0)).toFixed(2)}
+                  {item.pricingType === 'per_sqm' && (
+                    <div className="flex flex-wrap gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
+                      <div className="w-20 space-y-1.5">
+                        <Label className="text-[10px] uppercase text-muted-foreground font-bold">Larg (m)</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          value={item.width} 
+                          onChange={e => updateItem(idx, { width: parseFloat(e.target.value) || 0 })} 
+                          className="bg-background/50 h-8 text-xs"
+                        />
+                      </div>
+                      <div className="w-20 space-y-1.5">
+                        <Label className="text-[10px] uppercase text-muted-foreground font-bold">Alt (m)</Label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          value={item.height} 
+                          onChange={e => updateItem(idx, { height: parseFloat(e.target.value) || 0 })} 
+                          className="bg-background/50 h-8 text-xs"
+                        />
+                      </div>
+                      <div className="w-20 space-y-1.5 hidden sm:block">
+                        <Label className="text-[10px] uppercase text-muted-foreground font-bold">Área (m²)</Label>
+                        <div className="h-8 flex items-center px-3 rounded-md bg-background border border-input text-xs font-mono">
+                          {((item.width || 0) * (item.height || 0)).toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                  </>
-                )}
-
-                <div className="md:col-span-2 lg:col-span-1 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">Qtd</Label>
-                  <Input 
-                    type="number" 
-                    min={1} 
-                    value={item.quantity} 
-                    onChange={e => updateItem(idx, { quantity: parseInt(e.target.value) || 1 })} 
-                    className="bg-background/50"
-                  />
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {[10, 50, 100, 500, 1000].map(q => (
-                      <button
-                        key={q}
-                        type="button"
-                        onClick={() => updateItem(idx, { quantity: q })}
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-muted hover:bg-primary/20 hover:text-primary transition-colors"
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="md:col-span-4 lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">
-                    {item.pricingType === 'per_sqm' ? 'Vlr m² (R$)' : 'Vlr Unit (R$)'}
-                  </Label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    value={item.unitPrice} 
-                    onChange={e => updateItem(idx, { unitPrice: parseFloat(e.target.value) || 0 })} 
-                    className="bg-background/50"
-                  />
-                </div>
-                <div className="md:col-span-4 lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] uppercase text-muted-foreground font-bold">
-                    Custo Unit. (R$)
-                  </Label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    value={item.unitCost} 
-                    onChange={e => updateItem(idx, { unitCost: parseFloat(e.target.value) || 0 })} 
-                    className="bg-background/50 border-destructive/20"
-                  />
-                  {item.unitPrice > 0 && (
-                    <p className={cn(
-                      "text-[9px] font-bold uppercase",
-                      (item.unitPrice - (item.unitCost || 0)) > 0 ? "text-success" : "text-destructive"
-                    )}>
-                      Margem: {(((item.unitPrice - (item.unitCost || 0)) / item.unitPrice) * 100).toFixed(1)}%
-                    </p>
                   )}
-                </div>
-                <div className="md:col-span-4 lg:col-span-2 flex items-center justify-between gap-2 h-full pt-6">
-                  <div className="text-right flex-1">
-                    <p className="text-[10px] uppercase text-muted-foreground">Total Item</p>
-                    <p className="font-bold text-primary">
-                      R$ {(item.pricingType === 'per_sqm' 
-                        ? (item.unitPrice * (item.width || 0) * (item.height || 0) * item.quantity)
-                        : (item.unitPrice * item.quantity)
-                      ).toFixed(2)}
-                    </p>
+                  
+                  <div className="w-24 space-y-1.5">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Qtd</Label>
+                    <Input 
+                      type="number" 
+                      min={1} 
+                      value={item.quantity} 
+                      onChange={e => updateItem(idx, { quantity: parseInt(e.target.value) || 1 })} 
+                      className="bg-background/50 h-8 text-xs"
+                    />
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {[10, 50, 100].map(q => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => updateItem(idx, { quantity: q })}
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-muted hover:bg-primary/20 hover:text-primary transition-colors flex-1"
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-destructive hover:bg-destructive/10" 
-                    onClick={() => removeItem(idx)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+
+                  <div className="w-28 space-y-1.5">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">
+                      {item.pricingType === 'per_sqm' ? 'Vlr m² (R$)' : 'Vlr Unit (R$)'}
+                    </Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={item.unitPrice} 
+                      onChange={e => updateItem(idx, { unitPrice: parseFloat(e.target.value) || 0 })} 
+                      className="bg-background/50 h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="w-28 space-y-1.5">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">Custo Un (R$)</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={item.unitCost} 
+                      onChange={e => updateItem(idx, { unitCost: parseFloat(e.target.value) || 0 })} 
+                      className="bg-background/50 border-destructive/20 h-8 text-xs text-destructive font-semibold"
+                    />
+                    {item.unitPrice > 0 && (
+                      <p className={cn(
+                        "text-[9px] font-bold uppercase",
+                        (item.unitPrice - (item.unitCost || 0)) > 0 ? "text-success" : "text-destructive"
+                      )}>
+                        MG: {(((item.unitPrice - (item.unitCost || 0)) / item.unitPrice) * 100).toFixed(0)}%
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-[150px] flex items-center justify-between gap-4 h-full pb-2">
+                    <div className="text-right flex-1">
+                      <p className="text-[10px] uppercase text-muted-foreground">Total Item</p>
+                      <p className="text-lg font-black text-primary">
+                        R$ {(item.pricingType === 'per_sqm' 
+                          ? (item.unitPrice * (item.width || 0) * (item.height || 0) * item.quantity)
+                          : (item.unitPrice * item.quantity)
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-destructive hover:bg-destructive/10 h-8 w-8" 
+                      onClick={() => removeItem(idx)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
               {/* Acabamentos e Instruções */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/30">
@@ -620,6 +623,7 @@ const ManualSalesForm = ({ editingOrder, onSuccess }: ManualSalesFormProps) => {
                   />
                 </div>
               </div>
+            </div>
             </div>
           ))}
         </div>

@@ -39,7 +39,7 @@ const ProductAutocomplete = ({ onSelect, placeholder = "Buscar produto ou kit...
       // 1. Search in Products
       const { data: prods } = await supabase
         .from("products")
-        .select("id, name, price, sale_price, pricing_type, unit_cost")
+        .select("id, name, price, sale_price, pricing_type, unit_cost, price_per_sqm")
         .ilike("name", `%${term}%`)
         .eq("is_active", true)
         .limit(10);
@@ -56,7 +56,7 @@ const ProductAutocomplete = ({ onSelect, placeholder = "Buscar produto ou kit...
         ...(prods || []).map(p => ({
           id: p.id,
           name: p.name,
-          price: p.price,
+          price: p.pricing_type === 'per_sqm' ? (p.price_per_sqm || p.price) : p.price,
           sale_price: p.sale_price,
           pricing_type: p.pricing_type as any,
           type: 'product' as const,
