@@ -47,7 +47,7 @@ const AdminPedidos = () => {
   const deleteOrderMutation = useDeleteOrder();
 
   const toggleSelectAll = () => {
-    if (selectedOrders.size === orders.length && orders.length > 0) {
+    if (selectedOrders && selectedOrders.size === orders.length && orders.length > 0) {
       setSelectedOrders(new Set());
     } else {
       setSelectedOrders(new Set(orders.map(o => o.id)));
@@ -62,7 +62,7 @@ const AdminPedidos = () => {
   };
 
   const handleBulkUpdate = async () => {
-    if (!bulkStatus || selectedOrders.size === 0) return;
+    if (!bulkStatus || !selectedOrders || selectedOrders.size === 0) return;
     bulkUpdateMutation.mutate({ 
       ids: Array.from(selectedOrders), 
       status: bulkStatus 
@@ -96,7 +96,7 @@ const AdminPedidos = () => {
   };
 
   const generateBulkPackingSlip = async () => {
-    if (selectedOrders.size === 0) return;
+    if (!selectedOrders || selectedOrders.size === 0) return;
     const ids = Array.from(selectedOrders);
     const selectedOrdersData = orders.filter(o => ids.includes(o.id));
     const { data: allItems } = await supabase.from("order_items").select("*").in("order_id", ids);
@@ -286,7 +286,7 @@ const AdminPedidos = () => {
         />
 
         <BulkActions 
-          selectedCount={selectedOrders.size}
+          selectedCount={selectedOrders?.size || 0}
           bulkStatus={bulkStatus}
           setBulkStatus={setBulkStatus}
           handleBulkUpdate={handleBulkUpdate}

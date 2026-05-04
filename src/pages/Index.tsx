@@ -14,6 +14,7 @@ const DifferentialsSection = lazy(() => import("@/components/home/DifferentialsS
 const ReviewsSection = lazy(() => import("@/components/home/ReviewsSection"));
 const CTASection = lazy(() => import("@/components/home/CTASection"));
 const FAQSection = lazy(() => import("@/components/home/FAQSection"));
+const ContentRichSection = lazy(() => import("@/components/home/ContentRichSection"));
 const BeforeAfterSlider = lazy(() => import("@/components/home/BeforeAfterSlider").then(m => ({ default: m.BeforeAfterSlider })));
 
 const SectionLoader = ({ height = "400px" }) => (
@@ -31,9 +32,9 @@ const Index = () => {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": settings?.company_name || "Gráfica ImPlotter",
-    "image": "https://graficaimplotter.shop/pwa-icon-512.png",
-    "@id": "https://graficaimplotter.shop",
-    "url": "https://graficaimplotter.shop",
+    "image": "https://graficaimplotter.com.br/pwa-icon-512.png",
+    "@id": "https://graficaimplotter.com.br",
+    "url": "https://graficaimplotter.com.br",
     "telephone": settings?.phone || settings?.whatsapp || "",
     "address": {
       "@type": "PostalAddress",
@@ -54,8 +55,8 @@ const Index = () => {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Gráfica ImPlotter",
-    "url": "https://graficaimplotter.shop",
-    "logo": "https://graficaimplotter.shop/pwa-icon-512.png",
+    "url": "https://graficaimplotter.com.br",
+    "logo": "https://graficaimplotter.com.br/pwa-icon-512.png",
     "sameAs": [
       settings?.instagram_url,
       settings?.facebook_url
@@ -73,6 +74,11 @@ const Index = () => {
       
       {/* Above the fold - Eager */}
       <HeroSection />
+      
+      <Suspense fallback={<SectionLoader height="300px" />}>
+        <ContentRichSection />
+      </Suspense>
+
       <CategoriesSection />
       <PromoCarouselSection />
 

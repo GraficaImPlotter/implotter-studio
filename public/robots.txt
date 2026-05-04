@@ -7,5 +7,5 @@ Disallow: /checkout
 Disallow: /pagamento/*
 Disallow: /~oauth
 
-Sitemap: https://graficaimplotter.shop/sitemap.xml
+Sitemap: https://graficaimplotter.com.br/sitemap.xml
 Sitemap: https://hdwszoxthqxecgjzjdjw.supabase.co/functions/v1/sitemap

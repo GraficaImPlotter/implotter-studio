@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,6 +62,9 @@ const OrderDetailDialog = ({
                <DialogTitle className="font-display font-bold text-2xl flex items-center gap-2">
                  Pedido <span className="text-primary">#{order.order_number}</span>
                </DialogTitle>
+               <DialogDescription className="sr-only">
+                 Detalhes completos do pedido #{order.order_number}, incluindo itens, histórico e envio.
+               </DialogDescription>
                <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
                  Criado em {new Date(order.created_at).toLocaleString("pt-BR")}
                </p>

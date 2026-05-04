@@ -12,7 +12,7 @@ interface SEOHeadProps {
 
 const SITE_NAME = "Gráfica ImPlotter";
 const DEFAULT_DESCRIPTION = "Impressão profissional de alta qualidade: banners, adesivos, cartões, panfletos e muito mais. Entrega rápida e preço justo.";
-const SITE_URL = "https://graficaimplotter.shop";
+const SITE_URL = "https://graficaimplotter.com.br";
 
 const SEOHead = ({
   title,
