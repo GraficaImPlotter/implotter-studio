@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSearchParams, Link, useLocation } from "react-router-dom";
 import PublicLayout from "@/components/layout/PublicLayout";
 import SEOHead from "@/components/SEOHead";
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ShoppingCart, Search, ArrowRight, ChevronRight, ChevronDown,
   Home, Ruler, FolderOpen, Menu, Package, BoxIcon, Clock,
-  Sparkles, Flame, Tag, Check
+  Sparkles, Flame, Tag, Check, SlidersHorizontal, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -31,23 +31,25 @@ interface CatalogNode {
 }
 
 /* ─── Sidebar Content (New Filter System) ─── */
-const SidebarFilters = ({ 
-  categories, 
-  onSelectCategory, 
+const SidebarFilters = ({
+  categories,
+  onSelectCategory,
   selectedCategoryId,
   filters,
   setFilter,
-  availableOptions
-}: { 
-  categories: any[]; 
-  onSelectCategory: (id: string) => void;
+  availableOptions,
+  clearAll
+}: {
+  categories: any[];
+  onSelectCategory: (id: string | null) => void;
   selectedCategoryId: string | null;
   filters: Record<string, string[]>;
   setFilter: (key: string, val: string) => void;
   availableOptions: Record<string, string[]>;
+  clearAll: () => void;
 }) => {
   const [searchCat, setSearchCat] = useState("");
-  
+
   return (
     <div className="space-y-6">
       {/* Search Category */}
@@ -55,20 +57,20 @@ const SidebarFilters = ({
         <h3 className="text-sm font-bold text-foreground font-display">Produto</h3>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar produto" 
-            value={searchCat} 
+          <Input
+            placeholder="Buscar produto"
+            value={searchCat}
             onChange={e => setSearchCat(e.target.value)}
-            className="pl-9 h-9 text-xs bg-secondary/30 border-border rounded-lg"
+            className="pl-9 h-9 text-xs bg-card border-border rounded-lg"
           />
         </div>
         <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
           {categories.filter(c => (c.name || "").toLowerCase().includes(searchCat.toLowerCase())).map(c => (
             <button
               key={c.id}
-              onClick={() => onSelectCategory(c.id)}
+              onClick={() => onSelectCategory(selectedCategoryId === c.id ? null : c.id)}
               className={`w-full flex items-center justify-between text-left px-2 py-2 rounded-lg transition-all group
-                ${selectedCategoryId === c.id ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
+                ${selectedCategoryId === c.id ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-muted/50 text-foreground/60 hover:text-foreground'}`}
             >
               <div className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all shrink-0 ${selectedCategoryId === c.id ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
@@ -81,11 +83,21 @@ const SidebarFilters = ({
         </div>
       </div>
 
+      {/* Clear All Button */}
+      {(selectedCategoryId || Object.keys(filters).length > 0) && (
+        <button
+          onClick={clearAll}
+          className="w-full text-xs text-muted-foreground hover:text-primary underline underline-offset-4 py-2"
+        >
+          Limpar todas as seleções
+        </button>
+      )}
+
       {/* Dynamic Attribute Filters */}
       {Object.keys(availableOptions).map(attr => (
         <div key={attr} className="space-y-3 pt-6 border-t border-border/50">
           <h3 className="text-sm font-bold text-foreground font-display">{attr}</h3>
-          
+
           <div className="flex flex-wrap gap-2">
             {availableOptions[attr].length > 0 ? (
               availableOptions[attr].map(val => {
@@ -94,17 +106,17 @@ const SidebarFilters = ({
                   <button
                     key={val}
                     onClick={() => setFilter(attr, val)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border
-                      ${isSelected 
-                        ? 'bg-primary border-primary text-white shadow-glow-sm' 
-                        : 'bg-secondary/30 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all
+                      ${isSelected
+                        ? 'bg-primary border-primary text-white shadow-glow-sm'
+                        : 'bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'}`}
                   >
                     {val}
                   </button>
                 );
               })
             ) : (
-              <p className="text-[11px] text-muted-foreground italic px-2">Nenhuma opção disponível</p>
+              <p className="text-[11px] text-foreground/50 italic px-2">Nenhuma opção disponível</p>
             )}
           </div>
         </div>
@@ -122,11 +134,24 @@ const Loja = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const selectedNodeId = searchParams.get("node") || null;
   const sortBy = searchParams.get("sort") || "relevancia";
+
+  // Debounce search
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -136,7 +161,7 @@ const Loja = () => {
 
     const PUBLIC_PRODUCT_COLS = "id, name, slug, short_description, price, sale_price, pricing_type, sale_unit, price_per_sqm, catalog_node_id, category_id, is_active, is_featured, show_on_store, estimated_days, color_mode, default_quantity, sort_order, created_at, updated_at, product_images(image_url, sort_order)";
     let q = supabase.from("products").select(PUBLIC_PRODUCT_COLS).eq("is_active", true).eq("show_on_store", true);
-    
+
     const nodeId = new URLSearchParams(window.location.search).get("node");
     if (nodeId) {
       const getDescendants = (id: string, visited = new Set<string>(), depth = 0): string[] => {
@@ -151,7 +176,7 @@ const Loja = () => {
       q = q.in("catalog_node_id", allCategoryIds);
     }
 
-    const searchTerm = search.trim();
+    const searchTerm = debouncedSearch.trim();
     if (searchTerm) q = q.ilike("name", `%${searchTerm}%`);
 
     if (sortBy === "menor-preco") q = q.order("price", { ascending: true });
@@ -174,7 +199,7 @@ const Loja = () => {
     }
   }, [search, sortBy]);
 
-  useEffect(() => { load(); }, [selectedNodeId, sortBy, search, load]);
+  useEffect(() => { load(); }, [selectedNodeId, sortBy, debouncedSearch, load]);
 
   const availableFilters = useMemo(() => {
     const opts: Record<string, Set<string>> = {};
@@ -212,7 +237,7 @@ const Loja = () => {
     return products.filter(p => {
       for (const [attr, selectedVals] of Object.entries(activeFilters)) {
         if (selectedVals.length === 0) continue;
-        
+
         const hasAttr = p.configuration_schema?.some((schemaAttr: any) => {
           // Check top-level (flat)
           if (schemaAttr.label === attr && schemaAttr.options?.some((opt: any) => selectedVals.includes(opt.name))) {
@@ -220,7 +245,7 @@ const Loja = () => {
           }
           // Check nested (hierarchy)
           if (schemaAttr.ui_type === 'hierarchy' && Array.isArray(schemaAttr.groups)) {
-            return schemaAttr.groups.some((group: any) => 
+            return schemaAttr.groups.some((group: any) =>
                group.name === attr && group.options?.some((opt: any) => selectedVals.includes(opt.name))
             );
           }
@@ -236,7 +261,7 @@ const Loja = () => {
   const toggleFilter = (key: string, val: string) => {
     setActiveFilters(prev => {
       const current = prev[key] || [];
-      const next = current.includes(val) 
+      const next = current.includes(val)
         ? current.filter(v => v !== val)
         : [...current, val];
       return { ...prev, [key]: next };
@@ -264,6 +289,13 @@ const Loja = () => {
     setSearchParams(p);
   };
 
+  // Clear all filters
+  const clearAllFilters = () => {
+    setActiveFilters({});
+    setSearch("");
+    navigateToBreadcrumb(null);
+  };
+
   const roots = useMemo(() => allNodes
     .filter(n => !n.parent_id)
     .sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR")), [allNodes]);
@@ -275,49 +307,111 @@ const Loja = () => {
 
   return (
     <PublicLayout>
-      <SEOHead 
-        title={selectedNodeName ? `${selectedNodeName} | Catálogo` : "Loja de Impressos | Gráfica ImPlotter"} 
-        description="Explore nosso catálogo completo de materiais gráficos premium." 
+      <SEOHead
+        title={selectedNodeName ? `${selectedNodeName} | Catálogo` : "Loja de Impressos | Gráfica ImPlotter"}
+        description="Explore nosso catálogo completo de materiais gráficos premium."
       />
 
       <section className="py-8 md:py-12 bg-white min-h-screen">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col md:flex-row gap-12">
-            
+
             {/* Sidebar Desktop */}
             <aside className="hidden lg:block w-72 flex-shrink-0">
               <div className="sticky top-24 bg-white rounded-[2rem] border border-border/60 p-8 shadow-sm">
-                <SidebarFilters 
+                <SidebarFilters
                   categories={roots}
-                  onSelectCategory={id => navigateToBreadcrumb(id)}
+                  onSelectCategory={(id) => navigateToBreadcrumb(id)}
                   selectedCategoryId={selectedNodeId}
                   filters={activeFilters}
                   setFilter={toggleFilter}
                   availableOptions={availableFilters}
+                  clearAll={clearAllFilters}
                 />
               </div>
             </aside>
 
+            {/* Mobile Filter Button & Sheet */}
+            <div className="lg:hidden w-full mb-6">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full h-12 rounded-xl border-2 border-border flex items-center justify-center gap-3">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    <span className="text-sm font-bold">Filtros e Categorias</span>
+                    {(selectedNodeId || Object.keys(activeFilters).length > 0) && (
+                      <Badge variant="default" className="ml-2 bg-primary text-white">
+                        {Object.values(activeFilters).flat().length + (selectedNodeId ? 1 : 0)}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 p-6 overflow-y-auto">
+                  <div className="mb-6 flex items-center justify-between">
+                    <h3 className="font-display font-bold text-lg">Filtros</h3>
+                    <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs">
+                      Limpar Tudo
+                    </Button>
+                  </div>
+                  <SidebarFilters
+                    categories={roots}
+                    onSelectCategory={(id) => { navigateToBreadcrumb(id); }}
+                    selectedCategoryId={selectedNodeId}
+                    filters={activeFilters}
+                    setFilter={toggleFilter}
+                    availableOptions={availableFilters}
+                    clearAll={clearAllFilters}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+
             {/* Main Content */}
             <main className="flex-1">
+              {/* Active Filters Display */}
+              {(selectedNodeId || Object.keys(activeFilters).length > 0) && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {selectedNodeName && (
+                    <Badge variant="secondary" className="rounded-lg px-3 py-1.5 text-xs font-medium">
+                      {selectedNodeName}
+                      <button onClick={() => navigateToBreadcrumb(null)} className="ml-2 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {Object.entries(activeFilters).map(([key, vals]) =>
+                    vals.map(v => (
+                      <Badge key={`${key}-${v}`} variant="outline" className="rounded-lg px-3 py-1.5 text-xs">
+                        {v}
+                        <button onClick={() => toggleFilter(key, v)} className="ml-2 hover:text-destructive">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                  <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-primary underline underline-offset-4">
+                    Limpar todos
+                  </button>
+                </div>
+              )}
+
               {/* Banner */}
-              <div className="relative rounded-[2.5rem] overflow-hidden bg-slate-50 border border-border/40 min-h-[180px] md:min-h-[220px] flex items-center px-8 md:px-12 mb-10 group">
+              <div className="relative rounded-[2.5rem] overflow-hidden bg-card border border-border/40 min-h-[180px] md:min-h-[220px] flex items-center px-8 md:px-12 mb-10 group">
                 <div className="relative z-10 max-w-lg">
                   <h1 className="font-display text-3xl md:text-5xl font-black text-foreground mb-4 tracking-tight leading-tight">
                     {selectedNodeName || "Nossa Loja"}
                   </h1>
-                  <p className="text-sm md:text-base text-muted-foreground font-medium max-w-md">
+                  <p className="text-sm md:text-base text-foreground/70 font-medium max-w-md">
                     Impressão premium com acabamento profissional para elevar o nível do seu negócio.
                   </p>
                 </div>
                 {/* Decoration */}
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-l from-slate-100 to-transparent z-10" />
+                   <div className="absolute inset-0 bg-gradient-to-l from-muted/20 to-transparent z-10" />
                    {selectedNodeId && allNodes.find(n => n.id === selectedNodeId)?.image_url && (
-                      <img 
-                        src={allNodes.find(n => n.id === selectedNodeId)?.image_url || ""} 
-                        className="w-full h-full object-contain p-8 rotate-6 scale-110 opacity-80 group-hover:scale-125 transition-transform duration-1000" 
-                        alt="" 
+                      <img
+                        src={allNodes.find(n => n.id === selectedNodeId)?.image_url || ""}
+                        className="w-full h-full object-contain p-8 rotate-6 scale-110 opacity-80 group-hover:scale-125 transition-transform duration-1000"
+                        alt=""
                       />
                    )}
                 </div>
@@ -352,15 +446,15 @@ const Loja = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {filteredProducts.map((p, i) => (
                     <div key={p.id} className="flex h-full">
-                      <StoreProductCard 
-                        p={p} 
-                        index={i} 
-                        getImage={getProductImage} 
+                      <StoreProductCard
+                        p={p}
+                        index={i}
+                        getImage={getProductImage}
                         onAdd={(p) => {
                           const img = getProductImage(p);
                           addItem({ productId: p.id, name: p.name, price: Number(p.sale_price || p.price), quantity: 1, image: img });
                           toast({ title: "Adicionado!", description: `${p.name} está no carrinho.` });
-                        }} 
+                        }}
                         categoryName={findRootNodeName(p.catalog_node_id)}
                       />
                     </div>

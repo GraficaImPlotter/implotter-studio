@@ -1,0 +1,8 @@
+{
+    "env": {
+        "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+        "ANTHROPIC_AUTH_TOKEN": "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",
+        "ANTHROPIC_API_KEY": "",
+        "ANTHROPIC_MODEL": "tencent/hy3-preview:free"
+    }
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import { trackError, setErrorUser } from "@/services/errorTracking";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -24,7 +25,7 @@ class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("🚨 ErrorBoundary caught:", error, errorInfo);
-    // TODO: Send to Sentry or similar error tracking service
+    trackError(error, errorInfo);
   }
 
   render() {

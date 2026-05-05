@@ -10,7 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, ArrowLeft, Shield, Clock, Award, Truck, Ruler, AlertTriangle, ChevronRight, Home, HelpCircle, Layers, FileDown, Palette, Plus, CheckCircle2, Check, ChevronDown, Package, Sparkles } from "lucide-react";
+import { ShoppingCart, ArrowLeft, Shield, Clock, Award, Truck, Ruler, AlertTriangle, ChevronRight, Home, HelpCircle, Layers, FileDown, Palette, Plus, CheckCircle2, Check, ChevronDown, Package, Sparkles, ZoomIn } from "lucide-react";
 import { motion } from "framer-motion";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import SmartRecommendations from "@/components/product/SmartRecommendations";
@@ -65,6 +65,7 @@ const Produto = () => {
   const [quoteCustomer, setQuoteCustomer] = useState({ name: "", email: "", phone: "", cpfCnpj: "", company: "" });
   const [companySettings, setCompanySettings] = useState({ name: "", cnpj: "", address: "", phone: "", email: "", website: "" });
   const [showSticky, setShowSticky] = useState(false);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [configValues, setConfigValues] = useState<Record<string, any>>({});
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
@@ -422,13 +423,20 @@ const Produto = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 lg:sticky lg:top-24 h-fit">
-            <div className="aspect-square rounded-3xl overflow-hidden glass-card-premium border-gradient-premium shadow-2xl group">
+            <div className="aspect-square rounded-3xl overflow-hidden glass-card-premium border-gradient-premium shadow-2xl group relative">
               <motion.img
                 key={selectedImageOverride || selectedImage}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 src={selectedImageOverride || images[selectedImage]?.image_url || "/placeholder.svg"}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => setZoomImage(selectedImageOverride || images[selectedImage]?.image_url || "/placeholder.svg")}
               />
+              <button
+                onClick={() => setZoomImage(selectedImageOverride || images[selectedImage]?.image_url || "/placeholder.svg")}
+                className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
             </div>
             {images.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
@@ -916,6 +924,27 @@ const Produto = () => {
            </div>
         </div>
       )}
+    {/* Image Zoom Modal */}
+	      <Dialog open={!!zoomImage} onOpenChange={() => setZoomImage(null)}>
+	        <DialogContent className="max-w-[90vw] max-h-[90vh] w-auto h-auto p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-border">
+	          <DialogHeader className="sr-only">
+	            <DialogTitle>Zoom da Imagem - {product.name}</DialogTitle>
+	          </DialogHeader>
+	          <div className="relative w-full h-full flex items-center justify-center p-4">
+	            <img
+	              src={zoomImage || ""}
+	              alt={`Zoom: ${product.name}`}
+	              className="max-w-full max-h-[80vh] object-contain rounded-xl"
+	            />
+	            <button
+	              onClick={() => setZoomImage(null)}
+	              className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-xl transition-colors"
+	            >
+	              ✕
+	            </button>
+	          </div>
+	        </DialogContent>
+	      </Dialog>
     </PublicLayout>
   );
 };

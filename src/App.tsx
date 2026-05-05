@@ -13,6 +13,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { CookieConsentProvider } from "@/hooks/use-cookie-consent";
 import { HelmetProvider } from "react-helmet-async";
 import { TelemetryTracker } from "./hooks/use-telemetry";
+import { ProductSkeleton, StoreSkeleton, CheckoutSkeleton, CartSkeleton } from "@/components/ui/skeleton";
 
 // Critical: only Index is eagerly loaded for fastest FCP
 import Index from "./pages/Index";
@@ -87,20 +88,31 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoader = () => (
-  <div className="min-h-screen bg-background">
-    <div className="h-16 bg-muted/30 animate-pulse" />
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <div className="h-8 w-64 bg-muted rounded-lg animate-pulse" />
-      <div className="h-4 w-96 bg-muted rounded animate-pulse" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-64 bg-muted rounded-2xl animate-pulse" />
-        ))}
+const PageLoader = () => {
+  const location = useLocation();
+
+  // Retorna skeleton específico baseado na rota
+  if (location.pathname.includes("/loja")) return <StoreSkeleton />;
+  if (location.pathname.includes("/loja/")) return <ProductSkeleton />;
+  if (location.pathname.includes("/checkout")) return <CheckoutSkeleton />;
+  if (location.pathname.includes("/carrinho")) return <CartSkeleton />;
+
+  // Skeleton genérico para outras páginas
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="h-16 bg-muted/30 animate-pulse" />
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <div className="h-8 w-64 bg-muted rounded-lg animate-pulse" />
+        <div className="h-4 w-96 bg-muted rounded animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-64 bg-muted rounded-2xl animate-pulse" />
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Load cloud cart on app mount
 const CartCloudSync = () => {

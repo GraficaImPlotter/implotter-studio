@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(npm install *)",
+      "Bash(npx husky-init *)",
+      "Bash(npm run *)",
+      "Bash(grep -E \"\\\\.env$|SENTRY\")",
+      "Bash(cat)",
+      "Bash(python /tmp/fix_loja.py)",
+      "Bash(python /tmp/fix_filters.py)"
+    ]
+  }
+}

@@ -61,6 +61,7 @@ const menuGroups = [
       { title: "Avaliações", url: "/admin/avaliacoes", icon: Star },
       { title: "Prova Social", url: "/admin/social-proof", icon: MessageSquareMore },
       { title: "Banners (Carousel Home)", url: "/admin/hero-slides", icon: Image },
+      { title: "Páginas", url: "/admin/paginas", icon: FileEdit },
     ]
   },
   {

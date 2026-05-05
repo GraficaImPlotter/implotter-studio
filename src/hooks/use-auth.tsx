@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { setErrorUser } from '@/services/errorTracking';
 
 interface AuthContextType {
   user: User | null;
@@ -50,6 +51,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
       setLoading(false);
 
+      // Atualiza usuário no serviço de monitoramento de erros
+      setErrorUser(currentUser?.id ?? null, currentUser?.email);
+
       await loadAdminRole(currentUser?.id ?? null);
     };
 
@@ -84,6 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setIsAdmin(false);
     setLoading(false);
+    setErrorUser(null);
   };
 
   return (
