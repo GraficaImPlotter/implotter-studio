@@ -4,7 +4,7 @@
   "description": "Impressão profissional de cartões, banners, adesivos e panfletos.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1729",
+  "background_color": "#0f172a",
   "theme_color": "#2563eb",
   "orientation": "any",
   "categories": ["business", "shopping"],

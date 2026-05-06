@@ -101,7 +101,7 @@ export const trackEvent = (eventName: string, properties?: Record<string, any>) 
 
   if (sentryDsn) {
     Sentry.captureMessage(eventName, {
-      level: "info",
+      level: "info" as const,
       extra: properties,
     });
   }

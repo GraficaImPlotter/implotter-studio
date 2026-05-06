@@ -4,44 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Content Security Policy: restricts what the browser can load -->
-     <meta http-equiv="Content-Security-Policy" content="
-       default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;
-        img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://*.melhorenvio.com.br https://cdn.weatherapi.com https://www.transparenttextures.com https://pagead2.googlesyndication.com;
-        connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br https://brasilapi.com.br https://*.asaas.com https://api.resend.com https://*.melhorenvio.com.br https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://ep1.adtrafficquality.google;
-       media-src 'self' https://*.supabase.co blob:;
-        frame-src 'self' https://googleads.g.doubleclick.net https://www.google.com;
-       object-src 'none';
-       base-uri 'self';
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.unsplash.com https://*.melhorenvio.com.br https://cdn.weatherapi.com https://www.transparenttextures.com https://pagead2.googlesyndication.com;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://viacep.com.br https://brasilapi.com.br https://*.asaas.com https://api.resend.com https://*.melhorenvio.com.br https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://ep1.adtrafficquality.google;
+      media-src 'self' https://*.supabase.co blob:;
+      frame-src 'self' https://googleads.g.doubleclick.net https://www.google.com;
+      object-src 'none';
+      base-uri 'self';
      " />
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <title>Gráfica ImPlotter | Impressão Profissional</title>
     <meta name="description" content="Gráfica ImPlotter - Cartões, banners, adesivos, panfletos e materiais gráficos com qualidade profissional, agilidade e atendimento especializado." />
 
+    <!-- Preconnect for faster DNS + TLS -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://hdwszoxthqxecgjzjdjw.supabase.co" />
     <link rel="preconnect" href="https://images.unsplash.com" />
-    
-    <!-- Preload Cinematic Hero Assets -->
+
+    <!-- Optimized font loading with display=swap -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" /></noscript>
+
+    <!-- DNS prefetch for third-party resources -->
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    <link rel="dns-prefetch" href="https://viacep.com.br" />
+    <link rel="dns-prefetch" href="https://brasilapi.com.br" />
+
+    <!-- Preload critical hero images with fetchpriority (only the LCP image) -->
     <link rel="preload" as="image" href="/images/hero-lcp.jpg" fetchpriority="high" />
     <link rel="preload" as="image" href="/images/hero-cards.jpg" />
     <link rel="preload" as="image" href="/images/hero-stickers.jpg" />
-    
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://images.unsplash.com" />
-    <link rel="dns-prefetch" href="https://hdwszoxthqxecgjzjdjw.supabase.co" />
-    <link rel="dns-prefetch" href="https://viacep.com.br" />
 
-    <!-- Optimized font loading with display=swap -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4720093921936674" crossorigin="anonymous"></script>
+    <!-- Google AdSense - lazy loaded after core metrics -->
+    <script>
+      window.addEventListener('load', () => {
+        const s = document.createElement('script');
+        s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4720093921936674';
+        s.crossOrigin = 'anonymous';
+        s.async = true;
+        document.head.appendChild(s);
+      });
+    </script>
+
     <meta name="author" content="Gráfica ImPlotter" />
     <link rel="canonical" href="https://graficaimplotter.com.br" />
     <link rel="manifest" href="/manifest.json" />

@@ -14,6 +14,7 @@ import { ShoppingCart, ArrowLeft, Shield, Clock, Award, Truck, Ruler, AlertTrian
 import { motion } from "framer-motion";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import SmartRecommendations from "@/components/product/SmartRecommendations";
+import { ShareButtons } from "@/components/product/ShareButtons";
 import BundleOffer from "@/components/product/BundleOffer";
 import ArtEditor from "@/components/product/ArtEditor";
 import { generateClientQuotePDF } from "@/lib/quote-client-pdf";
@@ -453,6 +454,13 @@ const Produto = () => {
             <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-4">{product.name}</h1>
             <p className="text-muted-foreground text-sm mb-6">{product.short_description}</p>
 
+            <ShareButtons
+              url={`${SITE_URL}/loja/${product.slug}`}
+              title={product.name}
+              description={product.short_description}
+            />
+
+
             <div className="glass-card rounded-2xl p-6 mb-6">
               {isSqm ? (
                 <div className="space-y-6">
@@ -870,7 +878,7 @@ const Produto = () => {
                 <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
                   <FileDown className="w-5 h-5 text-primary" /> Ficha Técnica
                 </h3>
-                <div className="text-muted-foreground text-sm prose prose-sm max-w-none bg-secondary/30 rounded-3xl p-8 border border-border/50 break-words whitespace-pre-line overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.specifications) }} />
+                <div className="text-foreground/80 text-sm prose prose-sm max-w-none bg-secondary/30 rounded-3xl p-8 border border-border/50 break-words whitespace-pre-line overflow-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.specifications) }} />
               </div>
             )}
 
@@ -897,12 +905,12 @@ const Produto = () => {
 
         <div className="mt-12 space-y-16">
            {product.full_description && (
-             <section className="bg-white rounded-[32px] p-8 md:p-12 border border-border/50 shadow-sm overflow-hidden">
+             <section className="bg-card rounded-[32px] p-8 md:p-12 border border-border/50 shadow-sm overflow-hidden">
                <h2 className="font-display font-bold text-2xl mb-8 flex items-center gap-3">
                  <Sparkles className="w-6 h-6 text-primary" /> Informações Complementares
                </h2>
                <div 
-                 className="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden whitespace-pre-line" 
+                 className="prose prose-invert prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-p:leading-relaxed prose-img:rounded-2xl break-words overflow-hidden whitespace-pre-line" 
                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.full_description) }} 
                />
                </section>

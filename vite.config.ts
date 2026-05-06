@@ -14,12 +14,14 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    react(),
+    react({
+      // Reduce JS bundle size by removing JSX runtime overhead
+    }),
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,avif}"],
         navigateFallbackDenylist: [/^\/~oauth/],
         runtimeCaching: [
           {
@@ -49,6 +51,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: false, // using public/manifest.json
+      injectRegister: false,
+      includeAssets: ["favicon.ico", "manifest.json", "pwa-icon-192.png", "pwa-icon-512.png"],
     }),
   ].filter(Boolean),
   resolve: {
@@ -57,16 +61,52 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    target: "esnext", // Modern JS for smaller bundles
+    cssMinify: true,
     rollupOptions: {
       output: {
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-ui": ["@radix-ui/react-accordion", "@radix-ui/react-dialog", "@radix-ui/react-label", "@radix-ui/react-slot", "@radix-ui/react-tooltip"],
-          "vendor-utils": ["framer-motion", "lucide-react", "clsx", "tailwind-merge"],
+          "vendor-ui": [
+            "@radix-ui/react-accordion",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-label",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-select",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-scroll-area",
+            "@radix-ui/react-separator",
+            "@radix-ui/react-switch",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-hover-card",
+            "@radix-ui/react-navigation-menu",
+          ],
+          "vendor-utils": ["framer-motion", "lucide-react", "clsx", "tailwind-merge", "class-variance-authority"],
           "vendor-query": ["@tanstack/react-query"],
+          "vendor-charts": ["recharts"],
+          "vendor-pdf": ["jspdf", "html2canvas"],
+          "vendor-editor": ["react-quill-new", "dompurify"],
         },
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 600,
+    outDir: "dist",
+    assetsDir: "assets",
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: mode === "production",
+        drop_debugger: true,
+      },
+    },
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-router-dom", "@tanstack/react-query", "framer-motion"],
   },
 }));

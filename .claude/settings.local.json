@@ -9,7 +9,16 @@
       "Bash(grep -E \"\\\\.env$|SENTRY\")",
       "Bash(cat)",
       "Bash(python /tmp/fix_loja.py)",
-      "Bash(python /tmp/fix_filters.py)"
+      "Bash(python /tmp/fix_filters.py)",
+      "Bash(favicon\")",
+      "Bash(node -e ' *)",
+      "Bash(sort -k5 -hr)",
+      "Bash(where convert *)",
+      "Bash(where cwebp *)",
+      "Bash(convert \"public/images/hero-lcp.jpg\" -resize 1920x -quality 80 \"public/images/hero-lcp.webp\")",
+      "Bash(convert \"public/images/hero-cards.jpg\" -quality 80 \"public/images/hero-cards.webp\")",
+      "Bash(convert \"public/images/hero-stickers.jpg\" -quality 80 \"public/images/hero-stickers.webp\")",
+      "Bash(\"C:/Windows/System32/convert.exe\" \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.jpg\" -quality 80 \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.webp\")"
     ]
   }
 }
