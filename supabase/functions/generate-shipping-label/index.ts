@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const ME_API = "https://melhorenvio.com.br/api/v2/me";
-const USER_AGENT = "ImPlotter graficaimplotter.shop contato@implotter.com.br";
+const USER_AGENT = "ImPlotter graficaimplotter.com.br contato@implotter.com.br";
 
 async function getToken() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

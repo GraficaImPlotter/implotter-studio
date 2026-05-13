@@ -3,8 +3,8 @@
  * Restricts allowed origins to the production domain and localhost for dev.
  */
 export const ALLOWED_ORIGINS = [
-  "https://graficaimplotter.shop",
-  "https://www.graficaimplotter.shop",
+  "https://graficaimplotter.com.br",
+  "https://www.graficaimplotter.com.br",
   "http://localhost:5173",
   "http://localhost:4173",
   "http://localhost:8080",

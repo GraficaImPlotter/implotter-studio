@@ -6,7 +6,7 @@ serve(async (req) => {
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const SITE_URL = "https://graficaimplotter.shop";
+  const SITE_URL = "https://graficaimplotter.com.br";
 
   const { data: products } = await supabase
     .from("products")

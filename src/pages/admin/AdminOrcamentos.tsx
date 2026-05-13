@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus, Pencil, Trash2, Send, FileText, CheckCircle, XCircle,
-  Search, Eye, ShoppingCart, Share2, Link as LinkIcon,
+  Search, Eye, ShoppingCart, Share2, Link as LinkIcon, Sparkles
 } from "lucide-react";
 import { generateQuotePDF } from "@/lib/quote-pdf";
 import { generatePremiumProposalPDF } from "@/lib/premium-proposal-pdf";

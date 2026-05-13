@@ -42,7 +42,7 @@ const buildNodePath = (nodes: CatalogNode[], nodeId: string): CatalogNode[] => {
   return path;
 };
 
-const SITE_URL = "https://graficaimplotter.shop";
+const SITE_URL = "https://graficaimplotter.com.br";
 
 const Produto = () => {
   const { slug } = useParams();

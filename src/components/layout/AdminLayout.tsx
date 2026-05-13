@@ -17,8 +17,8 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, UserPlus,
   MessageSquare, Star, Tag, Link2, Settings, FileText, BarChart3, DollarSign, Search,
-  ArrowLeft, Image, ClipboardList, BoxIcon, FileEdit, MapPin, TrendingUp, Factory, 
-  Layers, MessageSquareMore, Sparkles, Command
+  ArrowLeft, Image, ClipboardList, BoxIcon, FileEdit, MapPin, TrendingUp, Factory,
+  Layers, MessageSquareMore, Sparkles, Command, FileSignature
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { NotificationHub } from "@/components/admin/NotificationHub";
@@ -51,7 +51,9 @@ const menuGroups = [
       { title: "Clientes", url: "/admin/clientes", icon: Users },
       { title: "CRM", url: "/admin/crm", icon: MessageSquare },
       { title: "Leads", url: "/admin/leads", icon: UserPlus },
+      { title: "Prospecção Inteligente", url: "/admin/prospeccao", icon: Sparkles },
       { title: "Mapa de Clientes", url: "/admin/mapa-clientes", icon: MapPin },
+
     ]
   },
   {
@@ -71,6 +73,7 @@ const menuGroups = [
       { title: "Lucro & Margem", url: "/admin/lucro", icon: TrendingUp },
       { title: "Relatórios", url: "/admin/relatorios", icon: BarChart3 },
       { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
+      { title: "NF-e", url: "/admin/nfe", icon: FileSignature },
     ]
   },
 ];
@@ -207,3 +210,4 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default AdminLayout;
+

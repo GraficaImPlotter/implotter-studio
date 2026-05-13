@@ -65,6 +65,9 @@ const AdminSocialProof = lazy(() => import("./pages/admin/AdminSocialProof"));
 const AdminProducaoMonitor = lazy(() => import("./pages/admin/AdminProducaoMonitor"));
 const AdminAbandonedCarts = lazy(() => import("./pages/admin/AdminAbandonedCarts"));
 const CostEstimator = lazy(() => import("./pages/admin/CostEstimator"));
+const AdminNFe = lazy(() => import("./pages/admin/AdminNFe"));
+const AdminProspects = lazy(() => import("./pages/admin/AdminProspects"));
+
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -139,6 +142,9 @@ const AppRoutes = () => {
             <Route path="/admin/producao/monitor" element={<AdminRoute><AdminProducaoMonitor /></AdminRoute>} />
             <Route path="/admin/carrinhos-abandonados" element={<AdminRoute><AdminAbandonedCarts /></AdminRoute>} />
             <Route path="/admin/calculadora" element={<AdminRoute><CostEstimator /></AdminRoute>} />
+            <Route path="/admin/nfe" element={<AdminRoute><AdminNFe /></AdminRoute>} />
+            <Route path="/admin/prospeccao" element={<AdminRoute><AdminProspects /></AdminRoute>} />
+
 
             <Route path="*" element={<NotFound />} />
           </Routes>

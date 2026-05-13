@@ -88,7 +88,7 @@ serve(async (req) => {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-        "User-Agent": "ImPlotter graficaimplotter.shop contato@implotter.com.br",
+        "User-Agent": "ImPlotter graficaimplotter.com.br contato@implotter.com.br",
       },
       body: JSON.stringify({ orders: tracking_codes }),
     });

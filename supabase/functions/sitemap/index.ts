@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SITE_URL = "https://graficaimplotter.shop";
+const SITE_URL = "https://graficaimplotter.com.br";
 
 const corsHeaders = {
   "Content-Type": "application/xml; charset=utf-8",

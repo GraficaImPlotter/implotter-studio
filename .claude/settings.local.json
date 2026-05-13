@@ -18,7 +18,25 @@
       "Bash(convert \"public/images/hero-lcp.jpg\" -resize 1920x -quality 80 \"public/images/hero-lcp.webp\")",
       "Bash(convert \"public/images/hero-cards.jpg\" -quality 80 \"public/images/hero-cards.webp\")",
       "Bash(convert \"public/images/hero-stickers.jpg\" -quality 80 \"public/images/hero-stickers.webp\")",
-      "Bash(\"C:/Windows/System32/convert.exe\" \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.jpg\" -quality 80 \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.webp\")"
+      "Bash(\"C:/Windows/System32/convert.exe\" \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.jpg\" -quality 80 \"C:/Users/Admin/Downloads/implotter/implotter-studio-1/public/images/hero-lcp.webp\")",
+      "Bash(npx vite *)",
+      "Bash(node --check server.js)",
+      "Bash(node server.js)",
+      "Bash(curl -s http://localhost:3001/api/nfe/signer-info -H \"Authorization: Bearer test\")",
+      "Bash(kill %1)",
+      "Bash(node \"C:\\\\Users\\\\Admin\\\\Downloads\\\\implotter\\\\implotter-studio-1\\\\backend\\\\server.js\")",
+      "Bash(Select-String -Path \"C:\\\\Users\\\\Admin\\\\Downloads\\\\implotter\\\\implotter-studio-1\\\\backend\\\\server.js\" -Pattern \"signer-info\")",
+      "Bash(Select-Object -First 5)",
+      "Bash(Select-String -Path \"src\\\\pages\\\\admin\\\\AdminNFe.tsx\" -Pattern \"Atencao|Atenção|Configuracao|Configuração|Emissao|Emissão|Endereco|Endereço|Razao|Razão|Inscricao|Inscrição\")",
+      "Bash(Select-Object LineNumber, Line)",
+      "Bash(node -c server.js)",
+      "Bash(powershell.exe *)",
+      "Bash(netstat -ano)",
+      "Bash(node backend/server.js)",
+      "Bash(taskkill /f /pid 16856)",
+      "Bash(taskkill /f /im node.exe)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/api/nfe/listar)",
+      "Bash(curl -s http://localhost:3001/api/nfe/listar)"
     ]
   }
 }
