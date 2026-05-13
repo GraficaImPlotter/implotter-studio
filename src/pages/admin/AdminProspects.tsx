@@ -871,8 +871,8 @@ const AdminProspects = () => {
 
             <div>
               <span className="text-[9px] font-black text-highlight uppercase tracking-[0.2em] block mb-1">MÓDULO DE AUDITORIA DE MARCA</span>
-              <h3 className="font-display font-black text-xl text-foreground uppercase tracking-tight">Diagnóstico Visual de {auditLead.name}</h3>
-              <p className="text-xs text-muted-foreground font-semibold mt-1">
+              <h3 className="font-display font-black text-xl text-white uppercase tracking-tight">Diagnóstico Visual de {auditLead.name}</h3>
+              <p className="text-xs text-slate-300 font-semibold mt-1">
                 Configure os inputs que serão avaliados pelo robô cognitivo do ImPlotter Studio.
               </p>
             </div>
@@ -934,7 +934,7 @@ const AdminProspects = () => {
               <Button
                 onClick={() => setAuditModalOpen(false)}
                 variant="outline"
-                className="flex-1 rounded-xl h-11 border-white/5 bg-white/[0.02]"
+                className="flex-1 rounded-xl h-11 border-white/10 bg-white/5 text-white hover:bg-white/20 hover:text-white"
               >
                 Cancelar
               </Button>
@@ -958,7 +958,7 @@ const AdminProspects = () => {
             {/* Drawer Close top right */}
             <button 
               onClick={() => setAnalysisPanelOpen(false)}
-              className="absolute top-6 right-6 text-muted-foreground hover:text-foreground text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 hover:bg-white/10 p-3 rounded-xl transition-all"
+              className="absolute top-6 right-6 text-white hover:text-white text-xs font-black uppercase tracking-widest bg-white/5 border border-white/15 hover:bg-white/15 p-3 rounded-xl transition-all"
             >
               Fechar Painel ✕
             </button>
@@ -975,8 +975,8 @@ const AdminProspects = () => {
                 {selectedProspect.name.slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <h2 className="font-display font-black text-2xl text-foreground uppercase tracking-tight">{selectedProspect.name}</h2>
-                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">
+                <h2 className="font-display font-black text-2xl text-white uppercase tracking-tight">{selectedProspect.name}</h2>
+                <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest">
                   Ficha do Lead & Mockups Personalizados
                 </p>
               </div>
@@ -992,7 +992,7 @@ const AdminProspects = () => {
                 {selectedProspect.analysis && (
                   <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
                         <Award className="w-4 h-4 text-highlight" /> Diagnóstico Comercial de Marca
                       </h4>
                       
@@ -1143,7 +1143,7 @@ const AdminProspects = () => {
                 
                 {/* Mockup switcher */}
                 <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                  <h4 className="text-[10px] font-black uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
                     <Palette className="w-4 h-4 text-highlight" /> Ferramentas de Design & Mockups
                   </h4>
                   <div className="flex gap-1">
@@ -1305,8 +1305,8 @@ const AdminProspects = () => {
                 {/* Color customizer */}
                 <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
                   <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                    <h5 className="text-[10px] font-black uppercase tracking-wider text-foreground">Paleta de Cores Sugerida por IA</h5>
-                    <span className="text-[9px] text-muted-foreground">Clique para customizar</span>
+                    <h5 className="text-[10px] font-black uppercase tracking-wider text-white">Paleta de Cores Sugerida por IA</h5>
+                    <span className="text-[9px] text-slate-300">Clique para customizar</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1347,7 +1347,7 @@ const AdminProspects = () => {
                 {/* Automatic Sugestions based on Sector/Niche (Part 2 Suggestions list) */}
                 {selectedProspect.analysis?.nicheProducts && (
                   <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
-                    <h5 className="text-[10px] font-black uppercase tracking-wider text-foreground mb-3 flex items-center gap-1">
+                    <h5 className="text-[10px] font-black uppercase tracking-wider text-white mb-3 flex items-center gap-1">
                       <Shield className="w-4 h-4 text-highlight" /> Sugestões de Impressos para seu Nicho
                     </h5>
                     <div className="grid grid-cols-2 gap-3">
