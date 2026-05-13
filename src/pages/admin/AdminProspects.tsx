@@ -59,6 +59,8 @@ interface Prospect {
   status?: string;
   analysis?: any;
   customColors?: { primary: string; secondary: string };
+  tags?: string[];
+  notes?: string;
 }
 
 const NY_PRESETS = [
@@ -106,6 +108,11 @@ const AdminProspects = () => {
   const [activeMockupType, setActiveMockupType] = useState<"card" | "banner" | "receituario" | "windbanner" | "fachada" | "adesivo">("card");
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [auditTone, setAuditTone] = useState<"consultivo" | "comercial" | "formal">("consultivo");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [commercialFilter, setCommercialFilter] = useState("all");
+  const [editingNote, setEditingNote] = useState("");
+  const [newTag, setNewTag] = useState("");
   
   // WhatsApp config states (stored in localStorage)
   const [waApiUrl, setWaApiUrl] = useState(() => localStorage.getItem("implotter_wa_url") || "");
@@ -147,6 +154,14 @@ const AdminProspects = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedProspect) {
+      setEditingNote(selectedProspect.notes || "");
+    } else {
+      setEditingNote("");
+    }
+  }, [selectedProspect]);
+
   const saveStats = (newStats: typeof stats) => {
     setStats(newStats);
     localStorage.setItem("implotter_prospecting_stats", JSON.stringify(newStats));
@@ -156,6 +171,34 @@ const AdminProspects = () => {
     setProspects(newProspects);
     localStorage.setItem("implotter_prospects", JSON.stringify(newProspects));
   };
+
+  const filteredProspects = prospects.filter((p) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchName = p.name.toLowerCase().includes(q);
+      const matchCategory = p.category.toLowerCase().includes(q);
+      const matchAddress = p.address.toLowerCase().includes(q);
+      if (!matchName && !matchCategory && !matchAddress) return false;
+    }
+
+    if (statusFilter !== "all") {
+      const pStatus = (p.status || "novo").toLowerCase();
+      if (statusFilter === "novo" && pStatus !== "novo" && pStatus !== "novo_contato") return false;
+      if (statusFilter === "enviado" && pStatus !== "enviado" && pStatus !== "mensagem enviada" && pStatus !== "contato iniciado") return false;
+      if (statusFilter === "respondeu" && pStatus !== "respondeu") return false;
+      if (statusFilter === "interessado" && pStatus !== "interessado") return false;
+      if (statusFilter === "orcamento" && pStatus !== "orcamento") return false;
+      if (statusFilter === "fechado" && pStatus !== "fechado") return false;
+      if (statusFilter === "perdido" && pStatus !== "perdido") return false;
+    }
+
+    if (commercialFilter !== "all") {
+      const score = p.analysis?.commercialScore || "Morno";
+      if (score.toLowerCase() !== commercialFilter.toLowerCase()) return false;
+    }
+
+    return true;
+  });
 
   // Run Google Maps Scraper (SSE Streamed)
   const startScraping = async () => {
@@ -484,10 +527,10 @@ const AdminProspects = () => {
     }
   };
 
-  const updateProspectStatus = (name: string, newStatus: string) => {
+  const updateProspectField = (name: string, field: keyof Prospect, value: any) => {
     const updated = prospects.map(p => {
       if (p.name === name) {
-        const item = { ...p, status: newStatus };
+        const item = { ...p, [field]: value };
         if (selectedProspect && selectedProspect.name === name) {
           setSelectedProspect(item);
         }
@@ -496,6 +539,10 @@ const AdminProspects = () => {
       return p;
     });
     saveProspects(updated);
+  };
+
+  const updateProspectStatus = (name: string, newStatus: string) => {
+    updateProspectField(name, "status", newStatus);
   };
 
   const handleColorChange = (type: "primary" | "secondary", hex: string) => {
@@ -533,23 +580,71 @@ const AdminProspects = () => {
         </div>
       </div>
 
-      {/* KPI stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        {[
-          { title: "Empresas Capturadas", value: stats.totalScraped, icon: Search, gradient: "from-blue-500/10 to-blue-500/0 text-blue-400" },
-          { title: "Auditorias IA Efetuadas", value: stats.analyzed, icon: Sparkles, gradient: "from-purple-500/10 to-purple-500/0 text-purple-400" },
-          { title: "Contatos Iniciados", value: stats.whatsappSent, icon: Send, gradient: "from-emerald-500/10 to-emerald-500/0 text-emerald-400" },
-          { title: "Sincronizados no CRM", value: stats.syncedCrm, icon: Database, gradient: "from-amber-500/10 to-amber-500/0 text-amber-400" },
-        ].map((c, i) => (
-          <div key={i} className={cn("bg-card border border-white/5 rounded-3xl p-6 relative overflow-hidden group shadow-xl bg-gradient-to-br", c.gradient)}>
-            <div className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center opacity-60 group-hover:scale-110 transition-transform">
-              <c.icon className="w-5 h-5" />
+      {/* CRM Dashboard Calculations */}
+      {(() => {
+        const totalLeadsCount = prospects.length;
+        const totalContactedCount = prospects.filter(p => p.status && ["enviado", "respondeu", "interessado", "orcamento", "fechado", "perdido", "mensagem enviada", "contato iniciado"].includes(p.status.toLowerCase())).length;
+        const totalRespondedCount = prospects.filter(p => p.status && ["respondeu", "interessado", "orcamento", "fechado"].includes(p.status.toLowerCase())).length;
+        const totalClosedCount = prospects.filter(p => p.status && p.status.toLowerCase() === "fechado").length;
+        const totalFollowupsPending = prospects.filter(p => p.status && ["enviado", "mensagem enviada", "contato iniciado"].includes(p.status.toLowerCase())).length;
+        
+        const responseRatePct = totalContactedCount > 0 ? Math.round((totalRespondedCount / totalContactedCount) * 100) : 0;
+        const conversionRatePct = totalContactedCount > 0 ? Math.round((totalClosedCount / totalContactedCount) * 100) : 0;
+
+        const closedLeadsList = prospects.filter(p => p.status && p.status.toLowerCase() === "fechado");
+        const catMap: Record<string, number> = {};
+        closedLeadsList.forEach(l => {
+          catMap[l.category] = (catMap[l.category] || 0) + 1;
+        });
+        const topNichesString = Object.entries(catMap)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 2)
+          .map(([cat]) => cat.replace("escritório de advocacia", "advogados").replace("clínica médica", "médico"))
+          .join(" & ") || "Clínicas Médicas";
+
+        return (
+          <div className="space-y-6 mb-10">
+            {/* KPI stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[
+                { title: "Empresas Capturadas", value: totalLeadsCount || stats.totalScraped, icon: Search, gradient: "from-blue-500/10 to-blue-500/0 text-blue-400" },
+                { title: "Auditorias IA Efetuadas", value: stats.analyzed, icon: Sparkles, gradient: "from-purple-500/10 to-purple-500/0 text-purple-400" },
+                { title: "Mensagens Enviadas", value: totalContactedCount || stats.whatsappSent, icon: Send, gradient: "from-emerald-500/10 to-emerald-500/0 text-emerald-400" },
+                { title: "Sincronizados no CRM", value: stats.syncedCrm, icon: Database, gradient: "from-amber-500/10 to-amber-500/0 text-amber-400" },
+              ].map((c, i) => (
+                <div key={i} className={cn("bg-card border border-white/5 rounded-3xl p-6 relative overflow-hidden group shadow-xl bg-gradient-to-br", c.gradient)}>
+                  <div className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center opacity-60 group-hover:scale-110 transition-transform">
+                    <c.icon className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">{c.title}</p>
+                  <h3 className="font-display text-3xl font-black text-foreground">{c.value}</h3>
+                </div>
+              ))}
             </div>
-            <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">{c.title}</p>
-            <h3 className="font-display text-3xl font-black text-foreground">{c.value}</h3>
+
+            {/* Performance Dashboard row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[
+                { title: "Taxa de Resposta", value: `${responseRatePct}%`, subtitle: `${totalRespondedCount} respostas de leads`, icon: MessageSquare, gradient: "from-orange-500/10 to-transparent text-orange-400 border-orange-500/10" },
+                { title: "Conversão / Fechados", value: `${conversionRatePct}%`, subtitle: `${totalClosedCount} contratos fechados`, icon: CheckCircle, gradient: "from-green-500/10 to-transparent text-green-400 border-green-500/10" },
+                { title: "Nichos Mais Lucrativos", value: topNichesString, subtitle: "Maior índice de fechamento", icon: Award, gradient: "from-pink-500/10 to-transparent text-pink-400 border-pink-500/10" },
+                { title: "Follow-ups Pendentes", value: totalFollowupsPending, subtitle: "Aguardando retorno do lead", icon: Clock, gradient: "from-cyan-500/10 to-transparent text-cyan-400 border-cyan-500/10" },
+              ].map((c, i) => (
+                <div key={i} className={cn("bg-[#0B0B10] border rounded-3xl p-5 relative overflow-hidden group shadow-md flex flex-col justify-between min-h-[120px]", c.gradient)}>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{c.title}</p>
+                    <c.icon className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl font-black text-white truncate max-w-[190px]">{c.value}</h3>
+                    <p className="text-[10px] text-muted-foreground/70 font-semibold">{c.subtitle}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
@@ -713,6 +808,51 @@ const AdminProspects = () => {
               )}
             </div>
 
+            {/* Filtros e Busca */}
+            {prospects.length > 0 && (
+              <div className="flex flex-col md:flex-row gap-4 mb-6 pb-4 border-b border-white/5">
+                <div className="flex-1 relative">
+                  <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por nome, nicho ou endereço..."
+                    className="w-full pl-10 pr-4 py-2 bg-[#050508] border border-white/5 rounded-xl text-xs font-semibold outline-none focus:border-highlight/20 text-white placeholder:text-muted-foreground/50 transition-all"
+                  />
+                </div>
+                <div className="flex gap-2.5 flex-wrap">
+                  {/* Status Filter */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="bg-[#050508] border border-white/5 text-slate-300 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25"
+                  >
+                    <option value="all">TODOS STATUS</option>
+                    <option value="novo">NOVO LEAD</option>
+                    <option value="enviado">MENSAGEM ENVIADA</option>
+                    <option value="respondeu">RESPONDEU</option>
+                    <option value="interessado">INTERESSADO</option>
+                    <option value="orcamento">ORÇAMENTO</option>
+                    <option value="fechado">FECHADO / GANHO</option>
+                    <option value="perdido">PERDIDO</option>
+                  </select>
+
+                  {/* Commercial score filter */}
+                  <select
+                    value={commercialFilter}
+                    onChange={(e) => setCommercialFilter(e.target.value)}
+                    className="bg-[#050508] border border-white/5 text-slate-300 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25"
+                  >
+                    <option value="all">TODOS OS SCORES</option>
+                    <option value="Quente">🔥 QUENTE</option>
+                    <option value="Morno">⚡ MORNO</option>
+                    <option value="Frio">❄️ FRIO</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             {prospects.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
                 <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-muted-foreground/40 mb-4 animate-float-gentle">
@@ -721,6 +861,16 @@ const AdminProspects = () => {
                 <h4 className="font-display font-black text-base text-foreground mb-2">Sem Leads no Momento</h4>
                 <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
                   Insira as palavras-chave e clique no botão de rastreamento para iniciar a prospecção de negócios locais.
+                </p>
+              </div>
+            ) : filteredProspects.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+                <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-muted-foreground/40 mb-4">
+                  <Search className="w-8 h-8" />
+                </div>
+                <h4 className="font-display font-black text-base text-foreground mb-2">Nenhum resultado</h4>
+                <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+                  Não encontramos leads que correspondam aos filtros de busca atuais. Tente mudar os termos ou selecionar outros status.
                 </p>
               </div>
             ) : (
@@ -736,7 +886,7 @@ const AdminProspects = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {prospects.map((p, idx) => (
+                    {filteredProspects.map((p, idx) => (
                       <tr 
                         key={idx} 
                         className={cn(
@@ -788,14 +938,37 @@ const AdminProspects = () => {
                           <div className="flex flex-col items-center gap-1">
                             <span className={cn(
                               "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full leading-none",
-                              p.status === "Novo" && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
-                              p.status === "Analisado" && "bg-purple-500/10 text-purple-400 border border-purple-500/20",
-                              p.status === "Mensagem Enviada" && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                              (p.status === "Novo" || !p.status || p.status === "novo") && "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+                              (p.status === "Analisado" || p.status === "analisado") && "bg-[#1E1E2E] text-slate-300 border border-slate-700",
+                              (p.status === "Mensagem Enviada" || p.status === "enviado") && "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                              p.status === "respondeu" && "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                              p.status === "interessado" && "bg-pink-500/10 text-pink-400 border border-pink-500/20",
+                              p.status === "orcamento" && "bg-purple-500/10 text-purple-400 border border-purple-500/20",
+                              p.status === "fechado" && "bg-green-500/10 text-green-400 border border-green-500/20 shadow-glow-sm",
+                              p.status === "perdido" && "bg-red-500/10 text-red-400 border border-red-500/20",
                               p.status === "Contato Iniciado" && "bg-teal-500/10 text-teal-400 border border-teal-500/20",
                               p.status === "No CRM" && "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                             )}>
-                              {p.status}
+                              {p.status === "novo" ? "Novo Lead" : 
+                               p.status === "enviado" ? "Mensagem Enviada" : 
+                               p.status === "respondeu" ? "Respondeu" : 
+                               p.status === "interessado" ? "Interessado" : 
+                               p.status === "orcamento" ? "Orçamento" : 
+                               p.status === "fechado" ? "Fechado" : 
+                               p.status === "perdido" ? "Perdido" : 
+                               p.status || "Novo"}
                             </span>
+
+                            {p.tags && p.tags.length > 0 && (
+                              <div className="flex gap-1 flex-wrap mt-1 justify-center max-w-[120px]">
+                                {p.tags.slice(0, 2).map((t, i) => (
+                                  <span key={i} className="text-[7px] font-black uppercase bg-white/5 text-slate-300 px-1 py-0.5 rounded">
+                                    {t}
+                                  </span>
+                                ))}
+                                {p.tags.length > 2 && <span className="text-[7px] font-semibold text-muted-foreground">+{p.tags.length - 2}</span>}
+                              </div>
+                            )}
                             
                             {p.analysis?.commercialScore && (
                               <span className={cn(
@@ -1098,6 +1271,170 @@ const AdminProspects = () => {
                     )}
                   </div>
                 )}
+
+                {/* Status & Tags CRM Panel */}
+                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-highlight" /> Status de Vendas & Tags (CRM)
+                    </h4>
+                    <span className="text-[9px] text-highlight font-black uppercase tracking-widest">Controle</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Status select */}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Status do Lead</span>
+                      <select
+                        value={selectedProspect.status || "novo"}
+                        onChange={(e) => updateProspectField(selectedProspect.name, "status", e.target.value)}
+                        className="w-full bg-[#0E0E14] border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-white outline-none focus:border-highlight/20"
+                      >
+                        <option value="novo">Novo Lead</option>
+                        <option value="enviado">Mensagem Enviada</option>
+                        <option value="respondeu">Respondeu</option>
+                        <option value="interessado">Interessado</option>
+                        <option value="orcamento">Orçamento Solicitado</option>
+                        <option value="fechado">Fechado / Ganho</option>
+                        <option value="perdido">Perdido</option>
+                      </select>
+                    </div>
+
+                    {/* Tag list */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase">Tags do Lead</span>
+                      <div className="flex gap-1 flex-wrap min-h-[34px] items-center">
+                        {(selectedProspect.tags || []).length === 0 ? (
+                          <span className="text-[10px] text-muted-foreground/50 italic font-semibold">Nenhuma tag adicionada</span>
+                        ) : (
+                          (selectedProspect.tags || []).map((tag, i) => (
+                            <span 
+                              key={i} 
+                              onClick={() => {
+                                const updatedTags = (selectedProspect.tags || []).filter(t => t !== tag);
+                                updateProspectField(selectedProspect.name, "tags", updatedTags);
+                              }}
+                              className="text-[8px] font-black uppercase tracking-wider bg-highlight/10 text-highlight border border-highlight/20 py-0.5 px-2 rounded-md cursor-pointer hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all"
+                              title="Clique para remover"
+                            >
+                              {tag} ✕
+                            </span>
+                          ))
+                        )}
+                      </div>
+                      {/* New Tag Input */}
+                      <div className="flex gap-1 mt-1">
+                        <input
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newTag.trim()) {
+                              e.preventDefault();
+                              const current = selectedProspect.tags || [];
+                              if (!current.includes(newTag.trim())) {
+                                updateProspectField(selectedProspect.name, "tags", [...current, newTag.trim()]);
+                              }
+                              setNewTag("");
+                            }
+                          }}
+                          placeholder="Add tag..."
+                          className="flex-1 bg-[#0E0E14] border border-white/10 rounded-lg px-2 py-1 text-[10px] font-semibold text-white outline-none focus:border-highlight/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newTag.trim()) {
+                              const current = selectedProspect.tags || [];
+                              if (!current.includes(newTag.trim())) {
+                                updateProspectField(selectedProspect.name, "tags", [...current, newTag.trim()]);
+                              }
+                              setNewTag("");
+                            }
+                          }}
+                          className="bg-highlight text-white p-1 rounded-lg hover:bg-highlight-glow transition-all"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes / Observations Panel */}
+                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                      <MessageSquare className="w-4 h-4 text-highlight" /> Observações & Anotações
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateProspectField(selectedProspect.name, "notes", editingNote);
+                        toast({ title: "Anotação Salva", description: "Histórico atualizado com sucesso!" });
+                      }}
+                      className="text-[9px] font-black uppercase bg-highlight/10 text-highlight hover:bg-highlight hover:text-white border border-highlight/20 py-1 px-3 rounded-lg transition-all"
+                    >
+                      Salvar Nota
+                    </button>
+                  </div>
+                  <textarea
+                    value={editingNote}
+                    onChange={(e) => setEditingNote(e.target.value)}
+                    placeholder="Escreva notas de reuniões, histórico de ligações, respostas do cliente..."
+                    className="w-full h-20 bg-[#0E0E14] border border-white/10 rounded-xl p-3 text-xs font-semibold text-white outline-none focus:border-highlight/20 resize-none placeholder:text-muted-foreground/30"
+                  />
+                </div>
+
+                {/* Automated Follow-up contextual copywriting */}
+                <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-highlight" /> Follow-up Automático Contextual (IA)
+                    </h4>
+                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Regras</span>
+                  </div>
+
+                  <p className="text-[10px] text-slate-300 leading-normal">
+                    Se o cliente não responder, use as regras automáticas da ImPlotter para gerar mensagens contextuais de recuperação:
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { day: 2, label: "2 Dias", desc: "Follow-up 1", prompt: "lembrete amigável do mockup e feedback visual" },
+                      { day: 5, label: "5 Dias", desc: "Follow-up 2", prompt: "outro ângulo, acabamento físico de alto valor e branding premium" },
+                      { day: 10, label: "10 Dias", desc: "Encerramento", prompt: "fechamento de contato, arquivar mockup cortesia mas ficar à disposição" }
+                    ].map((f) => (
+                      <button
+                        key={f.day}
+                        type="button"
+                        onClick={() => {
+                          let text = "";
+                          const product = selectedProspect.analysis?.nicheProducts?.[0]?.productName || "Cartão de Visita Soft Touch";
+                          const benefit = selectedProspect.analysis?.nicheProducts?.[0]?.benefit || "eleva a percepção de valor imediata de seus clientes";
+                          
+                          if (f.day === 2) {
+                            text = `Olá, equipe da *${selectedProspect.name}*! Tudo bem? 🌟\n\nPassando rápido para saber se conseguiram dar uma olhada no *Mockup do ${product}* que o nosso time de criação elaborou para vocês. Ficou super elegante!\n\nSe quiserem ajustar as cores, alterar o logotipo ou ver como ficaria em outros materiais premium como banners ou receituários, é só me avisar. Estamos à disposição! 😊\n\nUm abraço,\n*Time ImPlotter Studio* 🚀`;
+                          } else if (f.day === 5) {
+                            text = `Olá! Tudo bem? Imagino que a rotina por aí esteja super corrida! ⚡\n\nSó queria enviar este detalhe rápido sobre a qualidade física do *${product}* (que ${benefit.toLowerCase()}).\n\nNosso foco na ImPlotter Studio não é apenas vender impressos, mas sim garantir que a identidade física da *${selectedProspect.name}* reflita a máxima autoridade, profissionalismo e percepção de luxo que vocês já oferecem aos pacientes e clientes. \n\nO que achou da paleta sugerida? Podemos bater um papo rápido de 2 minutos para alinhar sem compromisso? 💬`;
+                          } else {
+                            text = `Olá! Como não tivemos retorno sobre a auditoria visual da *${selectedProspect.name}*, imagino que este não seja o melhor momento para focar na sinalização física ou papelaria corporativa de vocês. Totalmente compreensível! 👍\n\nEstarei arquivando o mockup personalizado de vocês por aqui. Se em algum momento no futuro vocês quiserem resgatar esse projeto para elevar a autoridade visual do espaço de atendimento de vocês a um nível premium, podem me chamar!\n\nDesejo muito sucesso e excelentes negócios por aí!\n\nUm abraço,\n*Time ImPlotter Studio* 🚀`;
+                          }
+
+                          setPitchText(text);
+                          toast({
+                            title: `Follow-up ${f.day === 10 ? 'Encerramento' : 'Dia ' + f.day} Gerado!`,
+                            description: "Mensagem contextual copiada para o editor de texto abaixo."
+                          });
+                        }}
+                        className="py-2 px-2.5 rounded-xl text-left border border-white/5 bg-white/[0.01] hover:bg-white/[0.04] text-slate-300 transition-all flex flex-col gap-0.5"
+                      >
+                        <span className="text-[10px] font-bold text-white flex items-center gap-1"><Zap className="w-3 h-3 text-highlight" /> {f.label}</span>
+                        <span className="text-[8px] opacity-60 font-semibold leading-none">{f.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* WhatsApp copy-editor */}
                 <div className="flex-1 flex flex-col gap-3">
