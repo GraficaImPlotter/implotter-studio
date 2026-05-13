@@ -651,14 +651,14 @@ const AdminProspects = () => {
         {/* Scraper Panel */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="glass-card-premium rounded-3xl border border-white/5 p-6 shadow-2xl relative overflow-hidden bg-mesh-gradient">
-            <h3 className="font-display font-black text-lg text-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-display font-black text-lg text-white mb-4 uppercase tracking-wider flex items-center gap-2">
               <Layers className="w-5 h-5 text-highlight" /> Parâmetros de Captura
             </h3>
             
             <div className="space-y-4">
               {/* Presets Grid */}
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Selecione o Nicho Local</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2 block">Selecione o Nicho Local</label>
                 <div className="grid grid-cols-2 gap-2">
                   {NY_PRESETS.map((p, idx) => (
                     <button
@@ -668,7 +668,7 @@ const AdminProspects = () => {
                         "py-2 px-3 text-left rounded-xl text-[11px] font-bold border transition-all truncate",
                         keyword === p.value 
                           ? "bg-highlight/10 text-highlight border-highlight/30" 
-                          : "bg-white/[0.02] border-white/5 text-muted-foreground hover:bg-white/[0.05]"
+                          : "bg-white/[0.02] border-white/5 text-slate-300 hover:bg-white/[0.05]"
                       )}
                     >
                       {p.label}
@@ -679,30 +679,30 @@ const AdminProspects = () => {
 
               {/* Keyword */}
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Palavra-chave Personalizada</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1 block">Palavra-chave Personalizada</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
                     placeholder="Ex: Clínicas odontológicas, Academias"
-                    className="w-full bg-[#12121a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm focus:border-highlight/40 outline-none text-white font-semibold"
+                    className="w-full bg-[#12121a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm focus:border-highlight/40 outline-none text-white font-semibold placeholder:text-white/40"
                   />
                 </div>
               </div>
 
               {/* City */}
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 block">Cidade de Busca</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1 block">Cidade de Busca</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/60" />
+                  <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Ex: São Paulo, Rio de Janeiro"
-                    className="w-full bg-[#12121a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm focus:border-highlight/40 outline-none text-white font-semibold"
+                    className="w-full bg-[#12121a] border border-white/10 rounded-xl pl-9 pr-4 py-2 text-sm focus:border-highlight/40 outline-none text-white font-semibold placeholder:text-white/40"
                   />
                 </div>
               </div>
@@ -710,7 +710,7 @@ const AdminProspects = () => {
               {/* Slider */}
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Quantidade de Resultados</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-300">Quantidade de Resultados</label>
                   <span className="text-xs font-bold text-highlight">{limit} leads</span>
                 </div>
                 <input
@@ -726,8 +726,8 @@ const AdminProspects = () => {
               {/* Simulation Mode */}
               <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-foreground">Modo Demonstração</h4>
-                  <p className="text-[9px] text-muted-foreground">Velocidade ultrarrápida, livre de bloqueios</p>
+                  <h4 className="text-xs font-bold text-white">Modo Demonstração</h4>
+                  <p className="text-[9px] text-slate-400">Velocidade ultrarrápida, livre de bloqueios</p>
                 </div>
                 <input
                   type="checkbox"
@@ -812,13 +812,13 @@ const AdminProspects = () => {
             {prospects.length > 0 && (
               <div className="flex flex-col md:flex-row gap-4 mb-6 pb-4 border-b border-white/5">
                 <div className="flex-1 relative">
-                  <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Buscar por nome, nicho ou endereço..."
-                    className="w-full pl-10 pr-4 py-2 bg-[#050508] border border-white/5 rounded-xl text-xs font-semibold outline-none focus:border-highlight/20 text-white placeholder:text-muted-foreground/50 transition-all"
+                    className="w-full pl-10 pr-4 py-2 bg-[#12121a] border border-white/10 rounded-xl text-xs font-semibold outline-none focus:border-highlight/30 text-white placeholder:text-white/55 transition-all"
                   />
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
@@ -826,7 +826,7 @@ const AdminProspects = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-[#050508] border border-white/5 text-slate-300 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25"
+                    className="bg-[#12121a] border border-white/10 text-slate-200 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25 cursor-pointer hover:border-white/20 transition-all"
                   >
                     <option value="all">TODOS STATUS</option>
                     <option value="novo">NOVO LEAD</option>
@@ -842,7 +842,7 @@ const AdminProspects = () => {
                   <select
                     value={commercialFilter}
                     onChange={(e) => setCommercialFilter(e.target.value)}
-                    className="bg-[#050508] border border-white/5 text-slate-300 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25"
+                    className="bg-[#12121a] border border-white/10 text-slate-200 font-bold uppercase tracking-wider text-[10px] py-1.5 px-3 rounded-xl outline-none focus:border-highlight/25 cursor-pointer hover:border-white/20 transition-all"
                   >
                     <option value="all">TODOS OS SCORES</option>
                     <option value="Quente">🔥 QUENTE</option>
