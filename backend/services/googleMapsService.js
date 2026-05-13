@@ -410,13 +410,16 @@ function runSimulation(keyword, city, limit, onProgress) {
       setTimeout(() => {
         // Filter mock leads based on keyword or select random
         const queryTerm = keyword.toLowerCase();
+        let isDynamic = false;
         let filtered = SIMULATED_LEADS.filter(l => 
           l.category.toLowerCase().includes(queryTerm) || 
           l.name.toLowerCase().includes(queryTerm)
         );
 
         if (filtered.length === 0) {
+          // If no matches found, use the base leads but dynamically inject the requested keyword!
           filtered = SIMULATED_LEADS;
+          isDynamic = true;
         }
 
         const selectedLeads = [];
@@ -427,7 +430,17 @@ function runSimulation(keyword, city, limit, onProgress) {
         let index = 0;
         function processNext() {
           if (index < itemsToTake) {
-            const baseLead = filtered[index];
+            let baseLead = { ...filtered[index] };
+            
+            // Dynamic generation to make the simulation faithful to the requested niche
+            if (isDynamic) {
+              const formattedKeyword = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+              baseLead.category = formattedKeyword;
+              const prefixes = [formattedKeyword, "Studio", "Espaço", "Centro", "Instituto"];
+              const suffixes = ["Premium", "Prime", "Center", "Elite", "Pro"];
+              baseLead.name = `${prefixes[index % prefixes.length]} ${suffixes[index % suffixes.length]} - ${formattedCity}`;
+            }
+
             const name = baseLead.name;
             onProgress(`[${index + 1}/${itemsToTake}] Acessando listagem de: "${name}"`);
             

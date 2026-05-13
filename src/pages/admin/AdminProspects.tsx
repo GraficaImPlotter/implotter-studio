@@ -1248,10 +1248,10 @@ const AdminProspects = () => {
                     {/* weaknesses list (amadorism flags) */}
                     {selectedProspect.analysis.weaknessesIdentified && (
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-red-400 block">Sinais de Amadorismo Identificados</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-red-300 block">Sinais de Amadorismo Identificados</span>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {selectedProspect.analysis.weaknessesIdentified.map((w: string, idx: number) => (
-                            <div key={idx} className="flex items-start gap-1.5 text-[10px] font-semibold text-foreground bg-red-500/5 border border-red-500/10 p-2 rounded-xl">
+                            <div key={idx} className="flex items-start gap-1.5 text-[10px] font-semibold text-slate-200 bg-red-500/10 border border-red-500/20 p-2 rounded-xl">
                               <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
                               <span>{w}</span>
                             </div>
@@ -1263,8 +1263,8 @@ const AdminProspects = () => {
                     {/* brand audit verdict narrative */}
                     {selectedProspect.analysis.brandAuditVerdict && (
                       <div className="p-3.5 bg-white/[0.01] border border-white/5 rounded-xl space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground block">Auditoria de Branding Geral</span>
-                        <p className="text-[11px] font-semibold text-muted-foreground leading-relaxed italic">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-300 block">Auditoria de Branding Geral</span>
+                        <p className="text-[11px] font-semibold text-slate-200 leading-relaxed italic">
                           "{selectedProspect.analysis.brandAuditVerdict}"
                         </p>
                       </div>
@@ -1895,10 +1895,10 @@ const AdminProspects = () => {
                     <div className="grid grid-cols-2 gap-3">
                       {selectedProspect.analysis.nicheProducts.map((p: any, idx: number) => (
                         <div key={idx} className="p-3 bg-white/[0.01] border border-white/5 rounded-xl flex flex-col justify-between">
-                          <h6 className="text-xs font-bold text-foreground mb-1 flex items-center gap-1">
+                          <h6 className="text-xs font-bold text-white mb-1 flex items-center gap-1">
                             <CheckCircle className="w-3.5 h-3.5 text-highlight shrink-0" /> {p.productName}
                           </h6>
-                          <p className="text-[9px] text-muted-foreground font-semibold leading-relaxed">{p.benefit}</p>
+                          <p className="text-[9px] text-slate-300 font-semibold leading-relaxed">{p.benefit}</p>
                         </div>
                       ))}
                     </div>
