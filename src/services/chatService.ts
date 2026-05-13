@@ -1,5 +1,5 @@
-// SEC-007: Use environment variable for chat API URL, fallback to localhost for dev
-const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || "http://localhost:3001/api/chat";
+// SEC-007: Use environment variable for chat API URL, fallback to Render backend for production
+const CHAT_API_URL = import.meta.env.VITE_CHAT_API_URL || "https://implotter-studio.onrender.com/api/chat";
 
 export const sendChatMessage = async (messages: { role: string; content: string }[]) => {
   try {
