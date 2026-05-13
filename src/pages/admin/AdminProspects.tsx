@@ -103,8 +103,9 @@ const AdminProspects = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisPanelOpen, setAnalysisPanelOpen] = useState(false);
   const [pitchText, setPitchText] = useState("");
-  const [activeMockupType, setActiveMockupType] = useState<"card" | "banner">("card");
+  const [activeMockupType, setActiveMockupType] = useState<"card" | "banner" | "receituario" | "windbanner" | "fachada" | "adesivo">("card");
   const [isCardFlipped, setIsCardFlipped] = useState(false);
+  const [auditTone, setAuditTone] = useState<"consultivo" | "comercial" | "formal">("consultivo");
   
   // WhatsApp config states (stored in localStorage)
   const [waApiUrl, setWaApiUrl] = useState(() => localStorage.getItem("implotter_wa_url") || "");
@@ -321,7 +322,8 @@ const AdminProspects = () => {
         body: JSON.stringify({
           lead: auditLead,
           photos: photoPayload,
-          customReviews: auditReviews
+          customReviews: auditReviews,
+          tone: auditTone
         })
       });
 
@@ -928,6 +930,35 @@ const AdminProspects = () => {
                   *A IA analisará a qualidade do design, cores e layout dessas imagens para reportar amadorismos de marca.
                 </p>
               </div>
+
+              {/* Approach Tone Selector */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 block">
+                  Tom de Abordagem do Robô de IA
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "consultivo", label: "💬 Consultivo", desc: "Design & Feedback" },
+                    { id: "comercial", label: "🔥 Comercial", desc: "Foco em Vendas" },
+                    { id: "formal", label: "💼 Formal", desc: "Elegante & Sério" }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setAuditTone(t.id as any)}
+                      className={cn(
+                        "py-2.5 px-3 rounded-xl text-left border transition-all flex flex-col gap-0.5",
+                        auditTone === t.id
+                          ? "bg-highlight/10 text-highlight border-highlight/30"
+                          : "bg-white/[0.02] border-white/5 text-slate-300 hover:bg-white/[0.05]"
+                      )}
+                    >
+                      <span className="text-[11px] font-bold">{t.label}</span>
+                      <span className="text-[8px] opacity-60 font-semibold leading-none">{t.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -1142,23 +1173,28 @@ const AdminProspects = () => {
               <div className="lg:col-span-6 flex flex-col gap-6">
                 
                 {/* Mockup switcher */}
-                <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                <div className="flex flex-col gap-2 pb-3 border-b border-white/5">
                   <h4 className="text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1.5">
                     <Palette className="w-4 h-4 text-highlight" /> Ferramentas de Design & Mockups
                   </h4>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5 flex-wrap">
                     {[
                       { id: "card", label: "Cartão", icon: Layout },
-                      { id: "banner", label: "Banner", icon: Layers }
+                      { id: "banner", label: "Banner", icon: Layers },
+                      { id: "receituario", label: "Receituário", icon: FileImage },
+                      { id: "windbanner", label: "Windbanner", icon: Flame },
+                      { id: "fachada", label: "Fachada 3D", icon: Globe },
+                      { id: "adesivo", label: "Adesivos", icon: Palette }
                     ].map((m) => (
                       <button
                         key={m.id}
+                        type="button"
                         onClick={() => setActiveMockupType(m.id as any)}
                         className={cn(
-                          "py-1 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1",
+                          "py-1.5 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5",
                           activeMockupType === m.id 
-                            ? "bg-highlight text-white border-highlight" 
-                            : "bg-white/[0.02] border-white/5 text-muted-foreground hover:bg-white/[0.05]"
+                            ? "bg-highlight text-white border-highlight shadow-glow-sm" 
+                            : "bg-white/[0.02] border-white/5 text-slate-300 hover:bg-white/[0.05]"
                         )}
                       >
                         <m.icon className="w-3.5 h-3.5" /> {m.label}
@@ -1296,6 +1332,175 @@ const AdminProspects = () => {
                           Excelente para atrair clientes locais na entrada do estabelecimento. Ideal para consultórios, academias ou escritórios.
                         </div>
 
+                      </div>
+                    </div>
+                  )}
+
+                  {activeMockupType === "receituario" && (
+                    <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+                      <div className="w-[240px] h-[310px] bg-white rounded-md shadow-glow-strong border border-gray-200 p-5 flex flex-col justify-between text-slate-800 relative overflow-hidden">
+                        {/* Watermark letter */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
+                          <span className="font-display font-black text-[120px]" style={{ color: selectedProspect.customColors?.primary }}>
+                            {selectedProspect.name[0].toUpperCase()}
+                          </span>
+                        </div>
+                        
+                        {/* Top Header */}
+                        <div className="border-b-2 pb-3 flex justify-between items-start" style={{ borderColor: selectedProspect.customColors?.primary || "#1e3a8a" }}>
+                          <div className="flex items-center gap-1.5">
+                            <div 
+                              className="w-5 h-5 rounded flex items-center justify-center font-black text-[9px] text-white"
+                              style={{ backgroundColor: selectedProspect.customColors?.primary || "#1e3a8a" }}
+                            >
+                              {selectedProspect.name.split(' ')[0][0].toUpperCase()}
+                            </div>
+                            <span className="font-display font-black text-[10px] tracking-tight text-slate-900 uppercase">{selectedProspect.name.split(' ').slice(0,2).join(' ')}</span>
+                          </div>
+                          <span className="text-[7px] font-black uppercase tracking-widest text-slate-400">Receituário Especial</span>
+                        </div>
+
+                        {/* Middle body lines representing prescription text */}
+                        <div className="flex-1 py-4 space-y-3">
+                          <div className="w-12 h-1.5 bg-slate-200 rounded" />
+                          <div className="space-y-2 pt-1">
+                            <div className="h-1 bg-slate-100 rounded w-full" />
+                            <div className="h-1 bg-slate-100 rounded w-full" />
+                            <div className="h-1 bg-slate-100 rounded w-[85%]" />
+                            <div className="h-1 bg-slate-100 rounded w-[90%]" />
+                          </div>
+                        </div>
+
+                        {/* Bottom Footer */}
+                        <div className="border-t pt-2 text-[6px] font-semibold text-slate-400 space-y-0.5 text-center">
+                          <p className="font-bold text-slate-600 uppercase tracking-wider truncate">{selectedProspect.address}</p>
+                          <p>{selectedProspect.phone || "(XX) XXXXX-XXXX"} | implotter.com.br</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-highlight">Receituário / Receita Médica Premium</span>
+                    </div>
+                  )}
+
+                  {activeMockupType === "windbanner" && (
+                    <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+                      <div className="flex gap-6 items-end">
+                        {/* Teardrop windbanner flag on pole */}
+                        <div className="relative h-[250px] w-[90px] flex items-end justify-center">
+                          {/* Pole */}
+                          <div className="absolute right-4 bottom-0 top-6 w-1 bg-slate-700 rounded-full" />
+                          <div className="absolute right-3 bottom-0 w-3 h-1 bg-slate-800 rounded-sm" />
+                          
+                          {/* Flag body curving */}
+                          <div 
+                            className="absolute right-[18px] bottom-6 top-6 w-[54px] rounded-l-[40px] rounded-r-md flex flex-col justify-between p-3 text-center text-white border-r border-white/10 shadow-lg"
+                            style={{ 
+                              background: `linear-gradient(180deg, ${selectedProspect.customColors?.primary || "#1e3a8a"}, ${selectedProspect.customColors?.secondary || "#3b82f6"})` 
+                            }}
+                          >
+                            <div className="w-5 h-5 rounded-full bg-white/10 mx-auto flex items-center justify-center font-black text-[9px] border border-white/20">
+                              {selectedProspect.name.split(' ')[0][0].toUpperCase()}
+                            </div>
+                            
+                            {/* Vertical text layout */}
+                            <div className="flex-1 flex flex-col justify-center items-center py-2 font-display font-black text-[7px] tracking-wider uppercase leading-tight gap-1 break-words w-full">
+                              {selectedProspect.name.split(' ').slice(0, 2).map((word, i) => (
+                                <span key={i} className="block text-center">{word}</span>
+                              ))}
+                            </div>
+
+                            <span className="text-[5px] font-black tracking-widest text-white/50 uppercase leading-none">PREMIUM</span>
+                          </div>
+                        </div>
+
+                        <div className="max-w-[180px] bg-white/[0.02] border border-white/5 p-4 rounded-2xl text-[11px] leading-relaxed text-slate-300 font-semibold">
+                          <p className="font-bold text-white mb-1 text-xs">Windbanner de Calçada</p>
+                          Excelente para atrair pedestres e motoristas na frente do seu negócio. Tecido oxford lavável de alta durabilidade com haste de fibra de vidro.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeMockupType === "fachada" && (
+                    <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+                      {/* Storefront wall */}
+                      <div className="w-[320px] h-[180px] rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-white/10 p-6 flex flex-col justify-between relative shadow-glow-strong overflow-hidden">
+                        {/* Brick/Store pattern background */}
+                        <div className="absolute inset-0 opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+                        
+                        {/* Store sign banner */}
+                        <div 
+                          className="w-full h-14 rounded-lg flex items-center justify-between px-6 shadow-2xl relative border"
+                          style={{ 
+                            background: `linear-gradient(90deg, ${selectedProspect.customColors?.primary || "#1e3a8a"}, ${selectedProspect.customColors?.secondary || "#3b82f6"})`,
+                            borderColor: `${selectedProspect.customColors?.secondary}40`
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-white text-xs border border-white/30">
+                              {selectedProspect.name.split(' ')[0][0].toUpperCase()}
+                            </div>
+                            <h4 className="font-display font-black text-[10px] text-white uppercase tracking-wider line-clamp-1">{selectedProspect.name}</h4>
+                          </div>
+                          
+                          <div className="flex gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+                          </div>
+                        </div>
+
+                        {/* Door / glass window mockups below */}
+                        <div className="flex justify-around items-end h-16 w-full px-4 border-t border-white/5">
+                          {/* Left glass pane */}
+                          <div className="w-20 h-14 border border-white/10 bg-white/[0.02] rounded-t flex items-center justify-center">
+                            <span className="text-[6px] text-white/20 font-bold uppercase tracking-widest">Adesivo Vitrine</span>
+                          </div>
+                          {/* Entrance Door */}
+                          <div className="w-24 h-16 border-x border-t border-white/20 bg-white/[0.04] rounded-t flex items-center justify-center">
+                            <div className="w-0.5 h-6 bg-white/20" />
+                          </div>
+                          {/* Right glass pane */}
+                          <div className="w-20 h-14 border border-white/10 bg-white/[0.02] rounded-t flex items-center justify-center">
+                            <span className="text-[6px] text-white/20 font-bold uppercase tracking-widest">Adesivo Vitrine</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-highlight">Letreiro de ACM e Adesivos de Fachada de Vidro</span>
+                    </div>
+                  )}
+
+                  {activeMockupType === "adesivo" && (
+                    <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+                      <div className="flex gap-6 items-center">
+                        {/* Round Sticker */}
+                        <div 
+                          className="w-40 h-40 rounded-full shadow-glow-strong flex flex-col items-center justify-center p-6 text-center border-4 relative overflow-hidden shrink-0"
+                          style={{ 
+                            background: `radial-gradient(circle, ${selectedProspect.customColors?.secondary || "#3b82f6"} 0%, ${selectedProspect.customColors?.primary || "#1e3a8a"} 100%)`,
+                            borderColor: `${selectedProspect.customColors?.secondary || "#3b82f6"}`
+                          }}
+                        >
+                          {/* Inner dotted circle */}
+                          <div className="absolute inset-2 rounded-full border border-dashed border-white/30" />
+                          
+                          <div className="z-10 space-y-1">
+                            <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/20 mx-auto flex items-center justify-center font-black text-white text-[10px] shadow-lg">
+                              {selectedProspect.name.split(' ')[0][0].toUpperCase()}
+                            </div>
+                            
+                            <h4 className="font-display font-black text-[9px] text-white uppercase tracking-wide line-clamp-2 max-w-[110px] leading-tight">
+                              {selectedProspect.name}
+                            </h4>
+                            
+                            <p className="text-[6px] font-black uppercase tracking-[0.2em] text-white/70">
+                              {selectedProspect.category}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="max-w-[180px] bg-white/[0.02] border border-white/5 p-4 rounded-2xl text-[11px] leading-relaxed text-slate-300 font-semibold">
+                          <p className="font-bold text-white mb-1 text-xs">Adesivo de Vinil Recortado</p>
+                          Adesivos redondos de vinil impermeável com meio-corte. Ideal para lacrar embalagens, sacolas de entrega ou distribuição promocional.
+                        </div>
                       </div>
                     </div>
                   )}

@@ -16,7 +16,7 @@ const getGenAI = () => {
  * @param {object} params - { lead, photos, customReviews }
  * @returns {Promise<object>} Detailed visual diagnosis and sales pitch
  */
-export async function analyzeLeadPresence({ lead, photos = [], customReviews = "" }) {
+export async function analyzeLeadPresence({ lead, photos = [], customReviews = "", tone = "consultivo" }) {
   try {
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({
@@ -28,6 +28,15 @@ export async function analyzeLeadPresence({ lead, photos = [], customReviews = "
 
     const categoryText = lead.category || "Empresa Local";
     const reviewsText = customReviews || `Nota média de ${lead.rating || 4.5} baseada em ${lead.reviews_count || 10} avaliações.`;
+
+    let toneInstruction = "";
+    if (tone === "formal") {
+      toneInstruction = "O tom deve ser FORMAL, elegante, altamente profissional, de altíssimo nível (ex: usando 'Prezados Diretores' ou 'Prezados responsáveis pela empresa [Nome]'). Use vocabulário solene, sem gírias ou excesso de emojis informais.";
+    } else if (tone === "comercial") {
+      toneInstruction = "O tom deve ser COMERCIAL, direto, focado em alta conversão de vendas, senso de oportunidade, demonstrando alta energia e como os produtos de luxo da ImPlotter trarão retorno imediato de novos clientes. Use emojis dinâmicos e gatilhos mentais.";
+    } else {
+      toneInstruction = "O tom deve ser CONSULTIVO, amigável e de feedback de design. Você atua como um parceiro analítico, elogiando os acertos de visibilidade deles, apontando oportunidades construtivas de evolução de branding e apresentando os mockups exclusivos.";
+    }
 
     const prompt = `
 Você é o Auditor de Branding e Diretor Comercial da Gráfica ImPlotter Studio.
@@ -72,9 +81,11 @@ Gere um JSON estritamente válido contendo o diagnóstico de marca da empresa. A
 
 5. "brandAuditVerdict": Um parágrafo resumido e direto (3 a 4 frases) em tom consultivo de design, explicando o diagnóstico da marca (por que a identidade atual parece amadora ou fraca e como a papelaria física premium da ImPlotter elevará a percepção de valor deles).
 
-6. "personalizedPitch": Um texto altamente persuasivo de WhatsApp formatado com emojis e quebras de linha para enviar ao lead:
-   - Cumprimente de forma calorosa e elogie a boa reputação dele nas avaliações locais.
-   - Aponte, em tom amigável, que percebeu oportunidades para valorizar o espaço de atendimento físico dele com papelaria personalizada.
+6. "personalizedPitch": Um texto altamente persuasivo de WhatsApp formatado com emojis e quebras de linha para enviar ao lead.
+   INSTRUÇÃO DE TOM DA MENSAGEM: ${toneInstruction}
+   DIRETRIZES DA MENSAGEM:
+   - Cumprimente e elogie a boa reputação dele nas avaliações locais.
+   - Aponte, de acordo com o tom especificado acima, oportunidades para valorizar o espaço de atendimento físico dele com papelaria personalizada.
    - Ofereça enviar o mockup exclusivo do cartão/banner que você preparou para eles visualizarem o potencial.
    - Pergunte se pode enviar uma proposta rápida sem compromisso.
 

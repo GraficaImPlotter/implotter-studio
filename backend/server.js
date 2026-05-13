@@ -655,13 +655,13 @@ app.get('/api/prospects/stream-scrape', verifyAuth, async (req, res) => {
 // Deep AI Presence Analysis
 app.post('/api/prospects/analyze', verifyAuth, async (req, res) => {
   try {
-    const { lead, photos = [], customReviews = "" } = req.body;
+    const { lead, photos = [], customReviews = "", tone = "consultivo" } = req.body;
     if (!lead || !lead.name || !lead.category) {
       return res.status(400).json({ error: 'Dados da empresa inválidos' });
     }
 
-    logger.info(`Analyzing visual presence for lead: "${lead.name}"`);
-    const analysis = await analyzeLeadPresence({ lead, photos, customReviews });
+    logger.info(`Analyzing visual presence for lead: "${lead.name}" with tone "${tone}"`);
+    const analysis = await analyzeLeadPresence({ lead, photos, customReviews, tone });
     res.json({ success: true, analysis });
 
   } catch (error) {
