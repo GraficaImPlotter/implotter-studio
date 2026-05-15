@@ -321,20 +321,7 @@ export async function scrapeGoogleMaps({ keyword, city, limit = 5, offset = 0, o
               }
               onProgress(`[${i + 1}/${processLimit}] Redes sociais extraídas: Instagram: ${lead.instagram || "—"}, Email: ${lead.email || "—"}`);
             }
-            onProgress(`[${i + 1}/${processLimit}] Analisando site para contatos adicionais: ${lead.website}`);
-            try {
-              const enriched = await enrichLead(lead.website);
-              lead.instagram = enriched.instagram;
-              lead.email = enriched.email;
-              if (enriched.phone && !lead.phone) {
-                lead.phone = enriched.phone;
-                lead.whatsapp = enriched.phone.replace(/\D/g, '');
-              }
-              onProgress(`[${i + 1}/${processLimit}] Redes sociais extraídas: Instagram: ${lead.instagram || "—"}, Email: ${lead.email || "—"}`);
-            } catch (err) {
-              logger.error("Error during contact enrichment", { message: err.message });
-            }
-          }
+
 
           leads.push(lead);
           // Validate lead data
