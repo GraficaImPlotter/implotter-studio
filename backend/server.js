@@ -767,8 +767,42 @@ app.post('/api/finance/expenses', verifyAuth, async (req, res) => {
 
 app.get('/api/finance/incoming-invoices', verifyAuth, async (req, res) => {
   try {
-    const data = await listIncomingInvoices();
+    const { data, error } = await supabaseAdmin
+      .from('incoming_invoices')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
     res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/finance/expenses/:id', verifyAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from('expenses')
+      .update(req.body)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/finance/expenses/:id', verifyAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabaseAdmin
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

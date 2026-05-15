@@ -26,6 +26,17 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
     const supplierData = infNFe.emit;
     const totalData = infNFe.total?.ICMSTot;
     const ide = infNFe.ide;
+    const cobr = infNFe.cobr;
+    
+    // Extract due date from cobr -> dup -> dVenc
+    let dueDate = ide.dhEmi || ide.dEmi; // Default to issue date
+    if (cobr && cobr.dup) {
+      const dup = Array.isArray(cobr.dup) ? cobr.dup[0] : cobr.dup;
+      if (dup.dVenc) {
+        dueDate = dup.dVenc;
+        logger.info(`Vencimento extraído do XML: ${dueDate}`);
+      }
+    }
 
     const data = {
       accessKey,
@@ -33,6 +44,7 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
       supplierName: supplierData.xNome,
       totalValue: parseFloat(totalData?.vNF || 0),
       issueDate: ide.dhEmi || ide.dEmi,
+      dueDate: dueDate,
       rawXml: xmlContent
     };
 
@@ -106,7 +118,7 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
           supplier_id: supplier.id,
           description: `NF-e Entrada ${accessKey.slice(-10)} - ${data.supplierName}`,
           amount: data.totalValue,
-          due_date: new Date().toISOString().split('T')[0], // Default to today
+          due_date: data.dueDate,
           category: 'producao_externa',
           invoice_id: invoice.id,
           order_id: orderId,

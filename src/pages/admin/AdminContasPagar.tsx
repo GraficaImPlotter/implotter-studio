@@ -25,6 +25,12 @@ import {
   BarChart3,
   Sparkles,
   Package,
+  MoreVertical,
+  Check,
+  Trash2,
+  Edit,
+  User,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -32,6 +38,30 @@ import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Expense {
@@ -41,7 +71,9 @@ interface Expense {
   due_date: string;
   status: "pending" | "paid" | "cancelled";
   category: string;
+  supplier_id?: string;
   supplier?: {
+    id: string;
     name: string;
     cnpj: string;
   };
@@ -73,10 +105,22 @@ const AdminContasPagar = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [invoices, setInvoices] = useState<IncomingInvoice[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [uploading, setUploading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+
+  // Form states
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentExpense, setCurrentExpense] = useState<Partial<Expense>>({
+    description: "",
+    amount: 0,
+    due_date: new Date().toISOString().split("T")[0],
+    category: "producao_externa",
+    status: "pending",
+  });
 
   const fetchExpenses = async () => {
     try {
@@ -97,7 +141,7 @@ const AdminContasPagar = () => {
       const { data, error } = await supabase
         .from("incoming_invoices")
         .select("*")
-        .order("issue_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setInvoices(data || []);
@@ -112,7 +156,7 @@ const AdminContasPagar = () => {
         .from("orders")
         .select("id, order_number, customer_name")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
       setOrders(data || []);
@@ -121,9 +165,24 @@ const AdminContasPagar = () => {
     }
   };
 
+  const fetchSuppliers = async () => {
+    try {
+      const { data, error } = await supabase.from("suppliers").select("*");
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar fornecedores:", error);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
-    await Promise.all([fetchExpenses(), fetchInvoices(), fetchOrders()]);
+    await Promise.all([
+      fetchExpenses(),
+      fetchInvoices(),
+      fetchOrders(),
+      fetchSuppliers(),
+    ]);
     setLoading(false);
   };
 
@@ -169,7 +228,7 @@ const AdminContasPagar = () => {
         toast.success(
           `NF-e importada com sucesso! Emitente: ${result.supplier.name}`,
         );
-        loadData(); // Refresh everything
+        loadData();
       } else {
         throw new Error(result.error);
       }
@@ -177,8 +236,96 @@ const AdminContasPagar = () => {
       toast.error("Erro ao processar XML: " + error.message);
     } finally {
       setUploading(false);
-      // Reset input
       event.target.value = "";
+    }
+  };
+
+  const handleSaveExpense = async () => {
+    try {
+      if (!currentExpense.description || !currentExpense.amount) {
+        toast.error("Preencha descrição e valor.");
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+
+      const API_URL = getApiUrl();
+      const url = isEditing
+        ? `${API_URL}/api/finance/expenses/${currentExpense.id}`
+        : `${API_URL}/api/finance/expenses`;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(currentExpense),
+      });
+
+      if (!response.ok) throw new Error("Erro ao salvar despesa");
+
+      toast.success(
+        isEditing ? "Despesa atualizada!" : "Despesa criada com sucesso!",
+      );
+      setIsFormOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/api/finance/expenses/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Erro ao excluir");
+
+      toast.success("Despesa excluída.");
+      loadData();
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
+    }
+  };
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/api/finance/expenses/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao atualizar status");
+
+      toast.success(
+        `Status atualizado para: ${newStatus === "paid" ? "Pago" : "Pendente"}`,
+      );
+      loadData();
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
     }
   };
 
@@ -203,6 +350,11 @@ const AdminContasPagar = () => {
       inv.access_key.includes(searchTerm) ||
       inv.supplier_cnpj.includes(searchTerm),
   );
+
+  const getOrderInfo = (orderId?: string) => {
+    if (!orderId) return null;
+    return orders.find((o) => o.id === orderId);
+  };
 
   return (
     <AdminLayout>
@@ -266,7 +418,20 @@ const AdminContasPagar = () => {
               </Button>
             </div>
 
-            <Button className="gap-2 bg-highlight hover:bg-highlight/90 shadow-glow h-11 px-5 rounded-2xl font-black text-xs tracking-widest uppercase">
+            <Button
+              onClick={() => {
+                setIsEditing(false);
+                setCurrentExpense({
+                  description: "",
+                  amount: 0,
+                  due_date: new Date().toISOString().split("T")[0],
+                  category: "producao_externa",
+                  status: "pending",
+                });
+                setIsFormOpen(true);
+              }}
+              className="gap-2 bg-highlight hover:bg-highlight/90 shadow-glow h-11 px-5 rounded-2xl font-black text-xs tracking-widest uppercase"
+            >
               <Plus className="w-4 h-4" />
               Nova Despesa
             </Button>
@@ -367,15 +532,6 @@ const AdminContasPagar = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest gap-2 bg-white/5 border border-white/5 hover:bg-white/10 transition-all"
-                  >
-                    <Filter className="w-4 h-4" /> Filtros Avançados
-                  </Button>
-                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -386,7 +542,7 @@ const AdminContasPagar = () => {
                         Vencimento
                       </TableHead>
                       <TableHead className="text-[10px] font-black uppercase tracking-widest py-6">
-                        Descrição & Vínculo
+                        Descrição & Pedido/Cliente
                       </TableHead>
                       <TableHead className="text-[10px] font-black uppercase tracking-widest py-6">
                         Fornecedor
@@ -427,90 +583,147 @@ const AdminContasPagar = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredExpenses.map((expense) => (
-                        <TableRow
-                          key={expense.id}
-                          className="group hover:bg-white/[0.04] transition-all duration-300 border-border/20"
-                        >
-                          <TableCell className="font-black text-foreground pl-8 py-5">
-                            {format(new Date(expense.due_date), "dd MMM yyyy", {
-                              locale: ptBR,
-                            })}
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-black text-foreground text-sm group-hover:text-highlight transition-colors uppercase tracking-tight">
-                                {expense.description}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-black bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
-                                  {expense.category}
+                      filteredExpenses.map((expense) => {
+                        const orderInfo = getOrderInfo(expense.order_id);
+                        return (
+                          <TableRow
+                            key={expense.id}
+                            className="group hover:bg-white/[0.04] transition-all duration-300 border-border/20"
+                          >
+                            <TableCell className="font-black text-foreground pl-8 py-5">
+                              {format(
+                                new Date(expense.due_date),
+                                "dd MMM yyyy",
+                                {
+                                  locale: ptBR,
+                                },
+                              )}
+                            </TableCell>
+                            <TableCell className="py-5">
+                              <div className="flex flex-col gap-1.5">
+                                <span className="font-black text-foreground text-sm group-hover:text-highlight transition-colors uppercase tracking-tight">
+                                  {expense.description}
                                 </span>
-                                {expense.order_id && (
-                                  <Badge
-                                    variant="hero"
-                                    className="text-[8px] h-4 font-black rounded-md"
-                                  >
-                                    #
-                                    {orders.find(
-                                      (o) => o.id === expense.order_id,
-                                    )?.order_number || "VINCULADO"}
-                                  </Badge>
-                                )}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-black bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
+                                    {expense.category}
+                                  </span>
+                                  {orderInfo && (
+                                    <>
+                                      <Badge
+                                        variant="hero"
+                                        className="text-[8px] h-4 font-black rounded-md flex items-center gap-1"
+                                      >
+                                        <Package className="w-2.5 h-2.5" /> #
+                                        {orderInfo.order_number}
+                                      </Badge>
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[8px] h-4 font-black rounded-md bg-highlight/10 text-highlight border-highlight/20 flex items-center gap-1"
+                                      >
+                                        <User className="w-2.5 h-2.5" />{" "}
+                                        {orderInfo.customer_name}
+                                      </Badge>
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-bold text-foreground/70 py-5">
-                            {expense.supplier?.name || "Fornecedor avulso"}
-                          </TableCell>
-                          <TableCell className="text-right font-black text-foreground text-base py-5">
-                            R${" "}
-                            {expense.amount.toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <Badge
-                              variant={
-                                expense.status === "paid"
-                                  ? "success"
+                            </TableCell>
+                            <TableCell className="font-bold text-foreground/70 py-5">
+                              {expense.supplier?.name || "Fornecedor avulso"}
+                            </TableCell>
+                            <TableCell className="text-right font-black text-foreground text-base py-5">
+                              R${" "}
+                              {expense.amount.toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </TableCell>
+                            <TableCell className="py-5">
+                              <Badge
+                                variant={
+                                  expense.status === "paid"
+                                    ? "success"
+                                    : expense.status === "pending"
+                                      ? "outline"
+                                      : "destructive"
+                                }
+                                className="capitalize px-4 py-1.5 font-black text-[9px] tracking-[0.15em] rounded-xl shadow-inner uppercase"
+                              >
+                                {expense.status === "paid"
+                                  ? "Pago"
                                   : expense.status === "pending"
-                                    ? "outline"
-                                    : "destructive"
-                              }
-                              className="capitalize px-4 py-1.5 font-black text-[9px] tracking-[0.15em] rounded-xl shadow-inner uppercase"
-                            >
-                              {expense.status === "paid"
-                                ? "Pago"
-                                : expense.status === "pending"
-                                  ? "Pendente"
-                                  : "Cancelado"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-5">
-                            {expense.invoice_id ? (
-                              <div className="flex items-center gap-2 text-success font-black text-[9px] bg-success/10 px-3 py-1.5 rounded-xl border border-success/20 w-fit uppercase tracking-wider">
-                                <Receipt className="w-4 h-4" />
-                                <span>NF OK</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 text-muted-foreground/30 font-black text-[9px] px-3 py-1.5 grayscale opacity-40 uppercase tracking-widest">
-                                <Receipt className="w-4 h-4" />
-                                <span>SEM NF</span>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right pr-8 py-5">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-12 w-12 rounded-2xl hover:bg-highlight hover:text-white transition-all shadow-xl bg-card border border-border/10"
-                            >
-                              <FileText className="w-5 h-5" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                    ? "Pendente"
+                                    : "Cancelado"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-5">
+                              {expense.invoice_id ? (
+                                <div className="flex items-center gap-2 text-success font-black text-[9px] bg-success/10 px-3 py-1.5 rounded-xl border border-success/20 w-fit uppercase tracking-wider">
+                                  <Receipt className="w-4 h-4" />
+                                  <span>NF OK</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 text-muted-foreground/30 font-black text-[9px] px-3 py-1.5 grayscale opacity-40 uppercase tracking-widest">
+                                  <Receipt className="w-4 h-4" />
+                                  <span>SEM NF</span>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right pr-8 py-5">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-xl hover:bg-highlight hover:text-white transition-all border border-border/10"
+                                  >
+                                    <MoreVertical className="w-5 h-5" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="bg-card border-border/50 rounded-2xl p-2 w-48 shadow-2xl"
+                                >
+                                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50 px-3 py-2">
+                                    Ações Rápidas
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuSeparator className="bg-border/30 mx-2" />
+                                  {expense.status === "pending" && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        updateStatus(expense.id, "paid")
+                                      }
+                                      className="flex items-center gap-2 p-3 rounded-xl cursor-pointer hover:bg-success/10 text-success font-bold text-xs"
+                                    >
+                                      <Check className="w-4 h-4" /> Marcar como
+                                      Pago
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setIsEditing(true);
+                                      setCurrentExpense(expense);
+                                      setIsFormOpen(true);
+                                    }}
+                                    className="flex items-center gap-2 p-3 rounded-xl cursor-pointer hover:bg-highlight/10 text-foreground font-bold text-xs"
+                                  >
+                                    <Edit className="w-4 h-4" /> Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator className="bg-border/30 mx-2" />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleDeleteExpense(expense.id)
+                                    }
+                                    className="flex items-center gap-2 p-3 rounded-xl cursor-pointer hover:bg-destructive/10 text-destructive font-bold text-xs"
+                                  >
+                                    <Trash2 className="w-4 h-4" /> Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -531,7 +744,10 @@ const AdminContasPagar = () => {
                         Chave de Acesso
                       </TableHead>
                       <TableHead className="text-[10px] font-black uppercase tracking-widest py-6">
-                        CNPJ Fornecedor
+                        Fornecedor
+                      </TableHead>
+                      <TableHead className="text-[10px] font-black uppercase tracking-widest py-6">
+                        Pedido & Cliente
                       </TableHead>
                       <TableHead className="text-right text-[10px] font-black uppercase tracking-widest py-6">
                         Valor Total
@@ -548,60 +764,79 @@ const AdminContasPagar = () => {
                     {filteredInvoices.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={7}
                           className="h-64 text-center text-muted-foreground/40 font-black uppercase tracking-widest text-[10px]"
                         >
                           Nenhuma nota fiscal importada ainda.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredInvoices.map((inv) => (
-                        <TableRow
-                          key={inv.id}
-                          className="group hover:bg-white/[0.04] transition-all duration-300 border-border/20"
-                        >
-                          <TableCell className="font-black text-foreground pl-8 py-5">
-                            {format(new Date(inv.issue_date), "dd MMM yyyy", {
-                              locale: ptBR,
-                            })}
-                          </TableCell>
-                          <TableCell className="font-mono text-[10px] text-muted-foreground py-5">
-                            {inv.access_key}
-                          </TableCell>
-                          <TableCell className="font-bold text-foreground/70 py-5">
-                            {inv.supplier_cnpj}
-                          </TableCell>
-                          <TableCell className="text-right font-black text-foreground py-5">
-                            R${" "}
-                            {inv.total_value.toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </TableCell>
-                          <TableCell className="py-5">
-                            <Badge
-                              variant={
-                                inv.status === "reconciled"
-                                  ? "success"
-                                  : "outline"
-                              }
-                              className="uppercase text-[8px] font-black tracking-widest"
-                            >
-                              {inv.status === "reconciled"
-                                ? "Conciliada"
-                                : "Pendente"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right pr-8 py-5">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-[10px] font-black uppercase tracking-widest gap-2"
-                            >
-                              <Download className="w-4 h-4" /> XML
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      filteredInvoices.map((inv) => {
+                        const orderInfo = getOrderInfo(inv.order_id);
+                        return (
+                          <TableRow
+                            key={inv.id}
+                            className="group hover:bg-white/[0.04] transition-all duration-300 border-border/20"
+                          >
+                            <TableCell className="font-black text-foreground pl-8 py-5">
+                              {format(new Date(inv.issue_date), "dd MMM yyyy", {
+                                locale: ptBR,
+                              })}
+                            </TableCell>
+                            <TableCell className="font-mono text-[10px] text-muted-foreground py-5">
+                              {inv.access_key}
+                            </TableCell>
+                            <TableCell className="font-bold text-foreground/70 py-5">
+                              {inv.supplier_cnpj}
+                            </TableCell>
+                            <TableCell className="py-5">
+                              {orderInfo ? (
+                                <div className="flex flex-col gap-1">
+                                  <Badge className="w-fit text-[8px] font-black">
+                                    Pedido #{orderInfo.order_number}
+                                  </Badge>
+                                  <span className="text-[10px] font-bold text-highlight uppercase">
+                                    {orderInfo.customer_name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground font-black uppercase opacity-30">
+                                  Avulso
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-black text-foreground py-5">
+                              R${" "}
+                              {inv.total_value.toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </TableCell>
+                            <TableCell className="py-5">
+                              <Badge
+                                variant={
+                                  inv.status === "reconciled"
+                                    ? "success"
+                                    : "outline"
+                                }
+                                className="uppercase text-[8px] font-black tracking-widest"
+                              >
+                                {inv.status === "reconciled"
+                                  ? "Conciliada"
+                                  : "Pendente"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right pr-8 py-5">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] font-black uppercase tracking-widest gap-2"
+                              >
+                                <Download className="w-4 h-4" /> XML
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -609,6 +844,151 @@ const AdminContasPagar = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create/Edit Modal */}
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 rounded-[32px] sm:max-w-[500px] shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tighter uppercase text-foreground">
+                {isEditing ? "Editar Despesa" : "Nova Despesa"}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground font-medium">
+                Insira os detalhes da despesa com seu fornecedor.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-6 py-4">
+              <div className="grid gap-2">
+                <Label
+                  htmlFor="description"
+                  className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1"
+                >
+                  Descrição
+                </Label>
+                <Input
+                  id="description"
+                  className="h-12 rounded-xl bg-background/50 border-border/30 focus:border-highlight/50 font-bold"
+                  value={currentExpense.description}
+                  onChange={(e) =>
+                    setCurrentExpense({
+                      ...currentExpense,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Ex: Impressão Lona 440g"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">
+                    Valor (R$)
+                  </Label>
+                  <Input
+                    type="number"
+                    className="h-12 rounded-xl bg-background/50 border-border/30 focus:border-highlight/50 font-bold"
+                    value={currentExpense.amount}
+                    onChange={(e) =>
+                      setCurrentExpense({
+                        ...currentExpense,
+                        amount: parseFloat(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">
+                    Vencimento
+                  </Label>
+                  <Input
+                    type="date"
+                    className="h-12 rounded-xl bg-background/50 border-border/30 focus:border-highlight/50 font-bold"
+                    value={currentExpense.due_date}
+                    onChange={(e) =>
+                      setCurrentExpense({
+                        ...currentExpense,
+                        due_date: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">
+                  Fornecedor
+                </Label>
+                <Select
+                  value={currentExpense.supplier_id}
+                  onValueChange={(val) =>
+                    setCurrentExpense({ ...currentExpense, supplier_id: val })
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-xl bg-background/50 border-border/30 focus:border-highlight/50 font-bold">
+                    <SelectValue placeholder="Selecione um fornecedor" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border/50 rounded-xl">
+                    {suppliers.map((s) => (
+                      <SelectItem
+                        key={s.id}
+                        value={s.id}
+                        className="font-bold text-xs p-3 rounded-lg"
+                      >
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">
+                  Status
+                </Label>
+                <div className="flex gap-2">
+                  {["pending", "paid", "cancelled"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() =>
+                        setCurrentExpense({
+                          ...currentExpense,
+                          status: s as any,
+                        })
+                      }
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                        currentExpense.status === s
+                          ? "bg-highlight text-white border-highlight shadow-glow-sm"
+                          : "bg-background/50 text-muted-foreground border-border/30 hover:bg-white/5"
+                      }`}
+                    >
+                      {s === "pending"
+                        ? "Pendente"
+                        : s === "paid"
+                          ? "Pago"
+                          : "Cancelado"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button
+                variant="ghost"
+                onClick={() => setIsFormOpen(false)}
+                className="rounded-xl font-bold"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveExpense}
+                className="bg-highlight hover:bg-highlight/90 text-white rounded-xl px-8 font-black uppercase tracking-widest text-xs h-12 shadow-glow"
+              >
+                {isEditing ? "Salvar Alterações" : "Criar Despesa"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10 pb-10">
@@ -619,10 +999,10 @@ const AdminContasPagar = () => {
                 CONTROLE TOTAL
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed font-bold opacity-80">
-                Se a nota fiscal não aparecer na aba de "Contas a Pagar",
-                verifique a aba de **"NFs de Entrada"**. Todas as notas
-                importadas com sucesso ficam registradas lá, permitindo que você
-                audite se o fornecedor emitiu o documento corretamente.
+                O sistema agora integra o fluxo financeiro com a produção. Veja
+                exatamente para qual cliente e qual pedido cada nota fiscal de
+                fornecedor foi emitida, garantindo controle total sobre suas
+                margens de lucro.
               </p>
             </div>
             <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-10 transition-opacity">
@@ -633,26 +1013,26 @@ const AdminContasPagar = () => {
           <Card className="border-border/20 bg-card/40 p-10 rounded-[48px] shadow-2xl border-t border-l border-white/5">
             <h3 className="text-xl font-black text-foreground mb-8 uppercase tracking-[0.1em] flex items-center gap-3">
               <div className="w-2 h-8 bg-highlight rounded-full" />
-              Checklist de Importação
+              Gestão de Fluxo
             </h3>
             <ul className="space-y-5">
               {[
                 {
-                  text: "Verifique se o CNPJ do fornecedor no XML está cadastrado.",
+                  text: "Visualize o nome do cliente final em cada nota importada.",
+                  icon: User,
+                },
+                {
+                  text: "Badge do pedido vincula automaticamente a despesa à venda.",
                   icon: Package,
                 },
                 {
-                  text: "Certifique-se que o valor total da nota é exatamente o valor da despesa.",
-                  icon: Receipt,
-                },
-                {
-                  text: "O sistema processa apenas arquivos XML de NF-e (Modelo 55).",
-                  icon: CheckCircle2,
+                  text: "Use as abas para separar Contas a Pagar do Arquivo de Notas.",
+                  icon: Tabs,
                 },
               ].map((tip, i) => (
                 <li key={i} className="flex gap-5 items-start group">
-                  <div className="mt-0.5 w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-highlight/40 group-hover:bg-highlight/10 transition-all shadow-lg">
-                    <tip.icon className="w-6 h-6 text-highlight" />
+                  <div className="mt-0.5 w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-highlight/40 group-hover:bg-highlight/10 transition-all shadow-lg text-highlight">
+                    <tip.icon className="w-6 h-6" />
                   </div>
                   <span className="text-sm text-muted-foreground/90 font-black group-hover:text-foreground transition-colors leading-snug py-1">
                     {tip.text}
