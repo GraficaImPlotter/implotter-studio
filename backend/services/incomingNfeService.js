@@ -115,18 +115,21 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
         .select()
         .single();
         
-      if (!createError) {
+      if (createError) {
+        logger.error('Erro ao criar despesa automática:', createError);
+        // We don't throw here to at least return the invoice success
+      } else {
         await supabaseAdmin
           .from('incoming_invoices')
           .update({ status: 'reconciled' })
           .eq('id', invoice.id);
-        logger.info(`Nova despesa criada automaticamente para NF-e ${accessKey}`);
+        logger.info(`Nova despesa criada automaticamente para NF-e ${accessKey}: ${newExpense.id}`);
       }
     }
 
     return { success: true, invoice, supplier };
   } catch (error) {
-    logger.error('Erro ao processar XML de entrada:', error);
+    logger.error('Erro crítico no processamento de XML de entrada:', error);
     throw error;
   }
 };
