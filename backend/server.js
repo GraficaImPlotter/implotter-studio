@@ -737,8 +737,9 @@ const PORT = process.env.PORT || 3001;
 app.post('/api/finance/incoming-xml', verifyAuth, xmlUpload.single('xml'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    const { orderId } = req.body;
     const xmlContent = req.file.buffer.toString('utf-8');
-    const result = await processIncomingXML(xmlContent);
+    const result = await processIncomingXML(xmlContent, orderId);
     res.json(result);
   } catch (error) {
     logger.error('Erro na rota /api/finance/incoming-xml:', error);

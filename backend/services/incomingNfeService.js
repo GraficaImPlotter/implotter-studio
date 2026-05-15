@@ -10,7 +10,7 @@ const parser = new XMLParser({
 /**
  * Service to handle incoming NF-e (Entrada) from suppliers
  */
-export const processIncomingXML = async (xmlContent) => {
+export const processIncomingXML = async (xmlContent, orderId = null) => {
   try {
     const jsonObj = parser.parse(xmlContent);
     
@@ -62,6 +62,7 @@ export const processIncomingXML = async (xmlContent) => {
         total_value: data.totalValue,
         issue_date: data.issueDate,
         raw_xml: data.rawXml,
+        order_id: orderId,
       }, { onConflict: 'access_key' })
       .select()
       .single();
@@ -71,8 +72,8 @@ export const processIncomingXML = async (xmlContent) => {
       throw invoiceError;
     }
 
-    // 3. Try to Reconcile with existing expenses
-    // Look for a pending expense for the same supplier and value within a 30-day window
+    // 3. Reconcile or Create Expense
+    // Look for a pending expense for the same supplier and value
     const { data: expenses, error: expenseError } = await supabaseAdmin
       .from('expenses')
       .select('*')
@@ -85,7 +86,10 @@ export const processIncomingXML = async (xmlContent) => {
       const targetExpense = expenses[0];
       await supabaseAdmin
         .from('expenses')
-        .update({ invoice_id: invoice.id })
+        .update({ 
+          invoice_id: invoice.id,
+          order_id: orderId || targetExpense.order_id 
+        })
         .eq('id', targetExpense.id);
       
       await supabaseAdmin
@@ -93,7 +97,31 @@ export const processIncomingXML = async (xmlContent) => {
         .update({ status: 'reconciled' })
         .eq('id', invoice.id);
         
-      logger.info(`NF-e ${accessKey} reconciliada com despesa ${targetExpense.id}`);
+      logger.info(`NF-e ${accessKey} reconciliada com despesa existente ${targetExpense.id}`);
+    } else {
+      // Auto-create expense since no match was found
+      const { data: newExpense, error: createError } = await supabaseAdmin
+        .from('expenses')
+        .insert({
+          supplier_id: supplier.id,
+          description: `NF-e Entrada ${accessKey.slice(-10)} - ${data.supplierName}`,
+          amount: data.totalValue,
+          due_date: new Date().toISOString().split('T')[0], // Default to today
+          category: 'producao_externa',
+          invoice_id: invoice.id,
+          order_id: orderId,
+          status: 'pending'
+        })
+        .select()
+        .single();
+        
+      if (!createError) {
+        await supabaseAdmin
+          .from('incoming_invoices')
+          .update({ status: 'reconciled' })
+          .eq('id', invoice.id);
+        logger.info(`Nova despesa criada automaticamente para NF-e ${accessKey}`);
+      }
     }
 
     return { success: true, invoice, supplier };
