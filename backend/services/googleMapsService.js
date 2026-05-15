@@ -113,7 +113,42 @@ const SIMULATED_LEADS = [
  * Scrapes Google Maps for a given keyword, city and limit
  * Falls back to simulation mode with high-quality Brazilian businesses if playwright is missing or fails
  */
-export async function scrapeGoogleMaps({ keyword, city, limit = 5, onProgress = () => {}, simulate = false }) {
+const enrichmentCache = new Map();
+
+/**
+ * Simple validation for lead fields.
+ * Returns an object { valid: boolean, errors: string[] }
+ */
+async function validateLead(lead) {
+  const errors = [];
+  // Phone: digits only, 10 or 11 digits (Brazilian numbers)
+  if (lead.phone) {
+    const digits = lead.phone.replace(/\D/g, "");
+    if (!/^\d{10,11}$/.test(digits)) {
+      errors.push("Invalid phone format");
+    }
+  }
+  // Website: perform a HEAD request to check reachability
+  if (lead.website) {
+    try {
+      const res = await fetch(lead.website, { method: "HEAD" });
+      if (!res.ok) {
+        errors.push("Website unreachable");
+      }
+    } catch (_) {
+      errors.push("Website unreachable");
+    }
+  }
+  // Instagram handle pattern
+  if (lead.instagram) {
+    if (!/^@?[A-Za-z0-9._]+$/.test(lead.instagram)) {
+      errors.push("Invalid Instagram handle");
+    }
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export async function scrapeGoogleMaps({ keyword, city, limit = 5, offset = 0, onProgress = () => {}, simulate = false }) {
   const query = `${keyword} em ${city}`;
   logger.info(`Starting scraping for: "${query}" (Limit: ${limit}, Simulate: ${simulate})`);
   
@@ -125,9 +160,8 @@ export async function scrapeGoogleMaps({ keyword, city, limit = 5, onProgress = 
   try {
     playwright = await import('playwright');
   } catch (error) {
-    logger.warn("Playwright not installed in environment. Falling back to high-fidelity Simulation Mode.");
-    onProgress("Playwright não instalado. Ativando modo de simulação resiliente...");
-    return runSimulation(keyword, city, limit, onProgress);
+    logger.error("Playwright not installed or failed to load.", { message: error.message });
+    throw new Error('Playwright not available: ensure it is installed in the environment');
   }
 
   let browser;
@@ -268,6 +302,25 @@ export async function scrapeGoogleMaps({ keyword, city, limit = 5, onProgress = 
 
           // Enrich lead from website if present
           if (lead.website && lead.website.startsWith('http')) {
+              // Use cache for enrichment to avoid repeated network calls
+              let enriched = enrichmentCache.get(lead.website);
+              if (!enriched) {
+                try {
+                  enriched = await enrichLead(lead.website);
+                  enrichmentCache.set(lead.website, enriched);
+                } catch (err) {
+                  logger.error("Enrichment failed", { message: err.message });
+                  enriched = { instagram: "", email: "" };
+                }
+              }
+              lead.instagram = enriched.instagram;
+              lead.email = enriched.email;
+              if (enriched.phone && !lead.phone) {
+                lead.phone = enriched.phone;
+                lead.whatsapp = enriched.phone.replace(/\D/g, "");
+              }
+              onProgress(`[${i + 1}/${processLimit}] Redes sociais extraídas: Instagram: ${lead.instagram || "—"}, Email: ${lead.email || "—"}`);
+            }
             onProgress(`[${i + 1}/${processLimit}] Analisando site para contatos adicionais: ${lead.website}`);
             try {
               const enriched = await enrichLead(lead.website);
@@ -284,6 +337,12 @@ export async function scrapeGoogleMaps({ keyword, city, limit = 5, onProgress = 
           }
 
           leads.push(lead);
+          // Validate lead data
+          const validation = await validateLead(lead);
+          lead.validation_status = validation.valid ? "ok" : "invalid";
+          if (!validation.valid) {
+            logger.warn('Lead validation issues', { errors: validation.errors, leadName: lead.name });
+          }
           onProgress(`[${i + 1}/${processLimit}] Empresa salva com sucesso.`);
         } catch (itemErr) {
           logger.error(`Error scraping item ${i}`, { message: itemErr.message });
@@ -331,10 +390,11 @@ export async function scrapeGoogleMaps({ keyword, city, limit = 5, onProgress = 
     return leads;
 
   } catch (error) {
-    logger.error("Scraper failed, falling back to Simulation Mode", { message: error.message });
-    onProgress(`Erro no navegador de captura: ${error.message}. Ativando plano de contingência para gerar leads.`);
+    logger.error("Scraper failed: unable to complete real scraping", { message: error.message });
+    onProgress(`Erro no navegador de captura: ${error.message}. Nenhum lead retornado.`);
     if (browser) await browser.close().catch(() => {});
-    return runSimulation(keyword, city, limit, onProgress);
+    // Propagate the error to the caller; they can decide whether to fallback to simulation
+    throw error;
   }
 }
 

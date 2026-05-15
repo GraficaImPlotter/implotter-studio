@@ -673,6 +673,8 @@ async function cancelNFe(nfeId, reason) {
 /**
  * Generate DANFE (PDF representation of NF-e)
  */
+import { jsPDF } from "jspdf";
+
 async function generateDANFE(nfeId) {
   try {
     const nfe = await getNFe(nfeId);

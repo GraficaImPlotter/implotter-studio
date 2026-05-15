@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -37,12 +43,18 @@ const AdminCupons = () => {
   const [ruleEditing, setRuleEditing] = useState<any>(null);
 
   const loadCoupons = async () => {
-    const { data } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: false });
     setItems(data ?? []);
   };
 
   const loadPopups = async () => {
-    const { data } = await supabase.from("popup_offers").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("popup_offers")
+      .select("*")
+      .order("created_at", { ascending: false });
     setPopups(data ?? []);
   };
 
@@ -55,7 +67,10 @@ const AdminCupons = () => {
   };
 
   const loadCategories = async () => {
-    const { data } = await supabase.from("categories").select("id, name").order("name", { ascending: true });
+    const { data } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name", { ascending: true });
     setCategories(data ?? []);
   };
 
@@ -66,27 +81,40 @@ const AdminCupons = () => {
     loadCategories();
   }, []);
 
-  const editingRestrictedCategories = useMemo(() => new Set<string>(editing?.restricted_categories ?? []), [editing]);
+  const editingRestrictedCategories = useMemo(
+    () => new Set<string>(editing?.restricted_categories ?? []),
+    [editing],
+  );
 
   // Coupon submit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
-    const restricted_categories = (fd.getAll("restricted_categories") as string[]).filter(Boolean);
-    const restricted_products = parseUuidList((fd.get("restricted_products") as string) || "");
+    const restricted_categories = (
+      fd.getAll("restricted_categories") as string[]
+    ).filter(Boolean);
+    const restricted_products = parseUuidList(
+      (fd.get("restricted_products") as string) || "",
+    );
 
     const payload = {
       code: ((fd.get("code") as string) || "").toUpperCase(),
       discount_type: fd.get("discount_type") as string,
       discount_value: parseFloat(fd.get("discount_value") as string) || 0,
       min_purchase: parseFloat(fd.get("min_purchase") as string) || 0,
-      max_uses: (fd.get("max_uses") as string) ? parseInt(fd.get("max_uses") as string) : null,
+      max_uses: (fd.get("max_uses") as string)
+        ? parseInt(fd.get("max_uses") as string)
+        : null,
       is_active: fd.get("is_active") === "on",
       first_purchase_only: fd.get("first_purchase_only") === "on",
       free_shipping: fd.get("free_shipping") === "on",
-      restricted_categories: restricted_categories.length ? restricted_categories : null,
-      restricted_products: restricted_products.length ? restricted_products : null,
+      restricted_categories: restricted_categories.length
+        ? restricted_categories
+        : null,
+      restricted_products: restricted_products.length
+        ? restricted_products
+        : null,
     };
 
     if (!payload.code || payload.code.length < 2) {
@@ -139,7 +167,10 @@ const AdminCupons = () => {
     }
 
     if (popupEditing) {
-      await supabase.from("popup_offers").update(payload).eq("id", popupEditing.id);
+      await supabase
+        .from("popup_offers")
+        .update(payload)
+        .eq("id", popupEditing.id);
     } else {
       await supabase.from("popup_offers").insert(payload);
     }
@@ -164,8 +195,12 @@ const AdminCupons = () => {
       name: (fd.get("name") as string) || "",
       discount_type: fd.get("discount_type") as string,
       discount_value: parseFloat(fd.get("discount_value") as string) || 0,
-      min_quantity: (fd.get("min_quantity") as string) ? parseInt(fd.get("min_quantity") as string) : 0,
-      min_value: (fd.get("min_value") as string) ? parseFloat(fd.get("min_value") as string) : 0,
+      min_quantity: (fd.get("min_quantity") as string)
+        ? parseInt(fd.get("min_quantity") as string)
+        : 0,
+      min_value: (fd.get("min_value") as string)
+        ? parseFloat(fd.get("min_value") as string)
+        : 0,
       is_active: fd.get("is_active") === "on",
     };
 
@@ -174,7 +209,11 @@ const AdminCupons = () => {
       return;
     }
 
-    if (ruleEditing) await supabase.from("progressive_discounts").update(payload).eq("id", ruleEditing.id);
+    if (ruleEditing)
+      await supabase
+        .from("progressive_discounts")
+        .update(payload)
+        .eq("id", ruleEditing.id);
     else await supabase.from("progressive_discounts").insert(payload);
 
     toast({ title: ruleEditing ? "Regra atualizada!" : "Regra criada!" });
@@ -192,7 +231,9 @@ const AdminCupons = () => {
 
   return (
     <AdminLayout>
-      <h1 className="font-display text-3xl font-bold text-foreground mb-6">Marketing & Cupons</h1>
+      <h1 className="font-display text-3xl font-bold text-foreground mb-6">
+        Marketing & Cupons
+      </h1>
 
       <Tabs defaultValue="coupons">
         <TabsList className="mb-6">
@@ -240,46 +281,78 @@ const AdminCupons = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium">Valor *</label>
-                      <Input name="discount_value" type="number" step="0.01" defaultValue={editing?.discount_value} required />
+                      <Input
+                        name="discount_value"
+                        type="number"
+                        step="0.01"
+                        defaultValue={editing?.discount_value}
+                        required
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Compra Mínima</label>
-                      <Input name="min_purchase" type="number" step="0.01" defaultValue={editing?.min_purchase} />
+                      <label className="text-sm font-medium">
+                        Compra Mínima
+                      </label>
+                      <Input
+                        name="min_purchase"
+                        type="number"
+                        step="0.01"
+                        defaultValue={editing?.min_purchase}
+                      />
                     </div>
                     <div>
                       <label className="text-sm font-medium">Máx. Usos</label>
-                      <Input name="max_uses" type="number" defaultValue={editing?.max_uses} />
+                      <Input
+                        name="max_uses"
+                        type="number"
+                        defaultValue={editing?.max_uses}
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="border border-border rounded-xl p-3">
-                      <p className="text-sm font-medium text-foreground mb-2">Restringir por categorias</p>
+                      <p className="text-sm font-medium text-foreground mb-2">
+                        Restringir por categorias
+                      </p>
                       <div className="max-h-40 overflow-auto space-y-1 pr-1">
                         {categories.map((cat) => (
-                          <label key={cat.id} className="flex items-center gap-2 text-sm">
+                          <label
+                            key={cat.id}
+                            className="flex items-center gap-2 text-sm"
+                          >
                             <input
                               type="checkbox"
                               name="restricted_categories"
                               value={cat.id}
-                              defaultChecked={editingRestrictedCategories.has(cat.id)}
+                              defaultChecked={editingRestrictedCategories.has(
+                                cat.id,
+                              )}
                             />
                             <span className="text-foreground">{cat.name}</span>
                           </label>
                         ))}
-                        {categories.length === 0 && <p className="text-xs text-muted-foreground">Sem categorias</p>}
+                        {categories.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Sem categorias
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium">Restringir por produtos (IDs, vírgula)</label>
+                      <label className="text-sm font-medium">
+                        Restringir por produtos (IDs, vírgula)
+                      </label>
                       <Textarea
                         name="restricted_products"
                         rows={4}
-                        defaultValue={(editing?.restricted_products ?? []).join(", ")}
+                        defaultValue={(editing?.restricted_products ?? []).join(
+                          ", ",
+                        )}
                         placeholder="uuid1, uuid2, uuid3"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -290,17 +363,30 @@ const AdminCupons = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="first_purchase_only" defaultChecked={editing?.first_purchase_only ?? false} />
+                      <input
+                        type="checkbox"
+                        name="first_purchase_only"
+                        defaultChecked={editing?.first_purchase_only ?? false}
+                      />
                       Apenas 1ª compra
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="free_shipping" defaultChecked={editing?.free_shipping ?? false} />
+                      <input
+                        type="checkbox"
+                        name="free_shipping"
+                        defaultChecked={editing?.free_shipping ?? false}
+                      />
                       Frete grátis
                     </label>
                   </div>
 
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="is_active" defaultChecked={editing?.is_active ?? true} /> Ativo
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      defaultChecked={editing?.is_active ?? true}
+                    />{" "}
+                    Ativo
                   </label>
 
                   <Button type="submit" variant="hero" className="w-full">
@@ -311,23 +397,38 @@ const AdminCupons = () => {
             </Dialog>
           </div>
 
-          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card">
+          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Código</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Desconto</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Usos</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Código
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Desconto
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Usos
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Status
+                  </th>
                   <th className="text-right p-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((c) => (
-                  <tr key={c.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="p-3 font-mono font-bold text-foreground">{c.code}</td>
+                  <tr
+                    key={c.id}
+                    className="border-t border-border hover:bg-muted/30"
+                  >
+                    <td className="p-3 font-mono font-bold text-foreground">
+                      {c.code}
+                    </td>
                     <td className="p-3 text-foreground">
-                      {c.discount_type === "percentage" ? `${c.discount_value}%` : `R$ ${Number(c.discount_value).toFixed(2)}`}
+                      {c.discount_type === "percentage"
+                        ? `${c.discount_value}%`
+                        : `R$ ${Number(c.discount_value).toFixed(2)}`}
                     </td>
                     <td className="p-3 text-muted-foreground">
                       {c.used_count}
@@ -336,17 +437,30 @@ const AdminCupons = () => {
                     <td className="p-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
-                          c.is_active ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                          c.is_active
+                            ? "bg-success/20 text-success"
+                            : "bg-destructive/20 text-destructive"
                         }`}
                       >
                         {c.is_active ? "Ativo" : "Inativo"}
                       </span>
                     </td>
                     <td className="p-3 text-right">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(c);
+                          setOpen(true);
+                        }}
+                      >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteCoupon(c.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteCoupon(c.id)}
+                      >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </td>
@@ -354,7 +468,10 @@ const AdminCupons = () => {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       Nenhum cupom
                     </td>
                   </tr>
@@ -381,12 +498,18 @@ const AdminCupons = () => {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{ruleEditing ? "Editar" : "Nova"} regra</DialogTitle>
+                  <DialogTitle>
+                    {ruleEditing ? "Editar" : "Nova"} regra
+                  </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleRuleSubmit} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium">Nome *</label>
-                    <Input name="name" defaultValue={ruleEditing?.name} required />
+                    <Input
+                      name="name"
+                      defaultValue={ruleEditing?.name}
+                      required
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -394,7 +517,9 @@ const AdminCupons = () => {
                       <label className="text-sm font-medium">Tipo</label>
                       <select
                         name="discount_type"
-                        defaultValue={ruleEditing?.discount_type || "percentage"}
+                        defaultValue={
+                          ruleEditing?.discount_type || "percentage"
+                        }
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="percentage">Percentual (%)</option>
@@ -403,23 +528,45 @@ const AdminCupons = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium">Valor *</label>
-                      <Input name="discount_value" type="number" step="0.01" defaultValue={ruleEditing?.discount_value} required />
+                      <Input
+                        name="discount_value"
+                        type="number"
+                        step="0.01"
+                        defaultValue={ruleEditing?.discount_value}
+                        required
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Qtd mínima</label>
-                      <Input name="min_quantity" type="number" defaultValue={ruleEditing?.min_quantity ?? 0} />
+                      <Input
+                        name="min_quantity"
+                        type="number"
+                        defaultValue={ruleEditing?.min_quantity ?? 0}
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Valor mínimo (R$)</label>
-                      <Input name="min_value" type="number" step="0.01" defaultValue={ruleEditing?.min_value ?? 0} />
+                      <label className="text-sm font-medium">
+                        Valor mínimo (R$)
+                      </label>
+                      <Input
+                        name="min_value"
+                        type="number"
+                        step="0.01"
+                        defaultValue={ruleEditing?.min_value ?? 0}
+                      />
                     </div>
                   </div>
 
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="is_active" defaultChecked={ruleEditing?.is_active ?? true} /> Ativa
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      defaultChecked={ruleEditing?.is_active ?? true}
+                    />{" "}
+                    Ativa
                   </label>
 
                   <Button type="submit" variant="hero" className="w-full">
@@ -430,41 +577,70 @@ const AdminCupons = () => {
             </Dialog>
           </div>
 
-          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card">
+          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Nome</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Condição</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Desconto</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Nome
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Condição
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Desconto
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Status
+                  </th>
                   <th className="text-right p-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {rules.map((r) => (
-                  <tr key={r.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="p-3 font-medium text-foreground">{r.name}</td>
+                  <tr
+                    key={r.id}
+                    className="border-t border-border hover:bg-muted/30"
+                  >
+                    <td className="p-3 font-medium text-foreground">
+                      {r.name}
+                    </td>
                     <td className="p-3 text-muted-foreground">
-                      min qtd: {r.min_quantity ?? 0} • min R$: {Number(r.min_value ?? 0).toFixed(2)}
+                      min qtd: {r.min_quantity ?? 0} • min R$:{" "}
+                      {Number(r.min_value ?? 0).toFixed(2)}
                     </td>
                     <td className="p-3 text-foreground">
-                      {r.discount_type === "percentage" ? `${r.discount_value}%` : `R$ ${Number(r.discount_value).toFixed(2)}`}
+                      {r.discount_type === "percentage"
+                        ? `${r.discount_value}%`
+                        : `R$ ${Number(r.discount_value).toFixed(2)}`}
                     </td>
                     <td className="p-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
-                          r.is_active ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                          r.is_active
+                            ? "bg-success/20 text-success"
+                            : "bg-destructive/20 text-destructive"
                         }`}
                       >
                         {r.is_active ? "Ativa" : "Inativa"}
                       </span>
                     </td>
                     <td className="p-3 text-right">
-                      <Button variant="ghost" size="icon" onClick={() => { setRuleEditing(r); setRuleOpen(true); }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setRuleEditing(r);
+                          setRuleOpen(true);
+                        }}
+                      >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteRule(r.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteRule(r.id)}
+                      >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </td>
@@ -472,7 +648,10 @@ const AdminCupons = () => {
                 ))}
                 {rules.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       Nenhuma regra
                     </td>
                   </tr>
@@ -499,45 +678,85 @@ const AdminCupons = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>{popupEditing ? "Editar" : "Novo"} Pop-up de Oferta</DialogTitle>
+                  <DialogTitle>
+                    {popupEditing ? "Editar" : "Novo"} Pop-up de Oferta
+                  </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handlePopupSubmit} className="space-y-4">
                   <div>
                     <label className="text-sm font-medium">Título *</label>
-                    <Input name="title" defaultValue={popupEditing?.title} required />
+                    <Input
+                      name="title"
+                      defaultValue={popupEditing?.title}
+                      required
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium">Descrição *</label>
-                    <Textarea name="description" defaultValue={popupEditing?.description} required rows={3} />
+                    <Textarea
+                      name="description"
+                      defaultValue={popupEditing?.description}
+                      required
+                      rows={3}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Código do Cupom *</label>
-                      <Input name="coupon_code" defaultValue={popupEditing?.coupon_code} required />
+                      <label className="text-sm font-medium">
+                        Código do Cupom *
+                      </label>
+                      <Input
+                        name="coupon_code"
+                        defaultValue={popupEditing?.coupon_code}
+                        required
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Label do Desconto</label>
-                      <Input name="discount_label" defaultValue={popupEditing?.discount_label || "10% OFF"} />
+                      <label className="text-sm font-medium">
+                        Label do Desconto
+                      </label>
+                      <Input
+                        name="discount_label"
+                        defaultValue={popupEditing?.discount_label || "10% OFF"}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Timer (min)</label>
-                      <Input name="timer_minutes" type="number" defaultValue={popupEditing?.timer_minutes ?? 15} />
+                      <Input
+                        name="timer_minutes"
+                        type="number"
+                        defaultValue={popupEditing?.timer_minutes ?? 15}
+                      />
                     </div>
                     <div>
                       <label className="text-sm font-medium">Delay (seg)</label>
-                      <Input name="delay_seconds" type="number" defaultValue={popupEditing?.delay_seconds ?? 3} />
+                      <Input
+                        name="delay_seconds"
+                        type="number"
+                        defaultValue={popupEditing?.delay_seconds ?? 3}
+                      />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="require_lead_capture" defaultChecked={popupEditing?.require_lead_capture ?? false} />
+                      <input
+                        type="checkbox"
+                        name="require_lead_capture"
+                        defaultChecked={
+                          popupEditing?.require_lead_capture ?? false
+                        }
+                      />
                       Exigir lead (nome+email)
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" name="is_active" defaultChecked={popupEditing?.is_active ?? false} />
+                      <input
+                        type="checkbox"
+                        name="is_active"
+                        defaultChecked={popupEditing?.is_active ?? false}
+                      />
                       Ativo (apenas 1)
                     </label>
                   </div>
@@ -550,39 +769,67 @@ const AdminCupons = () => {
             </Dialog>
           </div>
 
-          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card">
+          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Título</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Cupom</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Timer</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Título
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Cupom
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Timer
+                  </th>
+                  <th className="text-left p-3 font-medium text-muted-foreground">
+                    Status
+                  </th>
                   <th className="text-right p-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {popups.map((p) => (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="p-3 font-medium text-foreground">{p.title}</td>
-                    <td className="p-3 font-mono text-foreground">{p.coupon_code}</td>
+                  <tr
+                    key={p.id}
+                    className="border-t border-border hover:bg-muted/30"
+                  >
+                    <td className="p-3 font-medium text-foreground">
+                      {p.title}
+                    </td>
+                    <td className="p-3 font-mono text-foreground">
+                      {p.coupon_code}
+                    </td>
                     <td className="p-3 text-muted-foreground">
                       {p.timer_minutes}min / {p.delay_seconds}s delay
                     </td>
                     <td className="p-3">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
-                          p.is_active ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                          p.is_active
+                            ? "bg-success/20 text-success"
+                            : "bg-destructive/20 text-destructive"
                         }`}
                       >
                         {p.is_active ? "Ativo" : "Inativo"}
                       </span>
                     </td>
                     <td className="p-3 text-right flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => { setPopupEditing(p); setPopupOpen(true); }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setPopupEditing(p);
+                          setPopupOpen(true);
+                        }}
+                      >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deletePopup(p.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deletePopup(p.id)}
+                      >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </td>
@@ -590,7 +837,10 @@ const AdminCupons = () => {
                 ))}
                 {popups.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={5}
+                      className="p-8 text-center text-muted-foreground"
+                    >
                       Nenhum pop-up configurado
                     </td>
                   </tr>
@@ -605,4 +855,3 @@ const AdminCupons = () => {
 };
 
 export default AdminCupons;
-

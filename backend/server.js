@@ -621,7 +621,7 @@ app.get('/api/nfe/:id/danfe', verifyAuth, async (req, res) => {
 // ==================== PROSPECTING ROUTES ====================
 
 // Streamed Google Maps search & scrape using Server-Sent Events (SSE) for high interactivity
-app.get('/api/prospects/stream-scrape', verifyAuth, async (req, res) => {
+app.get('/api/prospects/stream-scrape-paged', verifyAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
