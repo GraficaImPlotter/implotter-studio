@@ -53,6 +53,16 @@ interface Expense {
   invoice_id?: string;
 }
 
+const getApiUrl = () => {
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    return "http://localhost:3001";
+  }
+  return import.meta.env.VITE_API_URL || window.location.origin;
+};
+
 const AdminContasPagar = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,13 +108,19 @@ const AdminContasPagar = () => {
       const formData = new FormData();
       formData.append("xml", file);
 
-      const response = await fetch(
-        `${window.location.origin.replace("8080", "3001")}/api/finance/incoming-xml`,
-        {
-          method: "POST",
-          body: formData,
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Usuário não autenticado");
+
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/api/finance/incoming-xml`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        body: formData,
+      });
 
       const result = await response.json();
       if (result.success) {

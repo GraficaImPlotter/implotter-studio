@@ -734,7 +734,7 @@ app.post('/api/prospects/sync-crm', verifyAuth, async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 // --- Finance & Incoming NF-e Routes ---
-app.post('/api/finance/incoming-xml', xmlUpload.single('xml'), async (req, res) => {
+app.post('/api/finance/incoming-xml', verifyAuth, xmlUpload.single('xml'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     const xmlContent = req.file.buffer.toString('utf-8');
@@ -746,7 +746,7 @@ app.post('/api/finance/incoming-xml', xmlUpload.single('xml'), async (req, res) 
   }
 });
 
-app.get('/api/finance/expenses', async (req, res) => {
+app.get('/api/finance/expenses', verifyAuth, async (req, res) => {
   try {
     const data = await listExpenses();
     res.json(data);
@@ -755,7 +755,7 @@ app.get('/api/finance/expenses', async (req, res) => {
   }
 });
 
-app.post('/api/finance/expenses', async (req, res) => {
+app.post('/api/finance/expenses', verifyAuth, async (req, res) => {
   try {
     const data = await createExpense(req.body);
     res.json(data);
@@ -764,7 +764,7 @@ app.post('/api/finance/expenses', async (req, res) => {
   }
 });
 
-app.get('/api/finance/incoming-invoices', async (req, res) => {
+app.get('/api/finance/incoming-invoices', verifyAuth, async (req, res) => {
   try {
     const data = await listIncomingInvoices();
     res.json(data);
