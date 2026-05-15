@@ -30,7 +30,8 @@ import {
   processIncomingXML, 
   listIncomingInvoices, 
   listExpenses, 
-  createExpense 
+  createExpense,
+  resyncAllInvoices
 } from './services/incomingNfeService.js';
 
 
@@ -825,6 +826,15 @@ app.delete('/api/finance/expenses/:id', verifyAuth, async (req, res) => {
       .eq('id', id);
     if (error) throw error;
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/finance/resync-invoices', verifyAuth, async (req, res) => {
+  try {
+    const result = await resyncAllInvoices();
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

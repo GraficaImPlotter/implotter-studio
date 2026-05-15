@@ -27,16 +27,28 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
     const totalData = infNFe.total?.ICMSTot;
     const ide = infNFe.ide;
     
-    // As requested: Due date is always the issue date
-    const dueDate = ide.dhEmi || ide.dEmi;
+    // Robust date extraction
+    let rawDate = ide.dhEmi || ide.dEmi;
+    let issueDate = new Date().toISOString().split('T')[0]; // Default fallback
+    
+    if (rawDate) {
+      // If it's a string like 2024-02-10T... or 2024-02-10
+      if (typeof rawDate === 'string') {
+        issueDate = rawDate.split('T')[0];
+      } else {
+        issueDate = rawDate; // Fallback for unexpected types
+      }
+    }
+    
+    logger.info(`Data extraída para NF-e ${accessKey}: ${issueDate} (Original: ${rawDate})`);
 
     const data = {
       accessKey,
       supplierCnpj: supplierData.CNPJ || supplierData.CPF,
       supplierName: supplierData.xNome,
       totalValue: parseFloat(totalData?.vNF || 0),
-      issueDate: ide.dhEmi || ide.dEmi,
-      dueDate: dueDate,
+      issueDate: issueDate,
+      dueDate: issueDate, // Always match as requested
       rawXml: xmlContent
     };
 
@@ -136,6 +148,46 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
     logger.error('Erro crítico no processamento de XML de entrada:', error);
     throw error;
   }
+};
+
+export const resyncAllInvoices = async () => {
+  logger.info('Iniciando re-sincronização de datas de todas as NF-e...');
+  const { data: invoices, error } = await supabaseAdmin
+    .from('incoming_invoices')
+    .select('id, raw_xml, access_key');
+  
+  if (error) throw error;
+
+  let fixedCount = 0;
+  for (const inv of invoices) {
+    try {
+      const jsonObj = parser.parse(inv.raw_xml);
+      const nfe = jsonObj.nfeProc ? jsonObj.nfeProc.NFe : jsonObj.NFe;
+      const ide = nfe.infNFe.ide;
+      const rawDate = ide.dhEmi || ide.dEmi;
+      const issueDate = typeof rawDate === 'string' ? rawDate.split('T')[0] : rawDate;
+
+      if (issueDate) {
+        // Update Invoice
+        await supabaseAdmin
+          .from('incoming_invoices')
+          .update({ issue_date: issueDate })
+          .eq('id', inv.id);
+        
+        // Update associated Expense
+        await supabaseAdmin
+          .from('expenses')
+          .update({ due_date: issueDate })
+          .eq('invoice_id', inv.id);
+        
+        fixedCount++;
+      }
+    } catch (err) {
+      logger.error(`Erro ao re-sincronizar nota ${inv.access_key}:`, err);
+    }
+  }
+  
+  return { success: true, fixedCount };
 };
 
 /**

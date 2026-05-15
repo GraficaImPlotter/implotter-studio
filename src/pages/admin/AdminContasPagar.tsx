@@ -209,6 +209,32 @@ const AdminContasPagar = () => {
     loadData();
   }, [invoicePage]);
 
+  const handleResync = async () => {
+    try {
+      setLoading(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/api/finance/resync-invoices`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Erro ao sincronizar");
+
+      const result = await response.json();
+      toast.success(`${result.fixedCount} notas foram corrigidas!`);
+      loadData();
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -403,6 +429,19 @@ const AdminContasPagar = () => {
                 ))}
               </select>
             </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleResync}
+              disabled={loading}
+              className="h-11 w-11 rounded-2xl border-highlight/30 hover:bg-highlight/10 group"
+              title="Sincronizar Datas (Corrige datas de notas já importadas)"
+            >
+              <TrendingUp
+                className={`w-4 h-4 text-highlight ${loading ? "animate-spin" : ""}`}
+              />
+            </Button>
 
             <div className="relative">
               <input
