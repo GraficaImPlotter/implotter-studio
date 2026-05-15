@@ -571,7 +571,7 @@ const AdminContasPagar = () => {
           </TabsList>
 
           <TabsContent value="despesas">
-            <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-[40px] overflow-hidden shadow-2xl">
+            <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-[40px] shadow-2xl">
               <div className="p-8 border-b border-border/30 flex flex-col md:flex-row gap-6 items-center justify-between">
                 <div className="relative w-full md:w-[450px] group">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-highlight transition-colors" />
@@ -584,8 +584,8 @@ const AdminContasPagar = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/5">
+                <Table className="min-w-[1000px]">
                   <TableHeader className="bg-muted/40">
                     <TableRow className="hover:bg-transparent border-border/30">
                       <TableHead className="text-[10px] font-black uppercase tracking-widest py-6 pl-8">
@@ -782,9 +782,9 @@ const AdminContasPagar = () => {
           </TabsContent>
 
           <TabsContent value="notas">
-            <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-[40px] overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <Table>
+            <Card className="border-border/30 bg-card/40 backdrop-blur-xl rounded-[40px] shadow-2xl">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/5">
+                <Table className="min-w-[1000px]">
                   <TableHeader className="bg-muted/40">
                     <TableRow className="hover:bg-transparent border-border/30">
                       <TableHead className="text-[10px] font-black uppercase tracking-widest py-6 pl-8">

@@ -792,9 +792,16 @@ app.get('/api/finance/incoming-invoices', verifyAuth, async (req, res) => {
 
 app.put('/api/finance/expenses/:id', verifyAuth, async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
-  
-  logger.info(`Tentativa de atualizar despesa ${id} com dados: ${JSON.stringify(updates)}`);
+  const body = req.body;
+  const updates = {
+    description: body.description,
+    amount: body.amount,
+    due_date: body.due_date,
+    status: body.status,
+    category: body.category,
+    supplier_id: body.supplier_id,
+    order_id: body.order_id
+  };
 
   try {
     const { data, error } = await supabaseAdmin

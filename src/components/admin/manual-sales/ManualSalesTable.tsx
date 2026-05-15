@@ -1,11 +1,24 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { 
-  Eye, Pencil, MessageCircle, FileText, QrCode, Copy, 
-  ChevronRight, ExternalLink, Receipt, Info
+import {
+  Eye,
+  Pencil,
+  MessageCircle,
+  FileText,
+  QrCode,
+  Copy,
+  ChevronRight,
+  ExternalLink,
+  Receipt,
+  Info,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -37,26 +50,49 @@ interface ManualSalesTableProps {
   onPix: (order: any) => void;
 }
 
-const ManualSalesTable = ({ 
-  orders, onEdit, onDuplicate, onView, onWhatsApp, onReceipt, onPix 
+const ManualSalesTable = ({
+  orders,
+  onEdit,
+  onDuplicate,
+  onView,
+  onWhatsApp,
+  onReceipt,
+  onPix,
 }: ManualSalesTableProps) => {
-  const formatCurrency = (v: number) => 
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+  const formatCurrency = (v: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(v);
 
   return (
     <TooltipProvider>
-      <div className="glass-card rounded-2xl overflow-hidden border-glow">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="glass-card rounded-2xl border-glow">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/5">
+          <table className="w-full text-sm min-w-[1000px]">
             <thead>
               <tr className="bg-muted/50 border-b border-border/50">
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Pedido</th>
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Cliente</th>
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Valor</th>
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Origem</th>
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Status</th>
-                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Data</th>
-                <th className="text-right p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">Ações</th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Pedido
+                </th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Cliente
+                </th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Valor
+                </th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Origem
+                </th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Status
+                </th>
+                <th className="text-left p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Data
+                </th>
+                <th className="text-right p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -71,39 +107,59 @@ const ManualSalesTable = ({
                   >
                     <td className="p-4">
                       <div className="flex flex-col">
-                        <span className="font-mono font-bold text-foreground">#{o.order_number}</span>
+                        <span className="font-mono font-bold text-foreground">
+                          #{o.order_number}
+                        </span>
                         {o.payment_method && (
-                          <span className="text-[10px] text-muted-foreground uppercase">{o.payment_method}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase">
+                            {o.payment_method}
+                          </span>
                         )}
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">{o.customer_name}</span>
-                        <span className="text-[10px] text-muted-foreground line-clamp-1">{o.customer_email || 'Sem email'}</span>
+                        <span className="font-semibold text-foreground">
+                          {o.customer_name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground line-clamp-1">
+                          {o.customer_email || "Sem email"}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4 font-bold text-primary">
                       {formatCurrency(o.total)}
                     </td>
                     <td className="p-4">
-                      <Badge variant="outline" className={`text-[10px] font-normal ${o.origin === 'orcamento' ? 'border-info/30 text-info' : 'border-muted-foreground/30 text-muted-foreground'}`}>
-                        {o.origin === 'orcamento' ? 'Orçamento' : 'Manual'}
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-normal ${o.origin === "orcamento" ? "border-info/30 text-info" : "border-muted-foreground/30 text-muted-foreground"}`}
+                      >
+                        {o.origin === "orcamento" ? "Orçamento" : "Manual"}
                       </Badge>
                     </td>
                     <td className="p-4">
-                      <Badge className={`rounded-full px-2.5 py-0.5 border ${statusColors[o.status] || "bg-muted text-muted-foreground"}`}>
+                      <Badge
+                        className={`rounded-full px-2.5 py-0.5 border ${statusColors[o.status] || "bg-muted text-muted-foreground"}`}
+                      >
                         {statusLabels[o.status] || o.status}
                       </Badge>
                     </td>
                     <td className="p-4 text-muted-foreground text-xs">
-                      {format(new Date(o.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      {format(new Date(o.created_at), "dd/MM/yyyy", {
+                        locale: ptBR,
+                      })}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-1 transition-opacity">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-highlight/10 hover:text-highlight" onClick={() => onEdit(o)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-highlight/10 hover:text-highlight"
+                              onClick={() => onEdit(o)}
+                            >
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
@@ -112,7 +168,12 @@ const ManualSalesTable = ({
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-success/10 hover:text-success" onClick={() => onWhatsApp(o)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-success/10 hover:text-success"
+                              onClick={() => onWhatsApp(o)}
+                            >
                               <MessageCircle className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
@@ -121,17 +182,27 @@ const ManualSalesTable = ({
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => onReceipt(o)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                              onClick={() => onReceipt(o)}
+                            >
                               <FileText className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Gerar Recibo</TooltipContent>
                         </Tooltip>
 
-                        {o.payment_method === 'pix' && (
+                        {o.payment_method === "pix" && (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-highlight-glow/10 hover:text-highlight-glow" onClick={() => onPix(o)}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-highlight-glow/10 hover:text-highlight-glow"
+                                onClick={() => onPix(o)}
+                              >
                                 <QrCode className="w-4 h-4" />
                               </Button>
                             </TooltipTrigger>
@@ -141,7 +212,12 @@ const ManualSalesTable = ({
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onDuplicate(o)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => onDuplicate(o)}
+                            >
                               <Copy className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
@@ -150,7 +226,12 @@ const ManualSalesTable = ({
 
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => onEdit(o)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => onEdit(o)}
+                            >
                               <ChevronRight className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
@@ -163,7 +244,10 @@ const ManualSalesTable = ({
               </AnimatePresence>
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-muted-foreground">
+                  <td
+                    colSpan={7}
+                    className="p-12 text-center text-muted-foreground"
+                  >
                     <div className="flex flex-col items-center gap-2">
                       <Info className="w-8 h-8 opacity-20" />
                       <p>Nenhuma venda manual registrada no período.</p>

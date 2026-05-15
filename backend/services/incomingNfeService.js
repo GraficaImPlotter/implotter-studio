@@ -156,38 +156,70 @@ export const resyncAllInvoices = async () => {
     .from('incoming_invoices')
     .select('id, raw_xml, access_key');
   
-  if (error) throw error;
+  if (error) {
+    logger.error('Erro ao buscar notas para sincronização:', error);
+    throw error;
+  }
 
   let fixedCount = 0;
+  let totalCount = invoices?.length || 0;
+  
+  logger.info(`Encontradas ${totalCount} notas para processar.`);
+
   for (const inv of invoices) {
     try {
+      if (!inv.raw_xml) {
+        logger.warn(`Nota ${inv.access_key} não possui conteúdo XML. Pulando.`);
+        continue;
+      }
+
       const jsonObj = parser.parse(inv.raw_xml);
       const nfe = jsonObj.nfeProc ? jsonObj.nfeProc.NFe : jsonObj.NFe;
+      
+      if (!nfe || !nfe.infNFe || !nfe.infNFe.ide) {
+        logger.warn(`Estrutura ide não encontrada no XML da nota ${inv.access_key}. Pulando.`);
+        continue;
+      }
+
       const ide = nfe.infNFe.ide;
       const rawDate = ide.dhEmi || ide.dEmi;
+      
+      if (!rawDate) {
+        logger.warn(`Data de emissão não encontrada no XML da nota ${inv.access_key}. Pulando.`);
+        continue;
+      }
+
       const issueDate = typeof rawDate === 'string' ? rawDate.split('T')[0] : rawDate;
 
-      if (issueDate) {
+      // Garantir que a data é válida (formato YYYY-MM-DD)
+      if (issueDate && typeof issueDate === 'string' && issueDate.match(/^\d{4}-\d{2}-\d{2}/)) {
         // Update Invoice
-        await supabaseAdmin
+        const { error: invErr } = await supabaseAdmin
           .from('incoming_invoices')
           .update({ issue_date: issueDate })
           .eq('id', inv.id);
         
+        if (invErr) logger.error(`Erro ao atualizar data da nota ${inv.access_key}:`, invErr);
+        
         // Update associated Expense
-        await supabaseAdmin
+        const { error: expErr } = await supabaseAdmin
           .from('expenses')
           .update({ due_date: issueDate })
           .eq('invoice_id', inv.id);
+          
+        if (expErr) logger.error(`Erro ao atualizar data da despesa vinculada à nota ${inv.access_key}:`, expErr);
         
         fixedCount++;
+      } else {
+        logger.warn(`Data extraída inválida para nota ${inv.access_key}: ${issueDate}`);
       }
     } catch (err) {
-      logger.error(`Erro ao re-sincronizar nota ${inv.access_key}:`, err);
+      logger.error(`Erro crítico ao processar nota ${inv.access_key} durante sincronização:`, err);
     }
   }
   
-  return { success: true, fixedCount };
+  logger.info(`Sincronização concluída. ${fixedCount} de ${totalCount} notas atualizadas.`);
+  return { success: true, fixedCount, totalCount };
 };
 
 /**

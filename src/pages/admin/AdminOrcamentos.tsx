@@ -624,9 +624,9 @@ const AdminOrcamentos = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card overflow-x-auto">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border shadow-card">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/5">
+          <table className="w-full text-sm min-w-[1000px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium text-muted-foreground">

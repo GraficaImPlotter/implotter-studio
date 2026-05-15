@@ -152,7 +152,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <CommandPalette />
-      <div className="min-h-screen flex w-full bg-background overflow-hidden">
+      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
         <Sidebar collapsible="icon" className="shadow-2xl z-50">
           <SidebarContent className="bg-card border-r border-border/50">
             <div className="p-6 border-b border-border/30">
@@ -274,7 +274,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="flex-1 p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
+          <main className="flex-1 p-4 md:p-8 overflow-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
             {children}
           </main>
         </div>
