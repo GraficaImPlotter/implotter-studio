@@ -41,33 +41,47 @@ const AdminProdutos = lazy(() => import("./pages/admin/AdminProdutos"));
 const AdminCategorias = lazy(() => import("./pages/admin/AdminCategorias"));
 const AdminPedidos = lazy(() => import("./pages/admin/AdminPedidos"));
 const AdminClientes = lazy(() => import("./pages/admin/AdminClientes"));
-const AdminClienteDetalhe = lazy(() => import("./pages/admin/AdminClienteDetalhe"));
+const AdminClienteDetalhe = lazy(
+  () => import("./pages/admin/AdminClienteDetalhe"),
+);
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminCRM = lazy(() => import("./pages/admin/AdminCRM"));
-const AdminVendasManuais = lazy(() => import("./pages/admin/AdminVendasManuais"));
+const AdminVendasManuais = lazy(
+  () => import("./pages/admin/AdminVendasManuais"),
+);
 const AdminAvaliacoes = lazy(() => import("./pages/admin/AdminAvaliacoes"));
 const AdminCupons = lazy(() => import("./pages/admin/AdminCupons"));
 const AdminAfiliados = lazy(() => import("./pages/admin/AdminAfiliados"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const AdminRelatorios = lazy(() => import("./pages/admin/AdminRelatorios"));
-const AdminDashboardFinanceiro = lazy(() => import("./pages/admin/AdminDashboardFinanceiro"));
-const AdminConfiguracoes = lazy(() => import("./pages/admin/AdminConfiguracoes"));
+const AdminDashboardFinanceiro = lazy(
+  () => import("./pages/admin/AdminDashboardFinanceiro"),
+);
+const AdminConfiguracoes = lazy(
+  () => import("./pages/admin/AdminConfiguracoes"),
+);
 const AdminHeroSlides = lazy(() => import("./pages/admin/AdminHeroSlides"));
 const AdminOrcamentos = lazy(() => import("./pages/admin/AdminOrcamentos"));
 const AdminKits = lazy(() => import("./pages/admin/AdminKits"));
 const AdminPaginas = lazy(() => import("./pages/admin/AdminPaginas"));
-const AdminClientesImportantes = lazy(() => import("./pages/admin/AdminClientesImportantes"));
+const AdminClientesImportantes = lazy(
+  () => import("./pages/admin/AdminClientesImportantes"),
+);
 const AdminMapaClientes = lazy(() => import("./pages/admin/AdminMapaClientes"));
 const AdminLucro = lazy(() => import("./pages/admin/AdminLucro"));
 const AdminProducao = lazy(() => import("./pages/admin/AdminProducao"));
 const AdminAcabamentos = lazy(() => import("./pages/admin/AdminAcabamentos"));
 const AdminSocialProof = lazy(() => import("./pages/admin/AdminSocialProof"));
-const AdminProducaoMonitor = lazy(() => import("./pages/admin/AdminProducaoMonitor"));
-const AdminAbandonedCarts = lazy(() => import("./pages/admin/AdminAbandonedCarts"));
+const AdminProducaoMonitor = lazy(
+  () => import("./pages/admin/AdminProducaoMonitor"),
+);
+const AdminAbandonedCarts = lazy(
+  () => import("./pages/admin/AdminAbandonedCarts"),
+);
 const CostEstimator = lazy(() => import("./pages/admin/CostEstimator"));
 const AdminNFe = lazy(() => import("./pages/admin/AdminNFe"));
 const AdminProspects = lazy(() => import("./pages/admin/AdminProspects"));
-
+const AdminContasPagar = lazy(() => import("./pages/admin/AdminContasPagar"));
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -97,7 +111,10 @@ const AppRoutes = () => {
             <Route path="/avaliacoes" element={<Avaliacoes />} />
             <Route path="/afiliados" element={<Afiliados />} />
             <Route path="/faq" element={<FAQ />} />
-            <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+            <Route
+              path="/politica-de-privacidade"
+              element={<PoliticaPrivacidade />}
+            />
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/area-do-cliente" element={<AreaDoCliente />} />
             <Route path="/login" element={<Login />} />
@@ -110,41 +127,268 @@ const AppRoutes = () => {
             <Route path="/rastrear" element={<RastrearPedido />} />
             <Route path="/catalogo" element={<CatalogoDigital />} />
             <Route path="/orcamento/:quoteId" element={<OrcamentoPublico />} />
-            <Route path="/melhor-envio/callback" element={<MelhorEnvioCallback />} />
+            <Route
+              path="/melhor-envio/callback"
+              element={<MelhorEnvioCallback />}
+            />
 
             {/* Admin — protected by AdminRoute guard */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/produtos" element={<AdminRoute><AdminProdutos /></AdminRoute>} />
-            <Route path="/admin/categorias" element={<AdminRoute><AdminCategorias /></AdminRoute>} />
-            <Route path="/admin/pedidos" element={<AdminRoute><AdminPedidos /></AdminRoute>} />
-            <Route path="/admin/clientes" element={<AdminRoute><AdminClientes /></AdminRoute>} />
-            <Route path="/admin/clientes/:id" element={<AdminRoute><AdminClienteDetalhe /></AdminRoute>} />
-            <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
-            <Route path="/admin/crm" element={<AdminRoute><AdminCRM /></AdminRoute>} />
-            <Route path="/admin/vendas-manuais" element={<AdminRoute><AdminVendasManuais /></AdminRoute>} />
-            <Route path="/admin/avaliacoes" element={<AdminRoute><AdminAvaliacoes /></AdminRoute>} />
-            <Route path="/admin/cupons" element={<AdminRoute><AdminCupons /></AdminRoute>} />
-            <Route path="/admin/afiliados" element={<AdminRoute><AdminAfiliados /></AdminRoute>} />
-            <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
-            <Route path="/admin/relatorios" element={<AdminRoute><AdminRelatorios /></AdminRoute>} />
-            <Route path="/admin/financeiro" element={<AdminRoute><AdminDashboardFinanceiro /></AdminRoute>} />
-            <Route path="/admin/configuracoes" element={<AdminRoute><AdminConfiguracoes /></AdminRoute>} />
-            <Route path="/admin/hero-slides" element={<AdminRoute><AdminHeroSlides /></AdminRoute>} />
-            <Route path="/admin/orcamentos" element={<AdminRoute><AdminOrcamentos /></AdminRoute>} />
-            <Route path="/admin/kits" element={<AdminRoute><AdminKits /></AdminRoute>} />
-            <Route path="/admin/paginas" element={<AdminRoute><AdminPaginas /></AdminRoute>} />
-            <Route path="/admin/clientes-importantes" element={<AdminRoute><AdminClientesImportantes /></AdminRoute>} />
-            <Route path="/admin/mapa-clientes" element={<AdminRoute><AdminMapaClientes /></AdminRoute>} />
-            <Route path="/admin/lucro" element={<AdminRoute><AdminLucro /></AdminRoute>} />
-            <Route path="/admin/producao" element={<AdminRoute><AdminProducao /></AdminRoute>} />
-            <Route path="/admin/acabamentos" element={<AdminRoute><AdminAcabamentos /></AdminRoute>} />
-            <Route path="/admin/social-proof" element={<AdminRoute><AdminSocialProof /></AdminRoute>} />
-            <Route path="/admin/producao/monitor" element={<AdminRoute><AdminProducaoMonitor /></AdminRoute>} />
-            <Route path="/admin/carrinhos-abandonados" element={<AdminRoute><AdminAbandonedCarts /></AdminRoute>} />
-            <Route path="/admin/calculadora" element={<AdminRoute><CostEstimator /></AdminRoute>} />
-            <Route path="/admin/nfe" element={<AdminRoute><AdminNFe /></AdminRoute>} />
-            <Route path="/admin/prospeccao" element={<AdminRoute><AdminProspects /></AdminRoute>} />
-
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/produtos"
+              element={
+                <AdminRoute>
+                  <AdminProdutos />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/categorias"
+              element={
+                <AdminRoute>
+                  <AdminCategorias />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/pedidos"
+              element={
+                <AdminRoute>
+                  <AdminPedidos />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/clientes"
+              element={
+                <AdminRoute>
+                  <AdminClientes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/clientes/:id"
+              element={
+                <AdminRoute>
+                  <AdminClienteDetalhe />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/leads"
+              element={
+                <AdminRoute>
+                  <AdminLeads />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/crm"
+              element={
+                <AdminRoute>
+                  <AdminCRM />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/vendas-manuais"
+              element={
+                <AdminRoute>
+                  <AdminVendasManuais />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/avaliacoes"
+              element={
+                <AdminRoute>
+                  <AdminAvaliacoes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/cupons"
+              element={
+                <AdminRoute>
+                  <AdminCupons />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/afiliados"
+              element={
+                <AdminRoute>
+                  <AdminAfiliados />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/blog"
+              element={
+                <AdminRoute>
+                  <AdminBlog />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/relatorios"
+              element={
+                <AdminRoute>
+                  <AdminRelatorios />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/financeiro"
+              element={
+                <AdminRoute>
+                  <AdminDashboardFinanceiro />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/configuracoes"
+              element={
+                <AdminRoute>
+                  <AdminConfiguracoes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/hero-slides"
+              element={
+                <AdminRoute>
+                  <AdminHeroSlides />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/orcamentos"
+              element={
+                <AdminRoute>
+                  <AdminOrcamentos />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/kits"
+              element={
+                <AdminRoute>
+                  <AdminKits />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/paginas"
+              element={
+                <AdminRoute>
+                  <AdminPaginas />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/clientes-importantes"
+              element={
+                <AdminRoute>
+                  <AdminClientesImportantes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/mapa-clientes"
+              element={
+                <AdminRoute>
+                  <AdminMapaClientes />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/lucro"
+              element={
+                <AdminRoute>
+                  <AdminLucro />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/producao"
+              element={
+                <AdminRoute>
+                  <AdminProducao />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/acabamentos"
+              element={
+                <AdminRoute>
+                  <AdminAcabamentos />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/social-proof"
+              element={
+                <AdminRoute>
+                  <AdminSocialProof />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/producao/monitor"
+              element={
+                <AdminRoute>
+                  <AdminProducaoMonitor />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/carrinhos-abandonados"
+              element={
+                <AdminRoute>
+                  <AdminAbandonedCarts />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/calculadora"
+              element={
+                <AdminRoute>
+                  <CostEstimator />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/nfe"
+              element={
+                <AdminRoute>
+                  <AdminNFe />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/prospeccao"
+              element={
+                <AdminRoute>
+                  <AdminProspects />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/contas-pagar"
+              element={
+                <AdminRoute>
+                  <AdminContasPagar />
+                </AdminRoute>
+              }
+            />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

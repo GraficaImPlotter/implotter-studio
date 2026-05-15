@@ -26,6 +26,13 @@ import {
 import { scrapeGoogleMaps } from './services/googleMapsService.js';
 import { analyzeLeadPresence } from './services/visualAnalysisService.js';
 import { sendWhatsAppMessage } from './services/whatsappService.js';
+import { 
+  processIncomingXML, 
+  listIncomingInvoices, 
+  listExpenses, 
+  createExpense 
+} from './services/incomingNfeService.js';
+
 
 
 // Resolve problema de caminho rodando pelo CWD
@@ -52,6 +59,12 @@ const upload = multer({
   },
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
 });
+
+// Multer config for XML uploads
+const xmlUpload = multer({
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+});
+
 
 const app = express();
 
@@ -720,7 +733,48 @@ app.post('/api/prospects/sync-crm', verifyAuth, async (req, res) => {
 
 
 const PORT = process.env.PORT || 3001;
+// --- Finance & Incoming NF-e Routes ---
+app.post('/api/finance/incoming-xml', xmlUpload.single('xml'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    const xmlContent = req.file.buffer.toString('utf-8');
+    const result = await processIncomingXML(xmlContent);
+    res.json(result);
+  } catch (error) {
+    logger.error('Erro na rota /api/finance/incoming-xml:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/finance/expenses', async (req, res) => {
+  try {
+    const data = await listExpenses();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/finance/expenses', async (req, res) => {
+  try {
+    const data = await createExpense(req.body);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/finance/incoming-invoices', async (req, res) => {
+  try {
+    const data = await listIncomingInvoices();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
+
   logger.info(`📡 ImPlotter Chat Inteligente V2 (Backend) rodando na porta ${PORT}`);
   logger.info(`🔑 GEMINI_API_KEY Configurada: ${process.env.GEMINI_API_KEY ? "SIM" : "NÃO"}`);
 });
