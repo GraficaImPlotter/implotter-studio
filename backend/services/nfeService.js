@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabaseService.js';
 import { logger } from './logger.js';
 import crypto from 'crypto';
 import { format } from 'date-fns';
+import { jsPDF } from 'jspdf';
 
 /**
  * NF-e Service - Handles NF-e XML generation and SEFAZ integration
@@ -671,21 +672,208 @@ async function cancelNFe(nfeId, reason) {
 }
 
 /**
- * Generate DANFE (PDF representation of NF-e)
+ * Generate DANFE (PDF representation of NF-e) using jsPDF
  */
-import { jsPDF } from "jspdf";
-
 async function generateDANFE(nfeId) {
   try {
     const nfe = await getNFe(nfeId);
     if (!nfe) throw new Error('NF-e não encontrada');
 
-    // In production, use a DANFE generation library or service
-    // For now, return a placeholder
-    return {
-      success: false,
-      message: 'DANFE generation requires implementation with PDF library (jspdf)',
+    const emit = nfe.emitente_config || {};
+    const dest = nfe.destinatario_data || {};
+    const itens = nfe.itens_data || [];
+    const valorTotal = Number(nfe.valor_total || 0);
+    const accessKey = nfe.access_key || '';
+    const numero = nfe.numero || '';
+    const serie = nfe.serie || '';
+    const protocolo = nfe.protocolo || 'Pendente';
+    const dataAutorizacao = nfe.data_autorizacao
+      ? new Date(nfe.data_autorizacao).toLocaleString('pt-BR')
+      : 'Pendente';
+
+    // Helper: format access key as groups of 4
+    const fmtKey = (k) => String(k).replace(/(.{4})/g, '$1 ').trim();
+
+    // Helper: truncate string
+    const trunc = (s, n) => (String(s || '').length > n ? String(s).substring(0, n - 1) + '…' : String(s || ''));
+
+    // Helper: currency format
+    const fmtCur = (v) => Number(v || 0).toFixed(2).replace('.', ',');
+
+    // ── jsPDF A4 Portrait ──────────────────────────────────────────────────
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210;
+    let y = 10;
+    const MARGIN = 8;
+    const COL_W = W - MARGIN * 2;
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    const drawRect = (x, _y, w, h) => doc.rect(x, _y, w, h);
+    const drawLine = (x1, _y1, x2, _y2) => doc.line(x1, _y1, x2, _y2);
+    const txt = (text, x, _y, opts = {}) => {
+      doc.setFontSize(opts.size || 8);
+      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+      doc.text(String(text), x, _y, { align: opts.align || 'left', maxWidth: opts.maxWidth });
     };
+    const label = (text, x, _y) => {
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(text, x, _y);
+      doc.setTextColor(0);
+    };
+
+    // ═══════════════════ HEADER ═══════════════════════════════════════════
+    // Border
+    drawRect(MARGIN, y, COL_W, 30);
+
+    // Emitter info (left 60%)
+    const emEnd = emit.endereco || {};
+    txt('DANFE', MARGIN + 2, y + 6, { size: 14, bold: true });
+    txt('Documento Auxiliar da Nota Fiscal Eletrônica', MARGIN + 2, y + 11, { size: 7 });
+    txt(trunc(emit.razao_social || emit.razaoSocial || 'Emitente', 40), MARGIN + 2, y + 17, { size: 9, bold: true });
+    txt(`CNPJ: ${emit.cnpj || ''}`, MARGIN + 2, y + 22, { size: 8 });
+    const endStr = [emEnd.logradouro, emEnd.numero, emEnd.bairro, emEnd.municipio, emEnd.uf].filter(Boolean).join(', ');
+    txt(trunc(endStr, 60), MARGIN + 2, y + 27, { size: 7 });
+
+    // NF-e number (right 40%)
+    const nfX = MARGIN + COL_W * 0.62;
+    drawLine(nfX, y, nfX, y + 30);
+    txt(`NF-e Nº ${numero}`, nfX + 4, y + 8, { size: 11, bold: true });
+    txt(`Série: ${serie}`, nfX + 4, y + 13, { size: 8 });
+    txt('Entrada/Saída: 1 - Saída', nfX + 4, y + 18, { size: 7 });
+    label('Protocolo de Autorização:', nfX + 4, y + 23);
+    txt(trunc(protocolo, 26), nfX + 4, y + 27, { size: 7, bold: true });
+
+    y += 32;
+
+    // ─── Access Key ────────────────────────────────────────────────────────
+    drawRect(MARGIN, y, COL_W, 10);
+    label('CHAVE DE ACESSO', MARGIN + 2, y + 3.5);
+    txt(fmtKey(accessKey), MARGIN + 2, y + 8, { size: 7 });
+    y += 12;
+
+    // ═══════════════════ DESTINATÁRIO ════════════════════════════════════
+    drawRect(MARGIN, y, COL_W, 22);
+    label('DESTINATÁRIO', MARGIN + 2, y + 3.5);
+    txt(trunc(dest.nome || 'Consumidor Final', 55), MARGIN + 2, y + 8, { size: 8, bold: true });
+
+    const docDest = dest.cnpj ? `CNPJ: ${dest.cnpj}` : dest.cpf ? `CPF: ${dest.cpf}` : '';
+    txt(docDest, MARGIN + 2, y + 13, { size: 7.5 });
+
+    const destEnd = dest.endereco || {};
+    const destEndStr = [destEnd.logradouro, destEnd.numero, destEnd.bairro, destEnd.municipio, destEnd.uf, destEnd.cep]
+      .filter(Boolean).join(', ');
+    txt(trunc(destEndStr, 80), MARGIN + 2, y + 18, { size: 7 });
+    if (dest.email) txt(`E-mail: ${dest.email}`, MARGIN + 2, y + 22, { size: 6.5 });
+    y += 25;
+
+    // ═══════════════════ ITEMS TABLE ════════════════════════════════════
+    // Header
+    const colCod = 18, colDesc = 58, colNCM = 18, colCFOP = 14, colUn = 12, colQtd = 16, colVUnit = 20, colVTot = 20;
+    const cols = [
+      { label: 'Código', w: colCod },
+      { label: 'Descrição', w: colDesc },
+      { label: 'NCM', w: colNCM },
+      { label: 'CFOP', w: colCFOP },
+      { label: 'Un.', w: colUn },
+      { label: 'Qtd', w: colQtd },
+      { label: 'Vl. Unit.', w: colVUnit },
+      { label: 'Vl. Total', w: colVTot },
+    ];
+    const tableH = 7;
+    const totalColW = cols.reduce((s, c) => s + c.w, 0);
+
+    drawRect(MARGIN, y, totalColW, tableH);
+    doc.setFillColor(220, 220, 220);
+    doc.rect(MARGIN, y, totalColW, tableH, 'F');
+
+    let cx = MARGIN;
+    cols.forEach((col) => {
+      txt(col.label, cx + 1, y + 4.5, { size: 6.5, bold: true });
+      cx += col.w;
+    });
+    y += tableH;
+
+    // Rows
+    const rowH = 6;
+    itens.forEach((item, i) => {
+      if (y > 250) {
+        doc.addPage();
+        y = 10;
+      }
+      const bg = i % 2 === 0 ? [255, 255, 255] : [245, 245, 245];
+      doc.setFillColor(...bg);
+      doc.rect(MARGIN, y, totalColW, rowH, 'F');
+      drawRect(MARGIN, y, totalColW, rowH);
+
+      cx = MARGIN;
+      const rowData = [
+        trunc(item.codigo || item.id || '', 12),
+        trunc(item.descricao || '', 35),
+        item.NCM || '99999999',
+        item.CFOP || '5102',
+        item.unidade || 'UN',
+        String(Number(item.quantidade || 0).toFixed(2)),
+        fmtCur(item.valorUnitario),
+        fmtCur(item.valorTotal),
+      ];
+      rowData.forEach((val, ci) => {
+        txt(val, cx + 1, y + 4, { size: 6.5 });
+        cx += cols[ci].w;
+      });
+      y += rowH;
+    });
+
+    y += 4;
+
+    // ═══════════════════ TOTALS ══════════════════════════════════════════
+    const totW = 100;
+    const totX = MARGIN + COL_W - totW;
+
+    const totRows = [
+      ['Base Cálculo ICMS', fmtCur(valorTotal)],
+      ['Valor ICMS', fmtCur(0)],
+      ['Valor IPI', fmtCur(0)],
+      ['Valor Total Produtos', fmtCur(valorTotal)],
+      ['Desconto', fmtCur(0)],
+      ['Frete', fmtCur(0)],
+      ['VALOR TOTAL NF-e', fmtCur(valorTotal)],
+    ];
+
+    const trH = 6;
+    drawRect(totX, y, totW, trH * totRows.length);
+    totRows.forEach((row, i) => {
+      const rowY = y + i * trH;
+      if (i < totRows.length - 1) drawLine(totX, rowY + trH, totX + totW, rowY + trH);
+      const isBold = i === totRows.length - 1;
+      txt(row[0], totX + 2, rowY + 4, { size: 6.5, bold: isBold });
+      txt(`R$ ${row[1]}`, totX + totW - 2, rowY + 4, { size: 6.5, bold: isBold, align: 'right' });
+    });
+
+    y += trH * totRows.length + 6;
+
+    // ═══════════════════ PAYMENT ════════════════════════════════════════
+    drawRect(MARGIN, y, COL_W, 14);
+    label('INFORMAÇÕES DE PAGAMENTO', MARGIN + 2, y + 3.5);
+    drawLine(MARGIN, y + 5, MARGIN + COL_W, y + 5);
+    txt('Forma de Pagamento', MARGIN + 2, y + 9, { size: 7, bold: true });
+    txt(`Valor Total: R$ ${fmtCur(valorTotal)}`, MARGIN + 80, y + 9, { size: 7 });
+    txt('À Vista / Outros', MARGIN + 2, y + 13, { size: 7 });
+    y += 17;
+
+    // ═══════════════════ COMPLEMENTARY INFO ══════════════════════════════
+    drawRect(MARGIN, y, COL_W, 16);
+    label('INFORMAÇÕES COMPLEMENTARES', MARGIN + 2, y + 3.5);
+    txt(`Data de Autorização: ${dataAutorizacao}`, MARGIN + 2, y + 9, { size: 7 });
+    txt(`NF-e Nº ${numero} | Série ${serie} | Ambiente: ${nfe.status === 'autorizada' ? 'Produção' : 'Homologação'}`, MARGIN + 2, y + 14, { size: 6.5 });
+
+    // ── Convert to Buffer ────────────────────────────────────────────────
+    const pdfOutput = doc.output('arraybuffer');
+    const pdfBuffer = Buffer.from(pdfOutput);
+
+    logger.info('DANFE generated successfully', { nfeId, size: pdfBuffer.length });
+    return { success: true, pdfBuffer };
   } catch (error) {
     logger.error('Error generating DANFE', { message: error.message, nfeId });
     throw error;
