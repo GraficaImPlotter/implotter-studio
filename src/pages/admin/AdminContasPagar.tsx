@@ -31,6 +31,8 @@ import {
   Edit,
   User,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -111,6 +113,11 @@ const AdminContasPagar = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
 
+  // Pagination states for Invoices
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoiceTotalPages, setInvoiceTotalPages] = useState(1);
+  const [invoiceCount, setInvoiceCount] = useState(0);
+
   // Form states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -136,15 +143,27 @@ const AdminContasPagar = () => {
     }
   };
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (page: number = 1) => {
     try {
-      const { data, error } = await supabase
-        .from("incoming_invoices")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const API_URL = getApiUrl();
+      const response = await fetch(
+        `${API_URL}/api/finance/incoming-invoices?page=${page}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
+      );
 
-      if (error) throw error;
-      setInvoices(data || []);
+      if (!response.ok) throw new Error("Erro ao buscar notas");
+
+      const result = await response.json();
+      setInvoices(result.data || []);
+      setInvoiceTotalPages(result.totalPages);
+      setInvoiceCount(result.total);
     } catch (error: any) {
       console.error("Erro ao carregar notas:", error);
     }
@@ -179,7 +198,7 @@ const AdminContasPagar = () => {
     setLoading(true);
     await Promise.all([
       fetchExpenses(),
-      fetchInvoices(),
+      fetchInvoices(invoicePage),
       fetchOrders(),
       fetchSuppliers(),
     ]);
@@ -188,7 +207,7 @@ const AdminContasPagar = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [invoicePage]);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -250,8 +269,6 @@ const AdminContasPagar = () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session) throw new Error("Não autenticado");
-
       const API_URL = getApiUrl();
       const url = isEditing
         ? `${API_URL}/api/finance/expenses/${currentExpense.id}`
@@ -262,7 +279,7 @@ const AdminContasPagar = () => {
         method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify(currentExpense),
       });
@@ -290,7 +307,7 @@ const AdminContasPagar = () => {
       const response = await fetch(`${API_URL}/api/finance/expenses/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session?.access_token}`,
         },
       });
 
@@ -313,7 +330,7 @@ const AdminContasPagar = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -343,12 +360,6 @@ const AdminContasPagar = () => {
     (e) =>
       e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  const filteredInvoices = invoices.filter(
-    (inv) =>
-      inv.access_key.includes(searchTerm) ||
-      inv.supplier_cnpj.includes(searchTerm),
   );
 
   const getOrderInfo = (orderId?: string) => {
@@ -761,7 +772,7 @@ const AdminContasPagar = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredInvoices.length === 0 ? (
+                    {invoices.length === 0 ? (
                       <TableRow>
                         <TableCell
                           colSpan={7}
@@ -771,7 +782,7 @@ const AdminContasPagar = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredInvoices.map((inv) => {
+                      invoices.map((inv) => {
                         const orderInfo = getOrderInfo(inv.order_id);
                         return (
                           <TableRow
@@ -841,11 +852,39 @@ const AdminContasPagar = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination Controls */}
+              <div className="p-6 border-t border-border/30 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  Total: {invoiceCount} notas | Página {invoicePage} de{" "}
+                  {invoiceTotalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={invoicePage === 1}
+                    onClick={() => setInvoicePage(invoicePage - 1)}
+                    className="rounded-xl font-bold gap-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={invoicePage === invoiceTotalPages}
+                    onClick={() => setInvoicePage(invoicePage + 1)}
+                    className="rounded-xl font-bold gap-1"
+                  >
+                    Próxima <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
 
-        {/* Create/Edit Modal */}
+        {/* Modal for Creating/Editing Expense */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent className="bg-card/95 backdrop-blur-xl border-border/50 rounded-[32px] sm:max-w-[500px] shadow-2xl">
             <DialogHeader>
@@ -996,13 +1035,12 @@ const AdminContasPagar = () => {
             <div className="relative z-10">
               <h3 className="text-3xl font-black text-foreground mb-4 flex items-center gap-4 tracking-tighter">
                 <Sparkles className="w-8 h-8 text-highlight animate-pulse" />
-                CONTROLE TOTAL
+                ORDEM & FLUXO
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed font-bold opacity-80">
-                O sistema agora integra o fluxo financeiro com a produção. Veja
-                exatamente para qual cliente e qual pedido cada nota fiscal de
-                fornecedor foi emitida, garantindo controle total sobre suas
-                margens de lucro.
+                A lista de notas agora segue uma ordem cronológica crescente de
+                emissão. Com a paginação de 10 em 10, fica muito mais fácil
+                localizar notas antigas ou recentes sem sobrecarregar a tela.
               </p>
             </div>
             <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-10 transition-opacity">
@@ -1013,21 +1051,21 @@ const AdminContasPagar = () => {
           <Card className="border-border/20 bg-card/40 p-10 rounded-[48px] shadow-2xl border-t border-l border-white/5">
             <h3 className="text-xl font-black text-foreground mb-8 uppercase tracking-[0.1em] flex items-center gap-3">
               <div className="w-2 h-8 bg-highlight rounded-full" />
-              Gestão de Fluxo
+              Dicas de Navegação
             </h3>
             <ul className="space-y-5">
               {[
                 {
-                  text: "Visualize o nome do cliente final em cada nota importada.",
-                  icon: User,
+                  text: "Use os botões Anterior/Próxima no rodapé das Notas.",
+                  icon: ChevronLeft,
                 },
                 {
-                  text: "Badge do pedido vincula automaticamente a despesa à venda.",
-                  icon: Package,
+                  text: "O vencimento automático agora reflete a data de emissão da nota.",
+                  icon: Calendar,
                 },
                 {
-                  text: "Use as abas para separar Contas a Pagar do Arquivo de Notas.",
-                  icon: Tabs,
+                  text: "A ordenação crescente ajuda a seguir a linha do tempo fiscal.",
+                  icon: TrendingUp,
                 },
               ].map((tip, i) => (
                 <li key={i} className="flex gap-5 items-start group">

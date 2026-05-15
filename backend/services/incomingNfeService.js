@@ -26,17 +26,9 @@ export const processIncomingXML = async (xmlContent, orderId = null) => {
     const supplierData = infNFe.emit;
     const totalData = infNFe.total?.ICMSTot;
     const ide = infNFe.ide;
-    const cobr = infNFe.cobr;
     
-    // Extract due date from cobr -> dup -> dVenc
-    let dueDate = ide.dhEmi || ide.dEmi; // Default to issue date
-    if (cobr && cobr.dup) {
-      const dup = Array.isArray(cobr.dup) ? cobr.dup[0] : cobr.dup;
-      if (dup.dVenc) {
-        dueDate = dup.dVenc;
-        logger.info(`Vencimento extraído do XML: ${dueDate}`);
-      }
-    }
+    // As requested: Due date is always the issue date
+    const dueDate = ide.dhEmi || ide.dEmi;
 
     const data = {
       accessKey,

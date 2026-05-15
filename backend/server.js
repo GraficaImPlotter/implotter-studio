@@ -767,29 +767,51 @@ app.post('/api/finance/expenses', verifyAuth, async (req, res) => {
 
 app.get('/api/finance/incoming-invoices', verifyAuth, async (req, res) => {
   try {
-    const { data, error } = await supabaseAdmin
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    const { data, error, count } = await supabaseAdmin
       .from('incoming_invoices')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .order('issue_date', { ascending: true })
+      .range(offset, offset + limit - 1);
+
     if (error) throw error;
-    res.json(data);
+    res.json({
+      data,
+      total: count,
+      page,
+      totalPages: Math.ceil(count / limit)
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 app.put('/api/finance/expenses/:id', verifyAuth, async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  logger.info(`Tentativa de atualizar despesa ${id} com dados: ${JSON.stringify(updates)}`);
+
   try {
-    const { id } = req.params;
     const { data, error } = await supabaseAdmin
       .from('expenses')
-      .update(req.body)
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
-    if (error) throw error;
+
+    if (error) {
+      logger.error(`Erro do Supabase ao atualizar despesa ${id}:`, error);
+      throw error;
+    }
+
+    logger.info(`Despesa ${id} atualizada com sucesso.`);
     res.json(data);
   } catch (error) {
+    logger.error(`Erro crítico na rota PUT /api/finance/expenses/${id}:`, error);
     res.status(500).json({ error: error.message });
   }
 });
