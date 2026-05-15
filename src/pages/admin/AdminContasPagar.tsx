@@ -22,6 +22,8 @@ import {
   Calendar,
   Download,
   Receipt,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
