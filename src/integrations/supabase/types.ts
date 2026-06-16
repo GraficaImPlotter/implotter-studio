@@ -515,6 +515,7 @@ export type Database = {
       finishings: {
         Row: {
           created_at: string
+          group_name: string | null
           id: string
           is_active: boolean
           name: string
@@ -524,6 +525,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          group_name?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -533,6 +535,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          group_name?: string | null
           id?: string
           is_active?: boolean
           name?: string

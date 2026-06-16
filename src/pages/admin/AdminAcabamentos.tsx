@@ -57,13 +57,29 @@ const AdminAcabamentos = () => {
     };
 
     if (editing) {
-      await supabase.from("finishings").update(payload).eq("id", editing.id);
-      toast({ title: "Acabamento atualizado!" });
+      const { error } = await supabase.from("finishings").update(payload).eq("id", editing.id);
+      if (error) {
+        toast({
+          title: "Erro ao atualizar acabamento",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Acabamento atualizado!" });
+      }
     } else {
-      await supabase
+      const { error } = await supabase
         .from("finishings")
         .insert({ ...payload, is_active: true, sort_order: items.length });
-      toast({ title: "Acabamento criado!" });
+      if (error) {
+        toast({
+          title: "Erro ao criar acabamento",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Acabamento criado!" });
+      }
     }
     setOpen(false);
     setEditing(null);
@@ -73,17 +89,33 @@ const AdminAcabamentos = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Excluir acabamento?")) return;
-    await supabase.from("finishings").delete().eq("id", id);
-    toast({ title: "Acabamento excluído" });
+    const { error } = await supabase.from("finishings").delete().eq("id", id);
+    if (error) {
+      toast({
+        title: "Erro ao excluir acabamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Acabamento excluído" });
+    }
     load();
   };
 
   const toggleActive = async (item: any) => {
-    await supabase
+    const { error } = await supabase
       .from("finishings")
       .update({ is_active: !item.is_active })
       .eq("id", item.id);
-    load();
+    if (error) {
+      toast({
+        title: "Erro ao alterar status",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      load();
+    }
   };
 
   return (
