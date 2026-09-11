@@ -1,0 +1,15 @@
+import { useEffect, useState } from "react";
+import AdminLayout from "@/components/layout/AdminLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
+export default function AdminPagamentos() {
+ const { toast }=useToast(); const [loading,setLoading]=useState(true);
+ const [form,setForm]=useState({pixEnabled:true,cardEnabled:true,environment:"sandbox",apiKey:"",webhookToken:"",apiKeyConfigured:false,webhookTokenConfigured:false,webhookUrl:""});
+ useEffect(()=>{supabase.auth.getSession().then(async({data:{session}})=>{const {data,error}=await supabase.functions.invoke("admin-payment-settings",{method:"GET",headers:{Authorization:`Bearer ${session?.access_token}`}}); if(!error&&data)setForm(v=>({...v,...data})); setLoading(false);});},[]);
+ const save=async()=>{const {data:{session}}=await supabase.auth.getSession();const {error}=await supabase.functions.invoke("admin-payment-settings",{method:"PUT",headers:{Authorization:`Bearer ${session?.access_token}`},body:form});if(error)toast({title:"Erro ao salvar",description:error.message,variant:"destructive"});else{setForm(v=>({...v,apiKey:"",webhookToken:""}));toast({title:"Pagamentos atualizados"});}};
+ if(loading)return <AdminLayout><p>Carregando...</p></AdminLayout>;
+ return <AdminLayout><div className="max-w-2xl space-y-6"><div><h1 className="font-display text-3xl font-bold">Pagamentos</h1><p className="text-muted-foreground">As credenciais são cifradas e nunca voltam a ser exibidas.</p></div><div className="bg-card border border-border rounded-xl p-6 space-y-5"><div className="flex gap-6"><label className="flex gap-2"><input type="checkbox" checked={form.pixEnabled} onChange={e=>setForm({...form,pixEnabled:e.target.checked})}/> PIX ativo</label><label className="flex gap-2"><input type="checkbox" checked={form.cardEnabled} onChange={e=>setForm({...form,cardEnabled:e.target.checked})}/> Cartão ativo</label></div><label className="block">Ambiente<select className="ml-3 border rounded p-2 bg-background" value={form.environment} onChange={e=>setForm({...form,environment:e.target.value})}><option value="sandbox">Sandbox</option><option value="production">Produção</option></select></label><div><label>Nova API key do Asaas {form.apiKeyConfigured?"(uma chave já está cadastrada)":""}</label><Input type="password" value={form.apiKey} onChange={e=>setForm({...form,apiKey:e.target.value})} placeholder="Deixe vazio para manter a atual"/></div><div><label>Token do webhook {form.webhookTokenConfigured?"(um token já está cadastrado)":""}</label><Input type="password" value={form.webhookToken} onChange={e=>setForm({...form,webhookToken:e.target.value})} placeholder="32+ caracteres, deixe vazio para manter"/></div><div><label>URL do webhook</label><Input readOnly value={form.webhookUrl}/></div><Button onClick={save}>Salvar pagamentos</Button></div></div></AdminLayout>;
+}
