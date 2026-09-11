@@ -57,8 +57,9 @@ const AdminLeads = () => {
           ))}
         </select>
       </div>
-      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card">
+        <div className="overflow-x-auto overscroll-x-contain touch-pan-x scrollbar-thin scrollbar-thumb-muted-foreground/20">
+          <table className="w-full min-w-[1100px] text-sm">
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-3 font-medium text-muted-foreground">
@@ -169,7 +170,8 @@ const AdminLeads = () => {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </AdminLayout>
   );
