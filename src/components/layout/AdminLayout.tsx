@@ -225,7 +225,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col relative">
+        <div className="flex-1 min-w-0 flex flex-col relative">
           <header className="h-20 flex items-center justify-between border-b border-border/50 px-8 bg-card/[0.01] backdrop-blur-3xl sticky top-0 z-40 transition-all duration-300">
             <div className="flex items-center gap-6">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-all p-2 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5" />
@@ -274,7 +274,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-8 overflow-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
+          <main className="flex-1 min-w-0 p-4 md:p-8 overflow-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
             {children}
           </main>
         </div>
