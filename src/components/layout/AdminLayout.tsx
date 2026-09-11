@@ -120,6 +120,7 @@ const menuGroups = [
         icon: BarChart3,
       },
       { title: "Contas a Pagar", url: "/admin/contas-pagar", icon: DollarSign },
+      { title: "Pagamentos", url: "/admin/pagamentos", icon: CreditCard },
       { title: "Lucro & Margem", url: "/admin/lucro", icon: TrendingUp },
       { title: "Relatórios", url: "/admin/relatorios", icon: TrendingUp },
       { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
