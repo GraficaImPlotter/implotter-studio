@@ -9,6 +9,8 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  // Physical units represented by one commercial line (for example, a 1,000-unit print run).
+  productionQuantity?: number;
   image?: string;
   instructions?: string;
   // Per-sqm fields
@@ -93,7 +95,7 @@ export const useCart = create<CartState>()(
       addItem: (item) => {
         const items = get().items;
         // For per_sqm items, always add as new line (dimensions may differ)
-        if (item.pricingType === "per_sqm") {
+        if (item.pricingType === "per_sqm" || item.productionQuantity) {
           set({ items: [...items, { ...item, id: generateUUID() }] });
           debouncedSync(() => get().syncToCloud());
           return;
