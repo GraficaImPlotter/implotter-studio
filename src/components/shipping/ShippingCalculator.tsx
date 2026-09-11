@@ -46,7 +46,7 @@ const aggregatePackage = (items: CartItem[]) => {
   let totalHeight = 0;
 
   for (const item of items) {
-    const qty = item.quantity;
+    const qty = (item.productionQuantity || 1) * item.quantity;
     totalWeight += (item.shippingWeight || 0.3) * qty;
     maxWidth = Math.max(maxWidth, item.shippingWidth || 11);
     maxLength = Math.max(maxLength, item.shippingLength || 16);
