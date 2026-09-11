@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCors } from "../_shared/cors.ts";
+import { adminClient, providerConfig } from "../_shared/payment-config.ts";
 
 // Gera senha aleatória
 function generateRandomPassword(length = 12) {
@@ -12,22 +13,6 @@ function generateRandomPassword(length = 12) {
   return pass;
 }
 
-// ---- Webhook Access Token Validation ----
-// Asaas sends a configurable access token in the header to verify
-// the webhook is authentic. Configure ASAAS_WEBHOOK_TOKEN in your
-// Supabase Edge Function secrets to match the one set in Asaas Dashboard.
-function validateWebhookToken(req: Request): boolean {
-  const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
-  if (!webhookToken) {
-    // If no token is configured, allow (but log warning)
-    console.warn("⚠️ ASAAS_WEBHOOK_TOKEN not configured — webhook is unprotected!");
-    return true;
-  }
-  
-  const receivedToken = req.headers.get("asaas-access-token") || req.headers.get("access_token");
-  return receivedToken === webhookToken;
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
@@ -37,8 +22,10 @@ serve(async (req) => {
   const headers = { ...getCorsHeaders(origin), "Content-Type": "application/json" };
 
   try {
-    // Validate webhook authenticity
-    if (!validateWebhookToken(req)) {
+    const supabase = adminClient();
+    const paymentConfig = await providerConfig(supabase);
+    const receivedToken = req.headers.get("asaas-access-token");
+    if (!paymentConfig.webhookToken || receivedToken !== paymentConfig.webhookToken) {
       console.error("🚫 Webhook request rejected — invalid token");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -65,10 +52,6 @@ serve(async (req) => {
         headers,
       });
     }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Fetch the order
     const { data: order, error: orderError } = await supabase
