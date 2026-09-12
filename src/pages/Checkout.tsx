@@ -185,10 +185,14 @@ const Checkout = () => {
     // Recalculate subtotal using real DB prices
     let verifiedSubtotal = 0;
     for (const item of items) {
-      const realUnitPrice = item.productId && serverPrices[item.productId]
-        ? serverPrices[item.productId]
-        : item.price; // fallback for custom/manual items without product_id
-      verifiedSubtotal += realUnitPrice * item.quantity;
+      // A configured print run carries the total price of its selected commercial lot.
+      // Standard products continue to use the catalog price fetched above.
+      const verifiedLinePrice = item.productionQuantity
+        ? item.price
+        : item.productId && serverPrices[item.productId]
+          ? serverPrices[item.productId]
+          : item.price;
+      verifiedSubtotal += verifiedLinePrice * item.quantity;
     }
 
     // Detect price manipulation (allow small rounding difference)
@@ -251,8 +255,8 @@ const Checkout = () => {
       order_id: order.id,
       product_id: item.productId || null,
       product_name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price,
+      quantity: (item.productionQuantity || 1) * item.quantity,
+      unit_price: item.price / (item.productionQuantity || 1),
       subtotal: item.price * item.quantity,
       instructions: item.instructions || null,
       item_width: item.itemWidth || null,

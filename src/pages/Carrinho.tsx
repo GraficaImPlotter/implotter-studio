@@ -153,7 +153,11 @@ const Carrinho = () => {
                             </p>
                           </div>
                         ) : (
-                          <p className="text-xs sm:text-sm text-muted-foreground">R$ {item.price.toFixed(2)} / un</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {item.productionQuantity && item.productionQuantity > 1
+                              ? `${item.productionQuantity.toLocaleString("pt-BR")} un por lote`
+                              : `R$ ${item.price.toFixed(2)} / un`}
+                          </p>
                         )}
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-1.5">
@@ -165,7 +169,7 @@ const Carrinho = () => {
                             >
                               <Minus className="w-3 h-3" />
                             </Button>
-                            <span className="w-8 text-center text-sm font-bold text-foreground">{item.quantity}</span>
+                            <span className="min-w-12 text-center text-sm font-bold text-foreground">{item.productionQuantity ? `${item.quantity} lote${item.quantity > 1 ? "s" : ""}` : item.quantity}</span>
                             <Button
                               variant="outline"
                               size="icon"

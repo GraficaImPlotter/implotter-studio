@@ -1,9 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCors } from "../_shared/cors.ts";
+import { providerConfig } from "../_shared/payment-config.ts";
 
-// Obtém a URL base (Se não tiver configurada nas secrets, usa a Sandbox padrão)
-const ASAAS_API_URL = Deno.env.get("ASAAS_API_URL") || "https://sandbox.asaas.com/api/v3";
 
 serve(async (req) => {
   const corsResponse = handleCors(req);
@@ -24,10 +23,16 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY")!;
+    const paymentConfig = await providerConfig();
+    const ASAAS_API_KEY = paymentConfig.apiKey;
+    const ASAAS_API_URL = paymentConfig.apiUrl;
 
     if (!ASAAS_API_KEY) {
       return new Response(JSON.stringify({ error: "Chave API do Asaas não configurada" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (!paymentConfig.pixEnabled) {
+      return new Response(JSON.stringify({ error: "Este método de pagamento está indisponível." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);

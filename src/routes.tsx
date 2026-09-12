@@ -82,6 +82,7 @@ const CostEstimator = lazy(() => import("./pages/admin/CostEstimator"));
 const AdminNFe = lazy(() => import("./pages/admin/AdminNFe"));
 const AdminProspects = lazy(() => import("./pages/admin/AdminProspects"));
 const AdminContasPagar = lazy(() => import("./pages/admin/AdminContasPagar"));
+const AdminPagamentos = lazy(() => import("./pages/admin/AdminPagamentos"));
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -381,6 +382,7 @@ const AppRoutes = () => {
                 </AdminRoute>
               }
             />
+            <Route path="/admin/pagamentos" element={<AdminRoute><AdminPagamentos /></AdminRoute>} />
             <Route
               path="/admin/contas-pagar"
               element={
