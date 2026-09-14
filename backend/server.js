@@ -26,7 +26,8 @@ import {
 import { scrapeGoogleMaps } from './services/googleMapsService.js';
 import { analyzeLeadPresence } from './services/visualAnalysisService.js';
 import { sendWhatsAppMessage } from './services/whatsappService.js';
-import { 
+import { encryptPassword, decryptPassword } from './utils/crypto.js';
+import {
   processIncomingXML, 
   listIncomingInvoices, 
   listExpenses, 
@@ -209,9 +210,25 @@ app.post('/api/chat/human', chatLimiter, verifyAuth, async (req, res) => {
   }
 });
 
-// TELEGRAM WEBHOOK
+// TELEGRAM WEBHOOK (com validação de segurança)
 app.post('/api/webhooks/telegram', async (req, res) => {
   try {
+    // Validar token secreto do Telegram
+    const secretToken = req.headers['x-telegram-bot-api-secret-token'];
+
+    if (!process.env.TELEGRAM_WEBHOOK_SECRET) {
+      logger.error('TELEGRAM_WEBHOOK_SECRET não configurado');
+      return res.status(500).json({ error: 'Webhook not configured' });
+    }
+
+    if (secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+      logger.warn('Tentativa de acesso não autorizado ao webhook Telegram', {
+        ip: req.ip,
+        headers: req.headers
+      });
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
     const { message } = req.body;
 
     if (!message || !message.reply_to_message || !message.text) {
@@ -592,12 +609,16 @@ app.post('/api/nfe/certificate/upload', verifyAuth, upload.single('certificate')
     const validTo = new Date(certInfo.validTo);
     const daysUntilExpiry = Math.ceil((validTo - now) / (1000 * 60 * 60 * 24));
 
-    // Store certificate info in database
+    // Store certificate info in database with encrypted password
+    const encryptedPassword = encryptPassword(password);
+
     await supabaseAdmin
       .from('nfe_config')
       .update({
         certificado_a1_url: certPath,
-        certificado_a1_password: password, // In production, encrypt this
+        certificado_a1_password: encryptedPassword.encrypted,
+        certificado_a1_password_iv: encryptedPassword.iv,
+        certificado_a1_password_auth_tag: encryptedPassword.authTag,
         certificado_info: certInfo,
       })
       .eq('id', (await supabaseAdmin.from('nfe_config').select('id').single()).data?.id);

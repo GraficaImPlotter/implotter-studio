@@ -313,13 +313,21 @@ const AdminProdutos = () => {
         path: getNodePath(catalogNodes, n.id),
       }));
 
+      // Obter token de sessão do usuário autenticado
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-product-content`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             productName: productName.trim(),
@@ -405,13 +413,21 @@ const AdminProdutos = () => {
     }
     setGeneratingImage(true);
     try {
+      // Obter token de sessão do usuário autenticado
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Sessão expirada. Faça login novamente.");
+      }
+
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-product-image`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ productName: productName.trim() }),
         },
@@ -629,13 +645,11 @@ const AdminProdutos = () => {
       const { data: urlData } = supabase.storage
         .from("product-images")
         .getPublicUrl(path);
-      await supabase
-        .from("product_images")
-        .insert({
-          product_id: productId,
-          image_url: urlData.publicUrl,
-          sort_order: i,
-        });
+      await supabase.from("product_images").insert({
+        product_id: productId,
+        image_url: urlData.publicUrl,
+        sort_order: i,
+      });
     }
   };
 

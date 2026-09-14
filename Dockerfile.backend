@@ -27,7 +27,6 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY backend/ ./backend/
-COPY .env ./
 
 EXPOSE 3001
 

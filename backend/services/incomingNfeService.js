@@ -5,6 +5,13 @@ import { logger } from './logger.js';
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
+  processEntities: false,  // Previne XXE attacks
+  allowBooleanAttributes: true,
+  parseTagValue: true,
+  parseAttributeValue: true,
+  trimValues: true,
+  cdataPropName: "__cdata",
+  stopNodes: ["*.CDATA"]  // Previne exploits via CDATA
 });
 
 /**
