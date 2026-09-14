@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import { mkdirSync } from 'fs';
+import { z } from 'zod';
 import { processChat } from './services/geminiService.js';
 import { sendToAdmin } from './services/telegramService.js';
 import { supabaseAdmin } from './services/supabaseService.js';
@@ -309,10 +310,40 @@ app.get('/api/nfe/config', verifyAuth, async (req, res) => {
   }
 });
 
+// ==================== INPUT VALIDATION SCHEMAS ====================
+
+// Schema for NF-e config - whitelists allowed fields
+const nfeConfigSchema = z.object({
+  razao_social: z.string().max(100).optional(),
+  nome_fantasia: z.string().max(100).optional(),
+  cnpj: z.string().regex(/^\d{14}$/).optional(),
+  inscricao_estadual: z.string().max(20).optional(),
+  inscricao_municipal: z.string().max(20).optional(),
+  cnae: z.string().max(10).optional(),
+  endereco: z.string().max(200).optional(),
+  numero: z.string().max(10).optional(),
+  complemento: z.string().max(50).optional(),
+  bairro: z.string().max(50).optional(),
+  codigo_municipio: z.string().max(10).optional(),
+  municipio: z.string().max(50).optional(),
+  uf: z.string().length(2).optional(),
+  cep: z.string().regex(/^\d{8}$/).optional(),
+  telefone: z.string().max(20).optional(),
+  email: z.string().email().max(100).optional(),
+  regime_tributario: z.enum(['1', '2', '3']).optional(),
+});
+
+// Schema for site settings - whitelists keys
+const siteSettingsSchema = z.record(z.string().max(100), z.string().max(500));
+
+// ==================== NF-e CONFIG ROUTES ====================
+
 // Save NF-e configuration (emitente data)
 app.post('/api/nfe/config', verifyAuth, async (req, res) => {
   try {
-    const { certificado_a1_url, certificado_a1_password, certificado_info, ...config } = req.body;
+    // Validate input with Zod - only allow whitelisted fields
+    const validated = nfeConfigSchema.parse(req.body);
+
     const userId = req.user.id;
 
     const { data: existing } = await supabaseAdmin
@@ -324,14 +355,14 @@ app.post('/api/nfe/config', verifyAuth, async (req, res) => {
     if (existing) {
       result = await supabaseAdmin
         .from('nfe_config')
-        .update({ ...config, updated_at: new Date().toISOString(), updated_by: userId })
+        .update({ ...validated, updated_at: new Date().toISOString(), updated_by: userId })
         .eq('id', existing.id)
         .select()
         .single();
     } else {
       result = await supabaseAdmin
         .from('nfe_config')
-        .insert({ ...config, created_by: userId })
+        .insert({ ...validated, created_by: userId })
         .select()
         .single();
     }
@@ -340,6 +371,9 @@ app.post('/api/nfe/config', verifyAuth, async (req, res) => {
 
     res.json({ success: true, config: result.data });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.errors });
+    }
     logger.error('Error saving NF-e config', { message: error.message });
     res.status(500).json({ error: 'Erro ao salvar configuração de NF-e' });
   }
