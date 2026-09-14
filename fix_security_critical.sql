@@ -33,22 +33,23 @@ WHERE is_active = true;
 GRANT SELECT ON public.products_public TO anon, authenticated;
 
 -- 2. Proteger SITE_SETTINGS de expor dados sensíveis
-DROP POLICY IF EXISTS "Public can view site_settings" ON public.site_settings;
-CREATE POLICY "Public can view safe settings" ON public.site_settings
+-- Usar nome único para evitar conflito
+DROP POLICY IF EXISTS "Public can view safe settings v2" ON public.site_settings;
+CREATE POLICY "Public can view safe settings v2" ON public.site_settings
 FOR SELECT USING (
   key NOT IN ('cpf_responsavel', 'cnpj', 'profit_margin_default', 'certificado_a1_password')
   OR public.is_admin()
 );
 
 -- 3. Garantir que apenas admins editam settings
-DROP POLICY IF EXISTS "Admins can manage site settings" ON public.site_settings;
-CREATE POLICY "Admins can manage site settings" ON public.site_settings
+DROP POLICY IF EXISTS "Admins can manage site settings v2" ON public.site_settings;
+CREATE POLICY "Admins can manage site settings v2" ON public.site_settings
 FOR ALL USING (public.is_admin());
 
 -- 4. Proteger tabela de CUPONS (não deve ser pública)
-DROP POLICY IF EXISTS "Public can view coupons" ON public.coupons;
--- Apenas admins veem cupons
-CREATE POLICY "Admins manage coupons" ON public.coupons
+-- Usar nome único para evitar conflito
+DROP POLICY IF EXISTS "Admins manage coupons v2" ON public.coupons;
+CREATE POLICY "Admins manage coupons v2" ON public.coupons
 FOR ALL USING (public.is_admin());
 
 -- Função para validar cupom (sem expor lista completa)
@@ -82,14 +83,14 @@ GRANT EXECUTE ON FUNCTION public.validate_coupon(TEXT) TO anon, authenticated;
 
 -- 5. Proteger dados de NF-e (não deve ser público)
 ALTER TABLE IF EXISTS public.nfe_configurations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public view nfe" ON public.nfe_configurations;
-CREATE POLICY "Admin only nfe" ON public.nfe_configurations
+DROP POLICY IF EXISTS "Admin only nfe v2" ON public.nfe_configurations;
+CREATE POLICY "Admin only nfe v2" ON public.nfe_configurations
 FOR ALL USING (public.is_admin());
 
 -- 6. Proteger tabela de PAYMENT_SETTINGS
 ALTER TABLE IF EXISTS public.payment_settings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public view payments" ON public.payment_settings;
-CREATE POLICY "Admin only payments" ON public.payment_settings
+DROP POLICY IF EXISTS "Admin only payments v2" ON public.payment_settings;
+CREATE POLICY "Admin only payments v2" ON public.payment_settings
 FOR ALL USING (public.is_admin());
 
 -- CONFIRMAÇÃO
