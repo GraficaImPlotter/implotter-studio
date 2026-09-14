@@ -314,6 +314,88 @@
     @apply bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] shadow-2xl;
   }
 
+  /* Border Glow Effect - Similar to ReactBits */
+  .border-glow-animated {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: 16px;
+  }
+
+  .border-glow-animated::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 2px;
+    background: linear-gradient(
+      135deg,
+      hsl(217 85% 60% / 0.6),
+      hsl(217 85% 60% / 0.1),
+      hsl(217 85% 60% / 0.6),
+      hsl(217 85% 60% / 0.1)
+    );
+    background-size: 300% 300%;
+    animation: borderGlow 4s ease infinite;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  @keyframes borderGlow {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* Border Glow com cores personalizadas via CSS variables */
+  .border-glow-primary {
+    --glow-color: 217 85% 55%;
+  }
+
+  .border-glow-success {
+    --glow-color: 142 70% 45%;
+  }
+
+  .border-glow-warning {
+    --glow-color: 38 90% 50%;
+  }
+
+  .border-glow-gold {
+    --glow-color: 45 93% 50%;
+  }
+
+  .border-glow-gold::before {
+    background: linear-gradient(
+      135deg,
+      hsl(45 93% 60% / 0.8),
+      hsl(45 93% 60% / 0.2),
+      hsl(45 93% 60% / 0.8),
+      hsl(45 93% 60% / 0.2)
+    );
+    background-size: 300% 300%;
+    animation: borderGlow 4s ease infinite;
+  }
+
+  /* Efeito de glow externo ao hover */
+  .glow-on-hover {
+    transition: all 0.3s ease;
+  }
+
+  .glow-on-hover:hover {
+    box-shadow: 0 0 30px hsl(217 85% 55% / 0.3);
+  }
+
+  .glow-on-hover-gold:hover {
+    box-shadow: 0 0 30px hsl(45 93% 50% / 0.3);
+  }
+
   .product-card-glow:hover {
     box-shadow: 0 0 20px rgba(0, 230, 255, 0.2);
     border-color: rgba(0, 230, 255, 0.4);

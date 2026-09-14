@@ -52,9 +52,13 @@ const KitsSection = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kits.map((kit, i) => {
-            const discount = kit.normal_price > 0
-              ? Math.round(((kit.normal_price - kit.promo_price) / kit.normal_price) * 100)
-              : 0;
+            const discount =
+              kit.normal_price > 0
+                ? Math.round(
+                    ((kit.normal_price - kit.promo_price) / kit.normal_price) *
+                      100,
+                  )
+                : 0;
 
             return (
               <motion.div
@@ -65,7 +69,7 @@ const KitsSection = () => {
                 viewport={{ once: true }}
               >
                 <Link to={`/kit/${kit.slug}`} className="block h-full">
-                  <div className="glass-card-premium rounded-3xl overflow-hidden border-gradient-premium hover:shadow-glow-sm hover:-translate-y-2 transition-all duration-300 flex flex-col h-full group product-card-glow">
+                  <div className="glass-card-premium rounded-3xl overflow-hidden border-gradient-premium hover:shadow-glow-sm hover:-translate-y-2 transition-all duration-300 flex flex-col h-full group product-card-glow border-glow-gold">
                     <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                       {kit.image_url ? (
                         <img
@@ -80,9 +84,11 @@ const KitsSection = () => {
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
+
                       <div className="absolute top-3 left-3 flex flex-col gap-2">
-                        <span className="bg-primary text-primary-foreground text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg uppercase tracking-tight">KIT PREMIUM</span>
+                        <span className="bg-primary text-primary-foreground text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg uppercase tracking-tight">
+                          KIT PREMIUM
+                        </span>
                         {discount > 0 && (
                           <span className="bg-destructive text-destructive-foreground text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg uppercase tracking-tight">
                             -{discount}% OFF
@@ -94,7 +100,7 @@ const KitsSection = () => {
                       <h3 className="font-display font-bold text-sm text-foreground line-clamp-2 mb-4 group-hover:text-primary transition-colors leading-tight min-h-[2.5rem]">
                         {kit.name}
                       </h3>
-                      
+
                       <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
                         <div className="flex flex-col">
                           {kit.normal_price > kit.promo_price && (

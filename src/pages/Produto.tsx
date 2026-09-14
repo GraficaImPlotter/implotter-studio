@@ -1300,7 +1300,7 @@ const Produto = () => {
                 }}
                 disabled={!canAddToCart}
                 variant="hero"
-                className="flex-1 h-14 bg-success hover:bg-success/90 text-white font-black"
+                className="flex-1 h-14 bg-success hover:bg-success/90 text-white font-black glow-on-hover"
               >
                 COMPRAR AGORA
               </Button>
