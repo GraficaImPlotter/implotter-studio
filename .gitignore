@@ -30,3 +30,7 @@ dist-ssr
 
 # Claude settings
 .claude/
+
+*.pfx
+*.p12
+certs/
