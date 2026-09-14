@@ -14,7 +14,10 @@ class ErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
   ErrorBoundaryState
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  constructor(props: {
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
+  }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -36,8 +39,18 @@ class ErrorBoundary extends React.Component<
         <div className="min-h-screen flex items-center justify-center bg-background p-8">
           <div className="max-w-md text-center">
             <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              <svg
+                className="w-8 h-8 text-destructive"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
               </svg>
             </div>
             <h1 className="font-display text-2xl font-bold text-foreground mb-2">
@@ -64,10 +77,10 @@ class ErrorBoundary extends React.Component<
                 Limpar Cache e Início
               </button>
             </div>
-            {this.state.error && (
+            {this.state.error && import.meta.env.DEV && (
               <details className="mt-6 text-left">
                 <summary className="text-sm text-muted-foreground cursor-pointer">
-                  Detalhes do erro
+                  Detalhes do erro (apenas em desenvolvimento)
                 </summary>
                 <pre className="mt-2 p-3 bg-muted rounded-lg text-xs overflow-auto max-h-48 text-destructive whitespace-pre-wrap">
                   {this.state.error.message}

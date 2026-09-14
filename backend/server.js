@@ -70,11 +70,35 @@ const xmlUpload = multer({
 
 const app = express();
 
-// SEC-002: CORS - aceita qualquer origem (desenvolvimento)
+// CORS: ambiente específico (produção vs desenvolvimento)
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://graficaimplotter.com.br', 'https://www.graficaimplotter.com.br']
+  : [
+      'https://graficaimplotter.com.br',
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'http://localhost:8082',
+      'http://127.0.0.1:8080',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ];
+
 app.use(cors({
-  origin: ['https://graficaimplotter.com.br', 'http://localhost:8080', 'http://127.0.0.1:8080', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+  origin: (origin, callback) => {
+    // Permitir requests sem origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      logger.warn('CORS blocked origin:', { origin, ip: origin });
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true
 }));
 
 app.use(express.json({ limit: '100kb' }));

@@ -54,8 +54,8 @@ function generateAccessKey(emitenteCNPJ, serie, numero, tpEmis = '1') {
   const numPadded = String(numero).padStart(9, '0');
   const cnpjPadded = emitenteCNPJ.replace(/\D/g, '').padStart(14, '0');
 
-  // Random 8-digit code
-  const cod = String(Math.floor(Math.random() * 99999999) + 1).padStart(8, '0');
+  // Cryptographically secure random 8-digit code (10000000 to 99999999)
+  const cod = String(crypto.randomInt(10000000, 99999999));
 
   const baseKey = uf + aamm + cnpjPadded + mod + seriePadded + numPadded + tpEmis + cod;
 
