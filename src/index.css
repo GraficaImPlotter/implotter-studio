@@ -175,6 +175,34 @@
 }
 
 @layer utilities {
+  /* Admin tables horizontal scroll for mobile */
+  .admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+  }
+
+  /* Ensure all tables in admin have min-width for scrolling */
+  .admin-table-container table {
+    min-width: 600px;
+  }
+
+  /* Custom scrollbar for admin tables */
+  .admin-table-container::-webkit-scrollbar {
+    height: 6px;
+  }
+  .admin-table-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .admin-table-container::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+  .admin-table-container::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
   .text-gradient-primary {
     background: var(--gradient-primary);
     -webkit-background-clip: text;

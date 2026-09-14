@@ -275,8 +275,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="flex-1 min-w-0 p-4 md:p-8 overflow-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500">
-            {children}
+          <main className="flex-1 min-w-0 p-4 md:p-8 overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-white/5 scroll-smooth relative z-10 transition-all duration-500 touch-pan-x">
+            <div className="min-w-[600px]">{children}</div>
           </main>
         </div>
       </div>
